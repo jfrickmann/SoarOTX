@@ -1,5 +1,5 @@
 -- JF F5J mix adjustment
--- Timestamp: 2018-03-07
+-- Timestamp: 2018-03-31
 -- Created by Jesper Frickmann
 
 local gv3 = getFieldInfo("gvar3").id
@@ -12,7 +12,7 @@ local Draw -- Draw() function is defined for specific transmitter
 -- Transmitter specific
 if tx == TX_X9D then
 	function Draw()
-		DrawMenu(" Aileron and camber ")
+		DrawMenu(" Adjust mixes ")
 		
 		lcd.drawText(10, 14, "Rudder trim = Aile-rudder")
 		lcd.drawText(10, 26, "Aileron trim = Differential")
@@ -33,7 +33,7 @@ if tx == TX_X9D then
 	end -- Draw()
 else
 	function Draw()
-		DrawMenu("Aile & camber")
+		DrawMenu("Adjust mixes")
 
 		lcd.drawText(5, 14, "Rudd. trim = Aile-rudd.", SMLSIZE)
 		lcd.drawText(5, 26, "Aile. trim = Differential", SMLSIZE)

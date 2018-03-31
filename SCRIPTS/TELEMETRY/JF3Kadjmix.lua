@@ -1,5 +1,5 @@
 -- JF F3K mix adjustment
--- Timestamp: 2018-03-07
+-- Timestamp: 2018-03-31
 -- Created by Jesper Frickmann
 
 local gv3 = getFieldInfo("gvar3").id
@@ -21,7 +21,7 @@ if tx == TX_X9D then
 		adj = 3
 		
 		-- Draw instructions on the screem
-		DrawMenu(" Aileron and camber ")
+		DrawMenu(" Adjust mixes ")
 		
 		lcd.drawText(160, 14, "AiR")
 		lcd.drawText(160, 26, "Dif")
@@ -51,7 +51,7 @@ else
 		adj = 3
 		
 		-- Draw instructions on the screem
-		DrawMenu("Aileron & camber")
+		DrawMenu("Adjust mixes")
 
 		lcd.drawText(5, 14, "Rudder trim = Aile-rudder", SMLSIZE)
 		lcd.drawText(5, 26, "Aileron trim = Differential", SMLSIZE)
