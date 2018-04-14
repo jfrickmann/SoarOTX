@@ -1,5 +1,5 @@
 -- JF F5J Timing and score keeping, loadable part
--- Timestamp: 2018-03-07
+-- Timestamp: 2018-04-13
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F5J.
 
@@ -33,19 +33,19 @@ if tx == TX_X9D then
 		end
 
 		if skLocals.state < skLocals.STATE_LANDINGPTS then
-			lcd.drawText(88, 16, "--", DBLSIZE + RIGHT)
+			lcd.drawText(93, 16, "--", DBLSIZE + RIGHT)
 		elseif skLocals.state == skLocals.STATE_LANDINGPTS then
-			lcd.drawNumber(88, 16, skLocals.landingPts, DBLSIZE + RIGHT + BLINK + INVERS)
+			lcd.drawNumber(93, 16, skLocals.landingPts, DBLSIZE + RIGHT + BLINK + INVERS)
 		else
-			lcd.drawNumber(88, 16, skLocals.landingPts, DBLSIZE + RIGHT)
+			lcd.drawNumber(93, 16, skLocals.landingPts, DBLSIZE + RIGHT)
 		end
 
 		if skLocals.state < skLocals.STATE_LANDINGPTS then
-			lcd.drawText(88, 38, "---", DBLSIZE + RIGHT)
+			lcd.drawText(93, 38, "---", DBLSIZE + RIGHT)
 		elseif skLocals.state == skLocals.STATE_STARTHEIGHT then
-			lcd.drawNumber(88, 38, skLocals.startHeight, DBLSIZE + RIGHT + BLINK + INVERS)
+			lcd.drawNumber(93, 38, skLocals.startHeight * 10, PREC1 + DBLSIZE + RIGHT + BLINK + INVERS)
 		else
-			lcd.drawNumber(88, 38, skLocals.startHeight, DBLSIZE + RIGHT)
+			lcd.drawNumber(93, 38, skLocals.startHeight * 10, PREC1 + DBLSIZE + RIGHT)
 		end
 		
 		if getValue(armId) >0 then
@@ -58,8 +58,8 @@ else -- QX7
 		DrawMenu(fmName)	
 
 		lcd.drawText(47, 58, " JF F5J ", SMLSIZE)
-		lcd.drawText(8, 20, "Landing", SMLSIZE)
-		lcd.drawText(8, 42, "Start", SMLSIZE)
+		lcd.drawText(7, 20, "Landing", SMLSIZE)
+		lcd.drawText(7, 42, "Start", SMLSIZE)
 		lcd.drawText(68, 42, "Mot", SMLSIZE)
 		lcd.drawTimer(90, 38, mt.value, MIDSIZE)
 
@@ -75,19 +75,19 @@ else -- QX7
 		end
 
 		if skLocals.state < skLocals.STATE_LANDINGPTS then
-			lcd.drawText(58, 16, "--", MIDSIZE + RIGHT)
+			lcd.drawText(64, 16, "--", MIDSIZE + RIGHT)
 		elseif skLocals.state == skLocals.STATE_LANDINGPTS then
-			lcd.drawNumber(58, 16, skLocals.landingPts, MIDSIZE + RIGHT + BLINK + INVERS)
+			lcd.drawNumber(64, 16, skLocals.landingPts, MIDSIZE + RIGHT + BLINK + INVERS)
 		else
-			lcd.drawNumber(58, 16, skLocals.landingPts, MIDSIZE + RIGHT)
+			lcd.drawNumber(64, 16, skLocals.landingPts, MIDSIZE + RIGHT)
 		end
 
 		if skLocals.state < skLocals.STATE_LANDINGPTS then
-			lcd.drawText(58, 38, "---", MIDSIZE + RIGHT)
+			lcd.drawText(64, 38, "---", MIDSIZE + RIGHT)
 		elseif skLocals.state == skLocals.STATE_STARTHEIGHT then
-			lcd.drawNumber(58, 38, skLocals.startHeight, MIDSIZE + RIGHT + BLINK + INVERS)
+			lcd.drawNumber(64, 38, skLocals.startHeight * 10, PREC1 + MIDSIZE + RIGHT + BLINK + INVERS)
 		else
-			lcd.drawNumber(58, 38, skLocals.startHeight, MIDSIZE + RIGHT)
+			lcd.drawNumber(64, 38, skLocals.startHeight * 10, PREC1 + MIDSIZE + RIGHT)
 		end
 		
 		if getValue(armId) >0 then
@@ -147,11 +147,19 @@ local function run(event)
 	elseif skLocals.state == skLocals.STATE_STARTHEIGHT then -- Input start height
 		local dm = 0
 		
-		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_PLUS_REPT then
+		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT then
+			dm = 0.1
+		end
+		
+		if event == EVT_PLUS_REPT then
 			dm = 1
 		end
 		
-		if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_MINUS_REPT then
+		if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT then
+			dm = -0.1
+		end
+		
+		if event == EVT_MINUS_REPT then
 			dm = -1
 		end
 		
@@ -176,7 +184,7 @@ local function run(event)
 				local timeStr = string.format("%02d:%02d", now.hour, now.min)
 
 				io.write(logFile, string.format("%s,%s,%s,", nameStr, dateStr, timeStr))
-				io.write(logFile, string.format("%s,%s,", skLocals.landingPts, skLocals.startHeight))
+				io.write(logFile, string.format("%s,%4.1f,", skLocals.landingPts, skLocals.startHeight))
 				io.write(logFile, string.format("%s,%s\n", ft.start, ft.value))
 
 				io.close(logFile)

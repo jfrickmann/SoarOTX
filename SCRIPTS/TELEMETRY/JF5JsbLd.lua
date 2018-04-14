@@ -1,5 +1,5 @@
 -- JF F5J Score Browser
--- Timestamp: 2018-03-07
+-- Timestamp: 2018-04-13
 -- Created by Jesper Frickmann
 -- Telemetry script for browsing scores recorded in the log file.
 
@@ -17,10 +17,10 @@ local Draw -- Draw() function is defined for specific transmitter
 if tx == TX_X9D then
 	function Draw()
 		lcd.drawText(10, 20, "Landing", MIDSIZE)
-		lcd.drawNumber(88, 16, lineData[4], DBLSIZE + RIGHT)
+		lcd.drawNumber(93, 16, lineData[4], DBLSIZE + RIGHT)
 
 		lcd.drawText(10, 42, "Start", MIDSIZE)
-		lcd.drawNumber(88, 38, lineData[5], DBLSIZE + RIGHT)
+		lcd.drawNumber(93, 38, lineData[5] * 10, PREC1 + DBLSIZE + RIGHT)
 
 		lcd.drawText(110, 20, "Target", MIDSIZE)
 		lcd.drawTimer(162, 16, lineData[6], DBLSIZE)
@@ -36,11 +36,11 @@ if tx == TX_X9D then
 	end -- Draw()
 else -- QX7
 	function Draw()
-		lcd.drawText(8, 20, "Landing", SMLSIZE)
-		lcd.drawNumber(58, 16, lineData[4], MIDSIZE + RIGHT)
+		lcd.drawText(7, 20, "Landing", SMLSIZE)
+		lcd.drawNumber(64, 16, lineData[4], MIDSIZE + RIGHT)
 
-		lcd.drawText(8, 42, "Start", SMLSIZE)
-		lcd.drawNumber(58, 38, lineData[5], MIDSIZE + RIGHT)
+		lcd.drawText(7, 42, "Start", SMLSIZE)
+		lcd.drawNumber(64, 38, lineData[5] * 10, PREC1 + MIDSIZE + RIGHT)
 
 		lcd.drawText(68, 20, "Tgt", SMLSIZE)
 		lcd.drawTimer(90, 16, lineData[6], MIDSIZE)
