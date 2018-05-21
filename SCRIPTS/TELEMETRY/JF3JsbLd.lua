@@ -22,11 +22,11 @@ if tx == TX_X9D then
 		lcd.drawText(10, 42, "Start", MIDSIZE)
 		lcd.drawNumber(93, 38, lineData[5] * 10, PREC1 + DBLSIZE + RIGHT)
 
-		lcd.drawText(110, 20, "Target", MIDSIZE)
-		lcd.drawTimer(162, 16, lineData[6], DBLSIZE)
+		lcd.drawText(106, 20, "Remain", MIDSIZE)
+		lcd.drawTimer(162, 16, lineData[7], DBLSIZE)
 
-		lcd.drawText(110, 42, "Flight", MIDSIZE)
-		lcd.drawTimer(162, 38, lineData[7], DBLSIZE)
+		lcd.drawText(106, 42, "Flight", MIDSIZE)
+		lcd.drawTimer(162, 38, lineData[8], DBLSIZE)
 
 		lcd.drawText(55, 58, " JF F3J Score Browser ", SMLSIZE)	
 		-- Warn if the log file is growing too large
@@ -42,11 +42,11 @@ else -- QX7
 		lcd.drawText(7, 42, "Start", SMLSIZE)
 		lcd.drawNumber(64, 38, lineData[5] * 10, PREC1 + MIDSIZE + RIGHT)
 
-		lcd.drawText(68, 20, "Tgt", SMLSIZE)
-		lcd.drawTimer(90, 16, lineData[6], MIDSIZE)
+		lcd.drawText(66, 20, "Rem", SMLSIZE)
+		lcd.drawTimer(90, 16, lineData[7], MIDSIZE)
 
-		lcd.drawText(68, 42, "Flt", SMLSIZE)
-		lcd.drawTimer(90, 38, lineData[7], MIDSIZE)
+		lcd.drawText(66, 42, "Flt", SMLSIZE)
+		lcd.drawTimer(90, 38, lineData[8], MIDSIZE)
 
 		lcd.drawText(47, 58, " JF F3J ", SMLSIZE)	
 		-- Warn if the log file is growing too large
