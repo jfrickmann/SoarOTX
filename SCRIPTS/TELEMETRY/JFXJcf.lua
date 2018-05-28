@@ -1,5 +1,5 @@
 -- JF FXJ Configuration Menu
--- Timestamp: 2018-05-20
+-- Timestamp: 2018-05-28
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 -- "adj" is a global var that is output to OpenTX with a custom script
@@ -70,7 +70,7 @@ local function run(event)
 		
 		-- Show the menu
 		if tx == TX_X9D then
-			DrawMenu(" JF F5J Configuration ")
+			DrawMenu(" JF FxJ Configuration ")
 			att = 0
 			x = 10
 			lcd.drawPixmap(159, 11, "/IMAGES/Lua-girl.bmp")
