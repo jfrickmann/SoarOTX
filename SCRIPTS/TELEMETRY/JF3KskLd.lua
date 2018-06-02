@@ -118,7 +118,7 @@ if tx == TX_X9D then
 			end
 		end
 	end  --  Draw()
-else -- TX_QX7
+else -- TX_QX7 or X-lite
 	taskList = {
 		"A. Last 5m",
 		"B. Last 2 3m",
@@ -323,19 +323,19 @@ local function run(event)
 		if windowRunning then
 		
 			-- Toggle quick relaunch
-			if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT then
+			if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_UP_BREAK then
 				skLocals.quickRelaunch = not skLocals.quickRelaunch
 				playTone(1760, 100, PLAY_NOW)
 			end
 
 			-- Toggle end of window timer stop
-			if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT then
+			if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_DOWN_BREAK then
 				skLocals.eowTimerStop = not skLocals.eowTimerStop
 				playTone(1760, 100, PLAY_NOW)
 			end
 
 			-- Menu button was pressed. Score a zero!
-			if event == EVT_MENU_LONG and skLocals.flying then
+			if event == EVT_MENU_LONG or event == EVT_SHIFT_LONG and skLocals.flying then
 				if skLocals.taskScoreTypes[skLocals.task] == 1 and skLocals.comitted then
 					RecordLast(skLocals.scores, 0)
 				end
@@ -348,7 +348,7 @@ local function run(event)
 		else -- Window is not running
 		
 			-- Change skLocals.task
-			if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT then
+			if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK then
 				saveTask = skLocals.task
 				skLocals.task = skLocals.task + 1
 				if skLocals.task > #taskList then skLocals.task = 1 end
@@ -358,7 +358,7 @@ local function run(event)
 				end
 			end
 
-			if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT then
+			if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK then
 				saveTask = skLocals.task
 				skLocals.task = skLocals.task - 1
 				if skLocals.task < 1 then skLocals.task = #taskList end

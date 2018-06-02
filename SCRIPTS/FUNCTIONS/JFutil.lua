@@ -1,5 +1,5 @@
 -- JF Library
--- Timestamp: 2018-03-06
+-- Timestamp: 2018-05-31
 -- Created by Jesper Frickmann
 -- Has a few shared functions and variables for telemetry and functions scripts
 -- Works together with a small shell script to load and unload program and telemetry scripts.
@@ -9,6 +9,7 @@
 TX_UNKNOWN = 0
 TX_X9D = 1 
 TX_QX7 = 2
+TX_LITE = 3
 
 local ver, radio = getVersion()
 
@@ -18,6 +19,9 @@ if string.find(radio, "x7") then -- Qx7
 elseif string.find(radio, "x9d") then -- X9D		
 	tx = TX_X9D
 	GRAY = GREY_DEFAULT
+elseif string.find(radio, "lite") then -- X-lite
+	tx = TX_LITE
+	GRAY = 0
 else
 	tx = TX_UNKNOWN
 end
@@ -47,7 +51,7 @@ if tx == TX_X9D then
 		lcd.drawText(LCD_W, 0, infoStr, RIGHT)
 		lcd.drawScreenTitle(title, 0, 0)
 	end -- DrawMenu()
-elseif tx == TX_QX7 then
+elseif tx == TX_QX7 or tx == TX_LITE then
 	function DrawMenu(title)
 		local now = getDateTime()
 		local infoStr = string.format("%1.1fV %02d:%02d", getValue(batId), now.hour, now.min)

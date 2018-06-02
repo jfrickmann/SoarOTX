@@ -1,5 +1,5 @@
 -- JF F3J Score Browser
--- Timestamp: 2018-05-21
+-- Timestamp: 2018-06-01
 -- Created by Jesper Frickmann
 -- Telemetry script for browsing scores recorded in the log file.
 
@@ -34,7 +34,7 @@ if tx == TX_X9D then
 			lcd.drawText(55, 57, " Log getting too large ", SMLSIZE + BLINK + INVERS)
 		end
 	end -- Draw()
-else -- QX7
+else -- QX7, X-lite
 	function Draw()
 		lcd.drawText(7, 20, "Landing", SMLSIZE)
 		lcd.drawNumber(64, 16, lineData[4], MIDSIZE + RIGHT)
@@ -132,7 +132,7 @@ local function run(event)
 	lastTime = thisTime
 	
 	-- Go to previous record
-	if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT then
+	if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK then
 		index = index - 1
 		if index <= 0 then
 			index = #indices - 1
@@ -146,7 +146,7 @@ local function run(event)
 	end
 
 	 -- Go to next record
-	if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT then
+	if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK then
 		index = index + 1
 		if index >= #indices then
 			index = 1

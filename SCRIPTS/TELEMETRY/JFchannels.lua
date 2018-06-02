@@ -1,5 +1,5 @@
 -- JF Channel Swap
--- Timestamp: 2018-03-09
+-- Timestamp: 2018-06-01
 -- Created by Jesper Frickmann
 
 local N = 32 -- Highest channel number to swap
@@ -30,7 +30,7 @@ if tx == TX_X9D then
 	XTXT = 30
 	ATT1 = MIDSIZE
 	ATT2 = 0
-else
+else -- QX7 or X-lite
 	MENUTXT = "Channel Config"
 	XDOT = 15
 	XREV = 45
@@ -336,13 +336,13 @@ local function run(event)
 				return true -- Quit
 			elseif event == EVT_ENTER_BREAK then
 				editing = 1
-			elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_PLUS_REPT then
+			elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_PLUS_REPT or event == EVT_UP_BREAK then
 				if selection == 1 then
 					playTone(3000, 100, 0, PLAY_NOW)
 				else
 					selection = selection - 1
 				end
-			elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_MINUS_REPT then
+			elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_MINUS_REPT or event == EVT_DOWN_BREAK then
 				if selection == #namedChs then
 					playTone(3000, 100, 0, PLAY_NOW)
 				else
@@ -354,9 +354,9 @@ local function run(event)
 			if event == EVT_ENTER_BREAK then
 				out.revert = 1 - out.revert
 				model.setOutput(iCh - 1, out)
-			elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT then
+			elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK then
 				editing = 1
-			elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT then
+			elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK then
 				editing = 3
 			elseif event == EVT_EXIT_BREAK then
 				editing = 0
@@ -366,10 +366,10 @@ local function run(event)
 			if event == EVT_ENTER_BREAK then
 				-- Start editing
 				editing = editing + 10
-			elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT then
+			elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK then
 				editing = editing - 1
 				if editing < 1 then editing = 7 end
-			elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT then
+			elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK then
 				editing = editing + 1
 				if editing > 7 then editing = 1 end
 			elseif event == EVT_EXIT_BREAK then
@@ -379,35 +379,35 @@ local function run(event)
 			-- Channel number edited
 			if event == EVT_ENTER_BREAK or event == EVT_EXIT_BREAK then
 				editing = 1
-			elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_PLUS_REPT then
+			elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_PLUS_REPT or event == EVT_UP_BREAK then
 				return MoveSelected(-1)
-			elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_MINUS_REPT then
+			elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_MINUS_REPT or event == EVT_DOWN_BREAK then
 				return MoveSelected(1)
 			end
 		elseif editing == 13 then
 			-- Lower, Center, Upper edited
 			if event == EVT_ENTER_BREAK or event == EVT_EXIT_BREAK then
 				editing = 3
-			elseif event == EVT_PLUS_BREAK then
+			elseif event == EVT_PLUS_BREAK or event == EVT_RIGHT_BREAK then
 				AdjCtrRng(out, 1, 0)
-			elseif event == EVT_PLUS_REPT or event == EVT_ROT_RIGHT then
+			elseif event == EVT_PLUS_REPT or event == EVT_ROT_RIGHT or event == EVT_RIGHT_REPT then
 				AdjCtrRng(out, 10, 0)
-			elseif event == EVT_MINUS_BREAK then
+			elseif event == EVT_MINUS_BREAK or event == EVT_LEFT_BREAK then
 				AdjCtrRng(out, -1, 0)
-			elseif event == EVT_MINUS_REPT or event == EVT_ROT_LEFT then
+			elseif event == EVT_MINUS_REPT or event == EVT_ROT_LEFT or event == EVT_LEFT_REPT then
 				AdjCtrRng(out, -10, 0)
 			end
 		elseif editing == 14 then
 			-- Channel range edited
 			if event == EVT_ENTER_BREAK or event == EVT_EXIT_BREAK then
 				editing = 4
-			elseif event == EVT_PLUS_BREAK then
+			elseif event == EVT_PLUS_BREAK or event == EVT_RIGHT_BREAK then
 				AdjCtrRng(out, 0, 1)
-			elseif event == EVT_PLUS_REPT or event == EVT_ROT_RIGHT then
+			elseif event == EVT_PLUS_REPT or event == EVT_ROT_RIGHT or event == EVT_RIGHT_REPT then
 				AdjCtrRng(out, 0, 10)
-			elseif event == EVT_MINUS_BREAK then
+			elseif event == EVT_MINUS_BREAK or event == EVT_LEFT_BREAK then
 				AdjCtrRng(out, 0, -1)
-			elseif event == EVT_MINUS_REPT or event == EVT_ROT_LEFT then
+			elseif event == EVT_MINUS_REPT or event == EVT_ROT_LEFT or event == EVT_LEFT_REPT then
 				AdjCtrRng(out, 0, -10)
 			end
 		elseif editing >= 15 and editing <= 17 then
@@ -416,13 +416,13 @@ local function run(event)
 			
 			if event == EVT_ENTER_BREAK or event == EVT_EXIT_BREAK then
 				editing = editing - 10
-			elseif event == EVT_PLUS_BREAK then
+			elseif event == EVT_PLUS_BREAK or event == EVT_RIGHT_BREAK then
 				delta = 1
-			elseif event == EVT_PLUS_REPT or event == EVT_ROT_RIGHT then
+			elseif event == EVT_PLUS_REPT or event == EVT_ROT_RIGHT or event == EVT_RIGHT_REPT then
 				delta = 10
-			elseif event == EVT_MINUS_BREAK then
+			elseif event == EVT_MINUS_BREAK or event == EVT_LEFT_BREAK then
 				delta = -1
-			elseif event == EVT_MINUS_REPT or event == EVT_ROT_LEFT then
+			elseif event == EVT_MINUS_REPT or event == EVT_ROT_LEFT or event == EVT_LEFT_REPT then
 				delta = -10
 			end
 			

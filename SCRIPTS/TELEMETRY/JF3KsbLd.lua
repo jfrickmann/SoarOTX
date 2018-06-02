@@ -1,5 +1,5 @@
 -- JF F3K Score Browser
--- Timestamp: 2018-03-07
+-- Timestamp: 2018-06-01
 -- Created by Jesper Frickmann
 -- Telemetry script for browsing scores recorded in the log file.
 
@@ -69,7 +69,7 @@ if tx == TX_X9D then
 			y = y + 10
 		end
 	end -- Draw()
-else -- QX7
+else -- QX7 or X-lite
 	maxScores[4] = {180, 180, 180, 180, 180, 180, 180}
 	maxScores[TASK_JUSTFLY] = {9999, 9999, 9999, 9999, 9999, 9999, 9999}
 	
@@ -243,7 +243,7 @@ local function run(event)
 	lastTime = thisTime
 	
 	-- Go to previous record
-	if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT then
+	if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK then
 		index = index - 1
 		if index <= 0 then
 			index = #indices - 1
@@ -257,7 +257,7 @@ local function run(event)
 	end
 
 	 -- Go to next record
-	if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT then
+	if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK then
 		index = index + 1
 		if index >= #indices then
 			index = 1

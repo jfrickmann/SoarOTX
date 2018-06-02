@@ -1,5 +1,5 @@
 -- JF FXJ Configuration Menu
--- Timestamp: 2018-05-28
+-- Timestamp: 2018-06-01
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 -- "adj" is a global var that is output to OpenTX with a custom script
@@ -54,14 +54,14 @@ local function run(event)
 		end
 	else
 		-- Handle menu key events
-		if event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT then
+		if event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_DOWN_BREAK then
 			selection = selection + 1
 			if selection > #texts then 
 				selection = 1
 			end
 		end
 		
-		if event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT then
+		if event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_UP_BREAK then
 			selection = selection - 1
 			if selection <= 0 then 
 				selection = #texts
@@ -74,7 +74,7 @@ local function run(event)
 			att = 0
 			x = 10
 			lcd.drawPixmap(159, 11, "/IMAGES/Lua-girl.bmp")
-		else
+		else -- QX7 or X-lite
 			DrawMenu("Configuration")
 			att = SMLSIZE
 			x = 5

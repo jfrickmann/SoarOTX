@@ -1,5 +1,5 @@
 -- JF Log Data Graph
--- Timestamp: 2018-02-12
+-- Timestamp: 2018-06-01
 -- Created by Jesper Frickmann
 -- Telemetry script for plotting telemetry parameters recorded in the log file.
 -- The graph design was inspired by Nigel Sheffield's script
@@ -471,7 +471,7 @@ local function run(event)
 		DrawMenu(title)
 
 		-- Plus button was pressed; read next flight
-		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT then
+		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK then
 			flightIndex = flightIndex + 1
 			if flightIndex > #flightTable then
 				flightIndex = 1
@@ -480,7 +480,7 @@ local function run(event)
 		end
 
 		-- Minus button was pressed; read previous flight
-		if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT then
+		if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK then
 			flightIndex = flightIndex - 1
 			if flightIndex < 1 then
 				flightIndex = #flightTable
@@ -498,7 +498,7 @@ local function run(event)
 		end
 		
 		-- Menu button was  pressed; toggle viewStats
-		if event == EVT_MENU_BREAK then
+		if event == EVT_MENU_BREAK or event == EVT_SHIFT_BREAK then
 			viewStats = not viewStats
 		end
 		

@@ -1,5 +1,5 @@
 -- JF F5J Timing and score keeping, loadable part
--- Timestamp: 2018-04-13
+-- Timestamp: 2018-06-01
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F5J.
 
@@ -52,7 +52,7 @@ if tx == TX_X9D then
 			lcd.drawText(10, 16, "     MOTOR    ARMED     ", DBLSIZE + BLINK + INVERS)
 		end
 	end  --  Draw()
-else -- QX7
+else -- QX7 or X-lite
 	function Draw()
 		local fmNbr, fmName = getFlightMode()
 		DrawMenu(fmName)	
@@ -100,7 +100,7 @@ local function run(event)
 	ft = model.getTimer(0)
 	mt = model.getTimer(1)
 	
-	if event == EVT_MENU_BREAK and skLocals.state > skLocals.STATE_LANDINGPTS and ft.value > 0 then
+	if event == EVT_MENU_BREAK or event == EVT_UP_BREAK and skLocals.state > skLocals.STATE_LANDINGPTS and ft.value > 0 then
 		-- Go back one step
 		skLocals.state  = skLocals.state  - 1
 	end
@@ -108,11 +108,11 @@ local function run(event)
 	if skLocals.state == skLocals.STATE_INITIAL then -- Set flight time before the flight
 		local dt = 0
 		
-		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_PLUS_REPT then
+		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_PLUS_REPT or event == EVT_RIGHT_BREAK then
 			dt = 60
 		end
 		
-		if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_MINUS_REPT then
+		if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_MINUS_REPT or event == EVT_LEFT_BREAK then
 			dt = -60
 		end
 		
@@ -126,11 +126,11 @@ local function run(event)
 	elseif skLocals.state == skLocals.STATE_LANDINGPTS then -- Landed, input landing points 
 		local dpts = 0
 		
-		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_PLUS_REPT then
+		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_PLUS_REPT or event == EVT_RIGHT_BREAK then
 			dpts = 5
 		end
 		
-		if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_MINUS_REPT then
+		if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_MINUS_REPT or event == EVT_LEFT_BREAK then
 			dpts = -5
 		end
 		
@@ -147,19 +147,19 @@ local function run(event)
 	elseif skLocals.state == skLocals.STATE_STARTHEIGHT then -- Input start height
 		local dm = 0
 		
-		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT then
+		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK then
 			dm = 0.1
 		end
 		
-		if event == EVT_PLUS_REPT then
+		if event == EVT_PLUS_REPT or event == EVT_RIGHT_REPT then
 			dm = 1
 		end
 		
-		if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT then
+		if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK then
 			dm = -0.1
 		end
 		
-		if event == EVT_MINUS_REPT then
+		if event == EVT_MINUS_REPT or event == EVT_LEFT_REPT then
 			dm = -1
 		end
 		
