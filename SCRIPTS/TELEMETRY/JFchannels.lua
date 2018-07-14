@@ -1,9 +1,9 @@
--- JF Channel Swap
--- Timestamp: 2018-06-01
+-- JF Channel configuration
+-- Timestamp: 2018-07-14
 -- Created by Jesper Frickmann
 
 local N = 32 -- Highest channel number to swap
-local MAXOUT = 1250 -- Maximum output value
+local MAXOUT = 1500 -- Maximum output value
 local MINDIF = 100 -- Minimum difference between lower, center and upper values
 local MENUTXT -- Text to show on menu
 local XDOT -- X position of number dot
@@ -24,9 +24,9 @@ local stage = 1 -- 1:Show warning 2:Run
 if tx == TX_X9D then
 	MENUTXT = " JF Channel Configurator "
 	XDOT = 18
-	XREV = 60
-	CENTER = 135
-	SCALE = 0.05
+	XREV = 58
+	CENTER = 140
+	SCALE = 0.045
 	XTXT = 30
 	ATT1 = MIDSIZE
 	ATT2 = 0
@@ -35,7 +35,7 @@ else -- QX7 or X-lite
 	XDOT = 15
 	XREV = 45
 	CENTER = 90
-	SCALE = 0.025
+	SCALE = 0.021
 	XTXT = 7
 	ATT1 = 0
 	ATT2 = SMLSIZE
@@ -158,8 +158,8 @@ local function Draw()
 	DrawMenu(MENUTXT)
 	
 	-- Draw vertical reference lines
-	for i = -5, 5 do
-		local x = CENTER - 0.2 * i * MAXOUT * SCALE
+	for i = -6, 6 do
+		local x = CENTER - i * MAXOUT * SCALE / 6
 		lcd.drawLine(x, 10, x, 61, DOTTED, FORCE)
 	end
 
@@ -268,53 +268,6 @@ local function Draw()
 	end
 end
 
--- Adjust all three based on Center or Range deltas
-local function AdjCtrRng(out, dCtr, dRng)
-	local lwr = out.min
-	local ctr = out.offset
-	local upr = out.max
-	local rng = (upr - lwr) / 2
-	local dMax -- Avoid big jumps of upper and lower points
-	
-	-- Adjust deltas to avoid exceeding constraints
-	if dCtr ~= 0 then
-		if dCtr > 0 then
-			dCtr = math.max(0, math.min(MAXOUT - MINDIF - ctr, dCtr))
-		else
-			dCtr = math.min(0, math.max(-MAXOUT + MINDIF - ctr, dCtr))
-		end
-		
-		ctr = ctr + dCtr
-		dMax = 2 * math.abs(dCtr)
-		
-		-- Adjust range if one endpoint is close to the limit
-		if upr >= MAXOUT - dMax or lwr <= -MAXOUT + dMax then
-			dRng = math.min(1000, MAXOUT - math.abs(ctr)) - rng
-		end
-	else -- dRng ~= 0
-		dMax = 2 * math.abs(dRng)
-
-		if dRng > 0 then
-			dRng = math.max(0, math.min(MAXOUT - upr, lwr + MAXOUT, dRng))
-		else
-			dRng = math.min(0, math.max(MINDIF - rng, dRng))
-		end
-	end
-	
-	if dCtr == 0 and dRng == 0 then
-		playTone(3000, 100, 0, PLAY_NOW)
-	else
-		rng = rng + dRng
-		out.offset = ctr
-		
-		-- For endpoints, aim for symmetry, and then limit deltas
-		out.min = math.max(-dMax, math.min(dMax, ctr - rng - lwr)) + lwr
-		out.max = math.max(-dMax, math.min(dMax, ctr + rng - upr)) + upr
-	end
-	
-	model.setOutput(namedChs[selection] - 1, out)
- end -- AdjCtrRng()
-
 local function run(event)
 	if stage == 1 then
 		if event == EVT_ENTER_BREAK then
@@ -361,7 +314,7 @@ local function run(event)
 			elseif event == EVT_EXIT_BREAK then
 				editing = 0
 			end
-		elseif editing == 1 or (editing >= 3 and editing <= 7) then
+		elseif editing <= 7 then
 			-- Item(s) selected, but not edited
 			if event == EVT_ENTER_BREAK then
 				-- Start editing
@@ -384,34 +337,7 @@ local function run(event)
 			elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_MINUS_REPT or event == EVT_DOWN_BREAK then
 				return MoveSelected(1)
 			end
-		elseif editing == 13 then
-			-- Lower, Center, Upper edited
-			if event == EVT_ENTER_BREAK or event == EVT_EXIT_BREAK then
-				editing = 3
-			elseif event == EVT_PLUS_BREAK or event == EVT_RIGHT_BREAK then
-				AdjCtrRng(out, 1, 0)
-			elseif event == EVT_PLUS_REPT or event == EVT_ROT_RIGHT or event == EVT_RIGHT_REPT then
-				AdjCtrRng(out, 10, 0)
-			elseif event == EVT_MINUS_BREAK or event == EVT_LEFT_BREAK then
-				AdjCtrRng(out, -1, 0)
-			elseif event == EVT_MINUS_REPT or event == EVT_ROT_LEFT or event == EVT_LEFT_REPT then
-				AdjCtrRng(out, -10, 0)
-			end
-		elseif editing == 14 then
-			-- Channel range edited
-			if event == EVT_ENTER_BREAK or event == EVT_EXIT_BREAK then
-				editing = 4
-			elseif event == EVT_PLUS_BREAK or event == EVT_RIGHT_BREAK then
-				AdjCtrRng(out, 0, 1)
-			elseif event == EVT_PLUS_REPT or event == EVT_ROT_RIGHT or event == EVT_RIGHT_REPT then
-				AdjCtrRng(out, 0, 10)
-			elseif event == EVT_MINUS_BREAK or event == EVT_LEFT_BREAK then
-				AdjCtrRng(out, 0, -1)
-			elseif event == EVT_MINUS_REPT or event == EVT_ROT_LEFT or event == EVT_LEFT_REPT then
-				AdjCtrRng(out, 0, -10)
-			end
-		elseif editing >= 15 and editing <= 17 then
-			-- One value edited
+		elseif editing >= 13 then
 			local delta = 0
 			
 			if event == EVT_ENTER_BREAK or event == EVT_EXIT_BREAK then
@@ -426,12 +352,51 @@ local function run(event)
 				delta = -10
 			end
 			
-			if editing == 15 then
-				out.min = math.max(-MAXOUT, math.min(0, out.offset - 100, out.min + delta))
+			if editing == 13 then
+				-- Lower, Center, Upper edited
+				if delta > 0 then
+					delta = math.max(0, math.min(delta, 0 - out.min, 1000 - out.offset, MAXOUT - out.max))
+				else
+					delta = math.min(0, math.max(delta, -MAXOUT - out.min, -1000 - out.offset, 0 - out.max))
+				end
+				
+				out.min = out.min + delta
+				out.offset = out.offset + delta
+				out.max = out.max + delta
+			elseif editing == 14 then
+				-- Range edited
+				if delta > 0 then
+					delta = math.max(0, math.min(delta, MAXOUT + out.min, MAXOUT - out.max))
+				else
+					delta = math.min(0, math.max(delta, out.min, -out.offset + out.min + MINDIF, 0 - out.max, out.offset - out.max + MINDIF))
+				end
+
+				out.max = out.max + delta
+				out.min = out.min - delta
+			elseif editing == 15 then
+				-- Lower limit
+				if delta > 0 then
+					delta = math.max(0, math.min(delta, 0 - out.min, out.offset - out.min - MINDIF))
+				else
+					delta = math.min(0, math.max(delta, -MAXOUT - out.min))
+				end
+				out.min = out.min + delta
 			elseif editing == 16 then
-				out.offset = math.max(out.min + 100, math.min(out.max - 100, out.offset + delta))
+				-- Center value
+				if delta > 0 then
+					delta = math.max(0, math.min(delta, 1000 - out.offset, out.max - out.offset - MINDIF))
+				else
+					delta = math.min(0, math.max(delta, -1000 - out.offset, out.min - out.offset + MINDIF))
+				end
+				out.offset = out.offset + delta
 			else
-				out.max = math.min(MAXOUT, math.max(0, out.offset + 100, out.max + delta))
+				-- Upper limit
+				if delta > 0 then
+					delta = math.max(0, math.min(delta, MAXOUT - out.max))
+				else
+					delta = math.min(0, math.max(delta, 0 - out.max, out.offset - out.max + MINDIF))
+				end
+				out.max = out.max + delta
 			end
 
 			model.setOutput(iCh - 1, out)
