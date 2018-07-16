@@ -1,5 +1,5 @@
 -- JF F3K mix adjustment
--- Timestamp: 2018-03-31
+-- Timestamp: 2018-07-15
 -- Created by Jesper Frickmann
 
 local gv3 = getFieldInfo("gvar3").id
@@ -53,10 +53,22 @@ else
 		-- Draw instructions on the screem
 		DrawMenu("Adjust mixes")
 
-		lcd.drawText(5, 14, "Rudder trim = Aile-rudder", SMLSIZE)
-		lcd.drawText(5, 26, "Aileron trim = Differential", SMLSIZE)
-		lcd.drawText(5, 38, "Elevator trim = Brake-elev.", SMLSIZE)
-		lcd.drawText(5, 50, "Throttle trim = Snap-flap", SMLSIZE)
+		lcd.drawText(85, 14, "AiR", SMLSIZE)
+		lcd.drawText(85, 26, "Dif", SMLSIZE)
+		lcd.drawText(85, 38, "BkE", SMLSIZE)
+		lcd.drawText(85, 50, "Snp", SMLSIZE)
+
+		lcd.drawLine(75, 10, 75, 61, SOLID, FORCE)
+		
+		lcd.drawNumber(123, 14, getValue(gv3), RIGHT + SMLSIZE)
+		lcd.drawNumber(123, 26, getValue(gv4), RIGHT + SMLSIZE)
+		lcd.drawNumber(123, 38, getValue(gv5), RIGHT + SMLSIZE)
+		lcd.drawNumber(123, 50, getValue(gv6), RIGHT + SMLSIZE)
+
+		lcd.drawText(5, 14, "Rudder trim =", SMLSIZE)
+		lcd.drawText(5, 26, "Aileron trim =", SMLSIZE)
+		lcd.drawText(5, 38, "Elevator trim =", SMLSIZE)
+		lcd.drawText(5, 50, "Throttle trim =", SMLSIZE)
 	end -- run()
 end
 

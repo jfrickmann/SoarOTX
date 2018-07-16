@@ -1,5 +1,5 @@
 -- JF F3K air brake and aileron travel adjustment
--- Timestamp: 2018-03-06
+-- Timestamp: 2018-07-15
 -- Created by Jesper Frickmann
 
 local gvAil = 0 -- Index of global variable used for aileron travel
@@ -12,24 +12,31 @@ local Draw -- Draw() function is defined for specific transmitter
 if tx == TX_X9D then
 	function Draw(ail, brk)
 		DrawMenu(" Flaperon centering ")
+
+		lcd.drawText(10, 18, "Use the throttle trim to ", 0)
+		lcd.drawText(10, 30, "center the flaperons.", 0)
+
+		lcd.drawLine(150, 10, 150, 61, SOLID, FORCE)		
+
 		lcd.drawText(160, 18, "Ail")
-		lcd.drawText(160, 30, "Brk")
-
-		lcd.drawLine(155, 10, 155, 61, SOLID, FORCE)		
 		lcd.drawNumber(202, 18, ail, RIGHT)
+		lcd.drawText(160, 30, "Brk")
 		lcd.drawNumber(202, 30, brk, RIGHT)
-
-		lcd.drawText(10, 18, "Use the throttle", 0)
-		lcd.drawText(10, 30, "trim to center the", 0)
-		lcd.drawText(10, 42, "flaperons.", 0)
 	end -- Draw()
 else
 	function Draw(ail, brk)
 		DrawMenu("Flaperon centering")
 
 		lcd.drawText(5, 18, "Use the throttle", SMLSIZE)
-		lcd.drawText(5, 30, "trim to center the", SMLSIZE)
-		lcd.drawText(5, 42, "flaperons.", SMLSIZE)
+		lcd.drawText(5, 30, "trim to center", SMLSIZE)
+		lcd.drawText(5, 42, "the flaperons.", SMLSIZE)
+
+		lcd.drawLine(82, 10, 82, 61, SOLID, FORCE)		
+
+		lcd.drawText(88, 18, "Ail", SMLSIZE)
+		lcd.drawNumber(123, 18, ail, RIGHT + SMLSIZE)
+		lcd.drawText(88, 30, "Brk", SMLSIZE)
+		lcd.drawNumber(123, 30, brk, RIGHT + SMLSIZE)
 	end -- Draw()
 end
 
