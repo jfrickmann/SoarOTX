@@ -1,13 +1,10 @@
 -- JF F3K Timing and score keeping, loadable part
--- Timestamp: 2018-03-07
+-- Timestamp: 2018-11-01
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for the official F3K tasks.
 
 local 	taskList -- List of skLocals.task descriptions for title
-local 	saveTask -- Show popup menu to save scores
 local menuReply -- Holds reply from popup menu
-local DrawScores
-
 local Draw -- Draw() function is defined for specific transmitter
 
 -- Transmitter specific
@@ -76,7 +73,7 @@ if tx == TX_X9D then
 		end
 
 		lcd.drawTimer(172, 16, model.getTimer(0).value, MIDSIZE)
-		if skLocals.flying then
+		if skLocals.state >= skLocals.STATE_FLYING then
 			lcd.drawText(125, 19, "Flight")
 		else
 			lcd.drawText(125, 19, "Target")
@@ -88,7 +85,7 @@ if tx == TX_X9D then
 		lcd.drawText(125, 35, "Window")
 		lcd.drawTimer(172, 32, model.getTimer(1).value, MIDSIZE)
 
-		if windowRunning then
+		if skLocals.state >= skLocals.STATE_WINDOW then
 			if skLocals.flightTimer < 0 and blnk then
 				lcd.drawFilledRectangle(124, 16, 80, 12)
 			end
@@ -106,14 +103,14 @@ if tx == TX_X9D then
 				end
 			end
 
-			if skLocals.comitted and skLocals.pokerCalled then
+			if skLocals.state >= skLocals.STATE_COMMITTED and skLocals.pokerCalled then
 				lcd.drawText(125, 48, "Next call", SMLSIZE)
 				lcd.drawTimer(172, 48, PokerTime(), SMLSIZE)
 			end
 
 		else
 
-			if skLocals.launchesLeft == 0 or (skLocals.finalScores[skLocals.task] and #skLocals.scores == skLocals.taskScores[skLocals.task]) or skLocals.winTimer < 0 then
+			if skLocals.state == skLocals.STATE_FINISHED then
 				lcd.drawText(125, 48, "GAME OVER!", SMLSIZE + BLINK)
 			end
 		end
@@ -172,7 +169,7 @@ else -- TX_QX7 or X-lite
 			lcd.drawText(50, 33, "EoW", SMLSIZE + INVERS)
 		end
 
-		if skLocals.flying then
+		if skLocals.state >= skLocals.STATE_FLYING then
 			lcd.drawText(70, 15, "Flt:")
 		else
 			lcd.drawText(70, 15, "Tgt:")
@@ -181,7 +178,7 @@ else -- TX_QX7 or X-lite
 			end
 		end
 
-		if windowRunning then
+		if skLocals.state >= skLocals.STATE_WINDOW then
 			if skLocals.flightTimer < 0 and blnk then
 				lcd.drawFilledRectangle(69, 10, 55, 12)
 			end
@@ -199,14 +196,14 @@ else -- TX_QX7 or X-lite
 				end
 			end
 
-			if skLocals.comitted and skLocals.pokerCalled then
+			if skLocals.state >= skLocals.STATE_COMMITTED and skLocals.pokerCalled then
 				lcd.drawText(50, 48, "Next call", SMLSIZE)
 				lcd.drawTimer(92, 48, PokerTime(), SMLSIZE)
 			end
 
 		else
 			
-			if skLocals.launchesLeft == 0 or (skLocals.finalScores[skLocals.task] and #skLocals.scores == skLocals.taskScores[skLocals.task]) or skLocals.winTimer < 0 then
+			if skLocals.state == skLocals.STATE_FINISHED then
 				lcd.drawText(50, 48, "GAME OVER!", SMLSIZE + BLINK)
 			end
 		end
@@ -246,21 +243,17 @@ local function InitializeWindow()
 		skLocals.counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45, 60, 120, 180, 240}
 	end
 
-	-- Start window timer
+	-- Set window timer
 	if skLocals.task == skLocals.TASK_AULD or skLocals.task == skLocals.TASK_TURN or skLocals.task == skLocals.TASK_JUSTFL then
 		skLocals.winTimer = skLocals.taskWindow[skLocals.task]
 	else
-		skLocals.winTimer = skLocals.taskWindow[skLocals.task] + 10
+		skLocals.winTimer = skLocals.taskWindow[skLocals.task]
 	end
 	skLocals.winTimerOld = skLocals.winTimer
 
-	local timerParms = {
-		start=skLocals.winTimer,
-		value=skLocals.winTimer
-	}
-	
-	model.setTimer(1, timerParms)
+	model.setTimer(1, { start=skLocals.winTimer, value=skLocals.winTimer })
 	SetFlightTimer()
+	skLocals.state = skLocals.STATE_IDLE
 end  --  InitializeWindow()
 
 local function init()
@@ -313,59 +306,89 @@ local function run(event)
 
 	else
 		Draw()
-		
-		-- Enter button was pressed. Stop or start the skLocals.task window
-		if event == EVT_ENTER_BREAK and not skLocals.flying then
-			windowRunning = not windowRunning
-			playTone(1760, 100, PLAY_NOW)
-		end
 
-		if windowRunning then
-		
-			-- Toggle quick relaunch
+		if skLocals.state <= skLocals.STATE_PAUSE then
+			if event == EVT_ENTER_BREAK then
+				-- Add 10 sec. to window timer, if a new task is started
+				if skLocals.state == skLocals.STATE_IDLE and skLocals.winTimer > 0 then
+					skLocals.winTimer = skLocals.winTimer + 10
+					model.setTimer(1, { start=skLocals.winTimer, value=skLocals.winTimer })
+				end
+
+				-- Start task window
+				skLocals.state = skLocals.STATE_WINDOW
+				playTone(1760, 100, PLAY_NOW)
+			end
+		elseif skLocals.state == skLocals.STATE_WINDOW then
+			if event == EVT_ENTER_BREAK then
+				-- Pause task window
+				skLocals.state = skLocals.STATE_PAUSE
+				playTone(1760, 100, PLAY_NOW)
+			end
+		elseif skLocals.state == skLocals.STATE_COMMITTED then
+			if event == EVT_MENU_LONG or event == EVT_SHIFT_LONG then
+				-- Record a zero score!
+				if skLocals.taskScoreTypes[skLocals.task] == 1 then
+					RecordLast(skLocals.scores, 0)
+				elseif skLocals.taskScoreTypes[skLocals.task] == 2 then
+					RecordBest(skLocals.scores, 0)
+				end
+				
+				-- Change state
+				if skLocals.launches == skLocals.taskLaunches[skLocals.task] or skLocals.winTimer < 0 or
+				   (skLocals.finalScores[skLocals.task] and #skLocals.scores == skLocals.taskScores[skLocals.task]) then
+					skLocals.state = skLocals.STATE_FINISHED
+				else
+					skLocals.state = skLocals.STATE_WINDOW
+				end
+
+				playTone(440, 333, PLAY_NOW)
+			end
+		end
+			
+		if skLocals.state <= skLocals.STATE_FINISHED then
+			local change = 0
+			
+			-- Change task
+			if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK then
+				change = 1
+			end
+
+			if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK then
+				change = -1
+			end
+			
+			if change ~= 0 then
+				-- Show popup menu to save scores
+				if skLocals.state > skLocals.STATE_IDLE then
+					saveTask = skLocals.task
+				end
+				
+				skLocals.task = skLocals.task + change
+				
+				if skLocals.task > #taskList then 
+					skLocals.task = 1 
+				elseif skLocals.task < 1 then 
+					skLocals.task = #taskList
+				end
+				
+				-- Do not show popup menu to save scores
+				if skLocals.state == skLocals.STATE_IDLE then
+					InitializeWindow()
+				end
+			end
+
+		else
+			-- Toggle quick relaunch QR
 			if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_UP_BREAK then
 				skLocals.quickRelaunch = not skLocals.quickRelaunch
 				playTone(1760, 100, PLAY_NOW)
 			end
-
-			-- Toggle end of window timer stop
+			
+			-- Toggle end of window timer stop EoW
 			if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_DOWN_BREAK then
 				skLocals.eowTimerStop = not skLocals.eowTimerStop
 				playTone(1760, 100, PLAY_NOW)
-			end
-
-			-- Menu button was pressed. Score a zero!
-			if event == EVT_MENU_LONG or event == EVT_SHIFT_LONG and skLocals.flying then
-				if skLocals.taskScoreTypes[skLocals.task] == 1 and skLocals.comitted then
-					RecordLast(skLocals.scores, 0)
-				end
-				fTmr = 0
-				skLocals.flying = false
-				skLocals.comitted = false
-				playTone(440, 333, PLAY_NOW)
-			end
-
-		else -- Window is not running
-		
-			-- Change skLocals.task
-			if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK then
-				saveTask = skLocals.task
-				skLocals.task = skLocals.task + 1
-				if skLocals.task > #taskList then skLocals.task = 1 end
-				if #skLocals.scores == 0 then -- Do not show popup menu to save scores
-					saveTask = 0
-					InitializeWindow()
-				end
-			end
-
-			if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK then
-				saveTask = skLocals.task
-				skLocals.task = skLocals.task - 1
-				if skLocals.task < 1 then skLocals.task = #taskList end
-				if #skLocals.scores == 0 then -- Do not show popup menu to save scores
-					saveTask = 0
-					InitializeWindow()
-				end
 			end
 		end
 	end

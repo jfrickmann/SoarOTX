@@ -1,23 +1,32 @@
 -- JF F3K Timing and score keeping, fixed part
--- Timestamp: 2017-02-23
+-- Timestamp: 2017-11-01
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for the official F3K tasks.
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 
 local myFile = "/SCRIPTS/TELEMETRY/JF3KskLd.lua" -- Lua file to be loaded and unloaded
 local FM_LAUNCH = 1 -- Flight mode used for launch
-local flightMode = getFlightMode() -- Used for detecting when FM changes
-local	flightTimeOld = 0 -- Current flight time since launch
+local flightModeOld = getFlightMode() -- Used for detecting when FM changes
 local	flightTimerOld -- Previous value of flight timer
 local	countIndex -- Index of timer count
 local	targetTime -- Current flight target time
 
 -- Globals
 skLocals = {} -- List of local variables shared with the loadable part
+wTmr = 0 -- Controls window timer with MIXES script
 fTmr = 0 -- Controls flight timer with MIXES script
-windowRunning = true -- Task window is running, controls window timer with MIXES script
 
--- Some skLocals.task index constants
+-- Program states
+skLocals.STATE_IDLE = 1 -- Task window not running
+skLocals.STATE_PAUSE = 2 -- Task window paused, not flying
+skLocals.STATE_FINISHED = 3 -- Task has been finished
+skLocals.STATE_WINDOW = 4 -- Task window started, not flying
+skLocals.STATE_READY = 5 -- Flight timer will be started when launch switch is released
+skLocals.STATE_FLYING = 6 -- Flight timer started but flight not yet committed
+skLocals.STATE_COMMITTED = 7 -- Flight timer started, and flight committed
+skLocals.state = skLocals.STATE_IDLE -- Current program state
+
+-- Task index constants
 skLocals.TASK_LASTFL = 1
 skLocals.TASK_2LAST4 = 3
 skLocals.TASK_AULD = 4
@@ -29,17 +38,15 @@ skLocals.TASK_3BEST = 10
 skLocals.TASK_BIGLAD = 12
 skLocals.TASK_TURN = 13
 skLocals.TASK_JUSTFL = 14
+skLocals.task = skLocals.TASK_JUSTFL -- Selected task index
 
 skLocals.eowTimerStop = true -- Freeze timer automatically at the end of the window
 skLocals.quickRelaunch = false -- Restart timer immediately
-skLocals.task = skLocals.TASK_JUSTFL -- Selected task index
-local autoStart = true -- Task was automatically started - stop when score keeper screen is activated
 
 -- 	Other variables stored in skLocals list:
 --[[	winTimer -- Current value of the window timer
 	winTimerOld -- Previous value of the window timer
 	flightTimer -- Current value of flight timer (count down)
-	flying -- Flight is ongoing
 	
 	counts -- Flight timer countdown
 	pokerMinId -- Input Id for setting minutes in Poker
@@ -53,9 +60,8 @@ local autoStart = true -- Task was automatically started - stop when score keepe
 
 	scores -- Scores recorded
 	launches -- Number of launches
-	comitted -- After 5 seconds, flights are comitted i.e. cannot be canceled
-	pokerCalled -- Freeze target time until it has been completed
-	launchesLeft -- Number of launches left in task window ]]--
+	launchesLeft -- Number of launches left in task window
+	pokerCalled -- Freeze target time until it has been completed ]]--
 
 -- Add new score to existing scores, keeping only the last scores
 function RecordLast(scores, newScore)
@@ -192,6 +198,12 @@ function SetFlightTimer()
 		targetTime = 180
 	end
 
+	-- Get ready to count down
+	countIndex = #skLocals.counts
+	while countIndex > 1 and skLocals.counts[countIndex] >= targetTime do
+		countIndex = countIndex - 1
+	end
+
 	-- Set flight timer
 	local timerParms = {
 		start = targetTime,
@@ -209,103 +221,103 @@ local function background()
 		return LdRun(myFile, event)
 	end
 	
+	local flightMode = getFlightMode()
+	local launchPulled, launchReleased
+		
+	if flightMode == FM_LAUNCH and flightModeOld ~= FM_LAUNCH then
+		launchPulled = true
+	elseif flightMode ~= FM_LAUNCH and flightModeOld == FM_LAUNCH then
+		launchReleased = true
+	end
+	
 	skLocals.launchesLeft = skLocals.taskLaunches[skLocals.task] - skLocals.launches
 
-	if windowRunning then
+	if skLocals.state < skLocals.STATE_READY or (skLocals.winTimer < 0 and skLocals.eowTimerStop) then
+		-- Stop flight timer
+		fTmr = 0
+	else
+		-- Ready to start flight timer
+		fTmr = 1
+	end
+	
+	if skLocals.state < skLocals.STATE_WINDOW then
+		-- Stop task window timer
+		wTmr = 0
+		
+		-- In Poker and Quick Relaunch, update flight timer with values set by knobs
+		if skLocals.task == skLocals.TASK_POKER or skLocals.task == skLocals.TASK_TURN then 
+			SetFlightTimer()
+		end
+		
+		-- Automatically start window and flight if launch switch is released
+		if launchPulled and skLocals.state == skLocals.STATE_IDLE then
+			SetFlightTimer()
+			skLocals.state = skLocals.STATE_READY
+		end
+
+	else
+		-- Start task window timer
+		wTmr = 1
+		
 		local timerData = model.getTimer(0)
-		local flightModeNew = getFlightMode()
 		local flightTime = math.abs(timerData.start - timerData.value)
 
-		skLocals.winTimer = model.getTimer(1).value
 		skLocals.flightTimer = timerData.value
+		skLocals.winTimer = model.getTimer(1).value
 
-		-- Beep at beginning and end of window
-		if skLocals.task ~= skLocals.TASK_AULD and skLocals.task ~= skLocals.TASK_TURN and skLocals.task ~= skLocals.TASK_JUSTFL and
-				((skLocals.winTimerOld >= skLocals.taskWindow[skLocals.task] + 1 and skLocals.winTimer < skLocals.taskWindow[skLocals.task] + 1) or
+		-- Beep at beginning and end of the task window
+		if skLocals.taskWindow[skLocals.task] > 0 and ((skLocals.winTimerOld >= skLocals.taskWindow[skLocals.task] + 1 and 
+				skLocals.winTimer < skLocals.taskWindow[skLocals.task] + 1) or
 				(skLocals.winTimerOld >= 0 and skLocals.winTimer < 0)) then
 			playTone(880, 1000, PLAY_NOW)
 		end
 
-		-- Launch mode entered
-		if (flightModeNew == FM_LAUNCH and flightMode ~= FM_LAUNCH) then
-			-- Stop timer and record score if flying
-			if skLocals.flying then
-				skLocals.flying = false
-				
-				if not skLocals.quickRelaunch or not skLocals.comitted then
-					-- Do not restart timer
-					fTmr = 0
-				end
+		if skLocals.state == skLocals.STATE_WINDOW then
+			SetFlightTimer()
 
-				-- Only record skLocals.comitted flights (over 5 seconds)
-				if skLocals.comitted then
-					skLocals.comitted = false
-
-					if skLocals.taskScoreTypes[skLocals.task] == 1 then
-						RecordLast(skLocals.scores, flightTime)
-						
-						-- In skLocals.task Just Fly!, report the time after flight is done
-						if skLocals.task == skLocals.TASK_JUSTFL then
-							playDuration(flightTime, 0)
-						end
-					
-					elseif skLocals.taskScoreTypes[skLocals.task] == 2 then
-						RecordBest(skLocals.scores, flightTime)
-					else
-						-- Only record if target time was made i.e. timer negative
-						if timerData.value <= 0 then
-							if skLocals.task == skLocals.TASK_POKER then
-								RecordLast(skLocals.scores, timerData.start) -- only target time!
-								skLocals.pokerCalled = false
-							else
-								RecordLast(skLocals.scores, flightTime)
-							end
-						end
-					end
-				end
-			else
-				-- If not flying, get ready to start timer
-				fTmr = 1
+			-- If all launches or scores have been made or window has expired; stop window
+			if skLocals.launchesLeft <= 0 or (skLocals.finalScores[skLocals.task] and #skLocals.scores >= skLocals.taskScores[skLocals.task]) or skLocals.winTimer < 0 then
+				playTone(1760, 100, PLAY_NOW)
+				skLocals.state = skLocals.STATE_FINISHED
 			end
 
-			-- If allowed number of launches have been reached, or window is over, then do not start timer again
-			if skLocals.launches == skLocals.taskLaunches[skLocals.task] or skLocals.winTimer < 0 or
-					(skLocals.finalScores[skLocals.task] and #skLocals.scores == skLocals.taskScores[skLocals.task]) then
-				fTmr = 0
-			end
-		end
-
-		-- Launch mode left.
-		if flightModeNew ~= FM_LAUNCH and flightMode == FM_LAUNCH then
-			if fTmr == 1 then
-				skLocals.flying = true
-
-				-- Report the target time (target is always zero in skLocals.task Just Fly!)
-				if skLocals.task ~= skLocals.TASK_JUSTFL then
-					playDuration(targetTime, 0)
-				end
-
-			else
+			if launchPulled then
+				skLocals.state = skLocals.STATE_READY
+			elseif launchReleased then
 				-- Play tone to warn that timer is NOT running
 				playTone(1760, 333, 0, PLAY_NOW)
 			end
-		end
+			
+		elseif skLocals.state == skLocals.STATE_READY then
+			SetFlightTimer()
 
-		if skLocals.flying then
-			-- If EoW is on and window expired, then freeze the flight timer
-			if skLocals.winTimer < 0 and skLocals.eowTimerStop then
-				fTmr = 0
+			if launchReleased then
+				skLocals.state = skLocals.STATE_FLYING
+
+				-- Report the target time
+				if targetTime > 0 then
+					playDuration(targetTime, 0)
+				end
+			end
+
+		elseif skLocals.state == skLocals.STATE_FLYING then
+			if launchPulled then
+				skLocals.state = skLocals.STATE_WINDOW
 			end
 
 			-- After 5 seconds, commit flight
-			if flightTimeOld <= 5 and flightTime > 5 then
-				skLocals.comitted = true
+			if flightTime > 5 then
 				skLocals.launches = skLocals.launches + 1
-
+				
 				-- Call Poker
-				if skLocals.task == skLocals.TASK_POKER then skLocals.pokerCalled = true end
+				if skLocals.task == skLocals.TASK_POKER then 
+					skLocals.pokerCalled = true
+				end
+				
+				skLocals.state = skLocals.STATE_COMMITTED
 			end
-
+			
+		elseif skLocals.state == skLocals.STATE_COMMITTED then
 			-- Is it time to count down?
 			if skLocals.flightTimer <= skLocals.counts[countIndex] and flightTimerOld > skLocals.counts[countIndex]  then
 				if skLocals.flightTimer > 15 then
@@ -316,42 +328,51 @@ local function background()
 				if countIndex > 1 then countIndex = countIndex - 1 end
 			end
 
-		else
-			SetFlightTimer()
-
-			-- Get ready to count down
-			countIndex = #skLocals.counts
-			while countIndex > 1 and skLocals.counts[countIndex] >= targetTime do
-				countIndex = countIndex - 1
-			end
-
-			-- If all launches or scores have been made or window has expired; stop window
-			if skLocals.launchesLeft <= 0 or (skLocals.finalScores[skLocals.task] and #skLocals.scores >= skLocals.taskScores[skLocals.task]) or skLocals.winTimer < 0 then
-				windowRunning = false
-				playTone(1760, 100, PLAY_NOW)
+			if launchPulled then
+				-- Record scores
+				if skLocals.taskScoreTypes[skLocals.task] == 1 then
+					RecordLast(skLocals.scores, flightTime)
+					
+					-- In task Just Fly!, report the time after flight is done
+					if skLocals.task == skLocals.TASK_JUSTFL then
+						playDuration(flightTime, 0)
+					end
+				
+				elseif skLocals.taskScoreTypes[skLocals.task] == 2 then
+					RecordBest(skLocals.scores, flightTime)
+				else
+					-- Only record if target time was made
+					if flightTime >= targetTime then
+						if skLocals.task == skLocals.TASK_POKER then
+							RecordLast(skLocals.scores, timerData.start) -- only target time!
+							skLocals.pokerCalled = false
+						else
+							RecordLast(skLocals.scores, flightTime)
+						end
+					end
+				end
+				
+				-- Change state
+				if skLocals.launches == skLocals.taskLaunches[skLocals.task] or skLocals.winTimer < 0 or
+				   (skLocals.finalScores[skLocals.task] and #skLocals.scores == skLocals.taskScores[skLocals.task]) then
+					skLocals.state = skLocals.STATE_FINISHED
+				elseif skLocals.quickRelaunch then
+					skLocals.state = skLocals.STATE_READY
+				else
+					skLocals.state = skLocals.STATE_WINDOW
+				end
 			end
 		end
-
-		flightMode = flightModeNew
+		
 		skLocals.winTimerOld = skLocals.winTimer
 		flightTimerOld = skLocals.flightTimer
-		flightTimeOld = flightTime
-
-	else -- Window is not running
-
-		-- In Poker, update flight timer with values set by knobs
-		if skLocals.task == skLocals.TASK_POKER or skLocals.task == skLocals.TASK_TURN then SetFlightTimer() end
 	end
+	
+	flightModeOld = flightMode
 end  --  background()
 
 -- Forward run() call to the loadable part
 local function run(event)
-	if autoStart then
-		autoStart = false
-		if not skLocals.flying then
-			windowRunning = false
-		end
-	end
 	return LdRun(myFile, event)
 end
 
