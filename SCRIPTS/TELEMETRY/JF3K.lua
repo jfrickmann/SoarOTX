@@ -1,9 +1,12 @@
--- JF F3K Timing and score keeping
--- Timestamp: 2017-11-05
+-- JF F3K Timing and score keeping - simplified version
+-- Timestamp: 2017-11-13
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for the official F3K tasks.
+-- This script is for use with my "simplified" F3K program, and for "third party" programs
 
 local FM_LAUNCH = 1 -- Flight mode used for launch
+local autoStart = true -- Start a window automatically when Launch trigger is pulled
+
 local flightModeOld = getFlightMode() -- Used for detecting when FM changes
 local	countIndex -- Index of timer count
 local	targetTime -- Current flight target time
@@ -770,7 +773,15 @@ local function background()
 		-- In Poker and Quick Relaunch, update flight timer with values set by knobs
 		if task == TASK_POKER or task == TASK_TURN then 
 			SetFlightTimer()
-		end		
+		end
+
+		-- Automatically start window and flight if launch switch is released
+		if autoStart and launchPulled and state == STATE_IDLE then
+			winT0 = now
+			SetFlightTimer()
+			state = STATE_READY
+		end
+
 	else
 		local flightTime = math.abs(flightStart - flightTimer)
 
