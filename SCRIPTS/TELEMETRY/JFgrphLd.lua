@@ -1,14 +1,19 @@
 -- JF Log Data Graph
--- Timestamp: 2018-06-01
+-- Timestamp: 2018-11-14
 -- Created by Jesper Frickmann
 -- Telemetry script for plotting telemetry parameters recorded in the log file.
 -- The graph design was inspired by Nigel Sheffield's script
 
+-- International users - un-comment ONE of the following lines:
+local FIRST_EXCLUDED = "Rud" -- ENGLISH or DUTCH log files
+--local FIRST_EXCLUDED = "Sei" -- GERMAN log files
+--local FIRST_EXCLUDED = "Dir" -- FRENCH log files
+--local FIRST_EXCLUDED = "Rod" -- SWEDISH log files
+--local FIRST_EXCLUDED = "Sme" -- CHECH log files
+
 -- Constants
 local FM_LAUNCH = 1 -- Launch flight mode
-
-local FIRST_EXCLUDED = "Rud" -- First variable not to be included in plot
-local ALTI_PLOT ="Alti(m)" -- Altitude is default plot variable
+local ALTI_PLOT ="Alti(m)" -- Default plot variable
 
 local TIME_GAP = 20 -- Time gap that triggers a new flight
 local MIN_TIME = 20 -- Minimum time of flight that will be plotted
@@ -467,7 +472,10 @@ local function run(event)
 		DrawMenu(" Reading... ")
 		return Read()
 	elseif state == STATE_PLOT then
-		local title = " " .. string.sub(flightTable[flightIndex][2], 1, 8) .. "\t" .. logFileHeaders[plotIndex]
+		local spacer = "\t"
+		if tx ~= TX_X9D then spacer = " " end
+		
+		local title = " " .. string.sub(flightTable[flightIndex][2], 1, 8) .. spacer .. logFileHeaders[plotIndex]
 		DrawMenu(title)
 
 		-- Plus button was pressed; read next flight
