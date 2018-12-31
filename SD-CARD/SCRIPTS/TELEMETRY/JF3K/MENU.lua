@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable menu for selecting task
--- Timestamp: 2018-12-30
+-- Timestamp: 2018-12-31
 -- Created by Jesper Frickmann
 
 local pluginFile = "/SCRIPTS/TELEMETRY/JF3K/SK%i.lua"
@@ -35,16 +35,7 @@ local function run(event)
 			plugins[#plugins + 1] = { file, name, tasks }
 		end
 		
-		scanPlugin = scanPlugin + 1
-		
-		if scanPlugin == 10 then
-			plugins[#plugins + 1] = { 
-				"/SCRIPTS/TELEMETRY/JF3K/SB.lua",
-				"Saved scores",
-				{ "" }
-			}
-		end
-		
+		scanPlugin = scanPlugin + 1		
 		return collectgarbage()
 	end
 
@@ -90,10 +81,7 @@ local function run(event)
 		local tasks = plugins[sk.selectedPlugin][3]
 
 		-- If there is only one task, then start it!
-		if #tasks == 1 then
-			event = EVT_ENTER_BREAK
-			sk.selectedTask = 0
-		end
+		if #tasks == 1 then event = EVT_ENTER_BREAK end
 
 		DrawMenu(name)
 		lcd.drawPixmap(156, 8, "/IMAGES/Lua-girl.bmp")
@@ -112,6 +100,9 @@ local function run(event)
 			sk.state = sk.STATE_IDLE
 			sk.run = plugins[sk.selectedPlugin][1]
 			sk.taskName = plugins[sk.selectedPlugin][3][sk.selectedTask]
+
+			-- If there is only one task, go back to the Plugin menu after returning!
+			if #tasks == 1 then sk.selectedTask = 0 end
 		elseif event == EVT_EXIT_BREAK then
 			sk.selectedTask = 0
 		elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_PLUS_REPT or event == EVT_UP_BREAK then
