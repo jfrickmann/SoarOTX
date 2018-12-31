@@ -1,7 +1,17 @@
--- JF F3K Score Browser
--- Timestamp: 2018-12-30
+-- Timing and score keeping, loadable plugin for browsing saved scores
+-- Timestamp: 2018-12-31
 -- Created by Jesper Frickmann
--- Telemetry script for browsing scores recorded in the log file.
+
+-- If no task is selected, then return name and task list to the menu
+if sk.task == 0 then
+	local name = "Saved scores"
+
+	local tasks = {
+		"Score browser"
+	}
+
+	return name, tasks
+end
 
 local logFile -- Log file handle
 local scores -- Scores recorded
@@ -298,4 +308,4 @@ local function run(event)
 	end
 end
 
-return {init = init, run = run}
+return { init = init, run = run }
