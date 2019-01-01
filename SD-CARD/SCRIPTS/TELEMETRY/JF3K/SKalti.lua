@@ -60,23 +60,23 @@ local function DrawGraph(dot)
 		yy1 = m * sk.scores[i].launch + LCD_H - 1
 
 		-- Launch height
-		if sk.task == TASK_HEIGHT_GAIN or sk.task == TASK_HEIGHT_POKER then
+		if sk.task == plugin.TASK_HEIGHT_GAIN or sk.task == plugin.TASK_HEIGHT_POKER then
 			lcd.drawLine(xx1, yy1, xx2, yy1, dot, FORCE)
-		elseif sk.task == TASK_THROW_LOW then
+		elseif sk.task == plugin.TASK_THROW_LOW then
 			yy2 = m * 100 + LCD_H - 1
 			lcd.drawLine(xx1, yy1, xx1, yy2, dot, FORCE)
 			lcd.drawLine(xx1 - 2, yy2, xx1 + 2, yy2, dot, FORCE)
 		end
 		
 		-- Flight time
-		if sk.task == TASK_CEILING then
+		if sk.task == plugin.TASK_CEILING then
 			yy1 = m * yScaleMax + LCD_H - 1
 			lcd.drawLine(xx1, 63, xx1, yy1, dot, FORCE)
 			lcd.drawLine(xx2, 63, xx2, yy1, dot, FORCE)
 		end
 		
 		-- Max height
-		if sk.task ~= TASK_THROW_LOW and sk.task ~= TASK_1ST2GAIN50 then
+		if sk.task ~= plugin.TASK_THROW_LOW and sk.task ~= plugin.TASK_1ST2GAIN50 then
 			xx1 = sk.scores[i].maxTime / plugin.heightInt
 			yy1 = m * sk.scores[i].launch + LCD_H - 1
 			yy2 = m * sk.scores[i].maxHeight + LCD_H - 1
@@ -84,7 +84,7 @@ local function DrawGraph(dot)
 		end
 
 		-- Climb rate in 1st to +50
-		if sk.task == TASK_1ST2GAIN50 then
+		if sk.task == plugin.TASK_1ST2GAIN50 then
 			xx1 = sk.scores[i].maxTime / plugin.heightInt
 			
 			if sk.scores[i].gain >= plugin.targetGain then
@@ -125,19 +125,19 @@ local function DrawGraph(dot)
 		end
 		
 		-- Launch height
-		if sk.task ~= TASK_CEILING then
+		if sk.task ~= plugin.TASK_CEILING then
 			yy1 = m * plugin.launchHeight + LCD_H - 1
 			lcd.drawLine(xx1, yy1, xx2, yy1, dot, FORCE)
 		end
 
 		-- Ceiling
-		if sk.task ~= TASK_THROW_LOW then
+		if sk.task ~= plugin.TASK_THROW_LOW then
 			yy1 = m * plugin.ceiling + LCD_H - 1
 			lcd.drawLine(xx1, yy1, xx2, yy1, dot, FORCE)
 		end
 
 		-- Flight time
-		if sk.task == TASK_CEILING then
+		if sk.task == plugin.TASK_CEILING then
 			yy1 = m * yScaleMax + LCD_H - 1
 			lcd.drawLine(xx1, 63, xx1, yy1, dot, FORCE)
 			lcd.drawLine(xx2, 63, xx2, yy1, dot, FORCE)
@@ -145,7 +145,7 @@ local function DrawGraph(dot)
 	end
 
 	-- In height poker, show call
-	if sk.task == TASK_HEIGHT_POKER and sk.state <= sk.STATE_WINDOW then
+	if sk.task == plugin.TASK_HEIGHT_POKER and sk.state <= sk.STATE_WINDOW then
 		local att = 0
 		
 		if plugin.pokerCalled then att = att + BLINK + INVERS end
@@ -153,7 +153,7 @@ local function DrawGraph(dot)
 	end
 
 	-- Show ceiling
-	if sk.task == TASK_CEILING and sk.state == sk.STATE_IDLE then
+	if sk.task == plugin.TASK_CEILING and sk.state == sk.STATE_IDLE then
 		lcd.drawText(2, 55, string.format("Ceiling: %02dm", plugin.ceiling))
 	end
 end -- DrawGraph()
@@ -205,15 +205,15 @@ if tx == TX_X9D then
 			
 			if i > #sk.scores then
 				lcd.drawText(LCD_W - x + 10, dy * i, "- - -")
-			elseif sk.task == TASK_1ST2GAIN50 then
+			elseif sk.task == plugin.TASK_1ST2GAIN50 then
 				if sk.state == sk.STATE_FINISHED then
 					lcd.drawTimer(LCD_W - x + 10, dy * i, sk.scores[i].time)
 				else
 					lcd.drawText(LCD_W - x + 10, dy * i, "---")
 				end
-			elseif sk.task == TASK_THROW_LOW then
+			elseif sk.task == plugin.TASK_THROW_LOW then
 				lcd.drawText(LCD_W - x + 10, dy * i, string.format("%02dp", sk.scores[i].gain))
-			elseif sk.task == TASK_HEIGHT_GAIN or sk.task == TASK_HEIGHT_POKER then
+			elseif sk.task == plugin.TASK_HEIGHT_GAIN or sk.task == plugin.TASK_HEIGHT_POKER then
 				lcd.drawText(LCD_W - x + 10, dy * i, string.format("%02dm", sk.scores[i].gain))
 			else
 				lcd.drawTimer(LCD_W - x + 10, dy * i, sk.scores[i].time)
@@ -260,16 +260,16 @@ else -- TX_QX7 or X-lite
 			local dy = 14
 			
 			if i > #sk.scores then
-				lcd.drawText(LCD_W - x + 10, dy * i, "---")
-			elseif sk.task == TASK_1ST2GAIN50 then
-				if sk.state == sk.STATE_FINISHED then
+				lcd.drawText(LCD_W - x + 10, dy * i, "- - -")
+			elseif sk.task == plugin.TASK_1ST2GAIN50 then 
+ 				if sk.state == sk.STATE_FINISHED then
 					lcd.drawTimer(LCD_W - x + 10, dy * i, sk.scores[i].time)
 				else
-					lcd.drawText(LCD_W - x + 10, dy * i, "---")
+					lcd.drawText(LCD_W - x + 10, dy * i, "- - -")
 				end
-			elseif sk.task == TASK_THROW_LOW then
+			elseif sk.task == plugin.TASK_THROW_LOW then
 				lcd.drawText(LCD_W - x + 10, dy * i, string.format("%02dp", sk.scores[i].gain))
-			elseif sk.task == TASK_HEIGHT_GAIN or sk.task == TASK_HEIGHT_POKER then
+			elseif sk.task == plugin.TASK_HEIGHT_GAIN or sk.task == plugin.TASK_HEIGHT_POKER then
 				lcd.drawText(LCD_W - x + 10, dy * i, string.format("%02dm", sk.scores[i].gain))
 			else
 				lcd.drawTimer(LCD_W - x + 10, dy * i, sk.scores[i].time)
@@ -302,9 +302,9 @@ local function run(event)
 			if logFile then
 				io.write(logFile, string.format("%s,%s,%s,%s", nameStr, sk.taskName, dateStr, timeStr))
 				for i = 1, #sk.scores do
-					if sk.task == TASK_HEIGHT_GAIN or sk.task == TASK_HEIGHT_POKER then
+					if sk.task == plugin.TASK_HEIGHT_GAIN or sk.task == plugin.TASK_HEIGHT_POKER then
 						io.write(logFile, string.format(",%im", sk.scores[i].gain))
-					elseif sk.task == TASK_THROW_LOW then
+					elseif sk.task == plugin.TASK_THROW_LOW then
 						io.write(logFile, string.format(",%ip", sk.scores[i].gain))
 					else
 						io.write(logFile, string.format(",%i", sk.scores[i].time))

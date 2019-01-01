@@ -2,13 +2,6 @@
 -- Timestamp: 2019-01-01
 -- Created by Jesper Frickmann
 
--- Task index constants, shared between task definition and UI
-local TASK_HEIGHT_GAIN = 1
-local TASK_1ST2GAIN50 = 2
-local TASK_CEILING = 3
-local TASK_THROW_LOW = 4
-local TASK_HEIGHT_POKER = 5
-
 -- If no task is selected, then return name and task list to the menu
 if sk.task == 0 then
 	local name = "Altimeter"
@@ -46,7 +39,14 @@ if sk.state == sk.STATE_IDLE then
 	plugin.maxTime = 0 -- Time of max. height
 	plugin.flightStart = 0 -- Time of flight start
 	plugin.targetGain = 0 -- Target for height gain
-	
+
+	-- Task index constants, shared between task definition and UI
+	plugin.TASK_HEIGHT_GAIN = 1
+	plugin.TASK_1ST2GAIN50 = 2
+	plugin.TASK_CEILING = 3
+	plugin.TASK_THROW_LOW = 4
+	plugin.TASK_HEIGHT_POKER = 5
+
 	if tx == TX_X9D then
 		plugin.heightInt = 4 -- Interval for recording heights
 	else -- TX_QX7 or X-lite
@@ -267,7 +267,7 @@ if sk.state == sk.STATE_IDLE then
 				
 				if sk.state == sk.STATE_COMMITTED then
 					-- Call Poker
-					if sk.task == TASK_HEIGHT_POKER then 
+					if sk.task == plugin.TASK_HEIGHT_POKER then 
 						plugin.pokerCalled = true
 					end				
 				end
