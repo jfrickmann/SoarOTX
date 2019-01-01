@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin part for altimeter based tasks
--- Timestamp: 2018-12-28
+-- Timestamp: 2019-01-01
 -- Created by Jesper Frickmann
 
 -- Task index constants, shared between task definition and UI
@@ -261,7 +261,7 @@ if sk.state == sk.STATE_IDLE then
 					-- If height ceiling is broken, then freeze the flight timer
 					if plugin.ceiling > 0 and plugin.maxHeight > plugin.ceiling then
 						sk.state = sk.STATE_FREEZE
-						playTone(1760, 100, PLAY_NOW)
+						playTone(1760, 750, PLAY_NOW)
 					end
 				end
 				

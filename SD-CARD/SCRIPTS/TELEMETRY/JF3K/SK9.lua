@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for browsing saved scores
--- Timestamp: 2018-12-31
+-- Timestamp: 2019-01-01
 -- Created by Jesper Frickmann
 
 -- If no task is selected, then return name and task list to the menu
@@ -295,9 +295,7 @@ local function run(event)
 	end
 
 	if event == EVT_EXIT_BREAK then
-		if sk then
-			sk.run = sk.menu
-		end
+		sk.run = sk.menu
 	end
 	
 	-- Time to draw the screen

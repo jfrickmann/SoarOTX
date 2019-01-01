@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for F3K tasks
--- Timestamp: 2018-12-27
+-- Timestamp: 2018-12-31
 -- Created by Jesper Frickmann
 
 -- If no task is selected, then return name and task list to the menu
@@ -139,6 +139,10 @@ if sk.state == sk.STATE_IDLE then
 			return Best1234Target(sk.winTimer, sk.scores, 4)
 		end
 		
+		-- A few extra counts in 1234
+		counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45, 60, 65, 70, 75, 120,
+			125, 130, 135, 180, 185, 190, 195, 240}
+
 	elseif targetType == 4 then -- Big ladder
 		sk.TargetTime = function() 
 			return 60 + 30 * #sk.scores

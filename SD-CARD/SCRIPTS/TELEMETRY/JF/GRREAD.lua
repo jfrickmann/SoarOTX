@@ -1,5 +1,5 @@
 -- JF Log Data Graph, loadable part for reading data
--- Timestamp: 2018-12-30
+-- Timestamp: 2018-12-31
 -- Created by Jesper Frickmann
 
 -- International users - un-comment ONE of the following lines:
@@ -204,9 +204,9 @@ if not gr.yValues then
 
 	local function run()
 		DrawMenu(" Scanning... ")
-		lcd.drawText(2, 12, "No data", DBLSIZE)
 
 		if not logFile then 
+			lcd.drawText(2, 12, "No data", DBLSIZE)
 			return StartScan()
 		else
 			return Scan()

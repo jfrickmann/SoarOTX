@@ -1,5 +1,5 @@
 -- JF F3K Configuration Menu
--- Timestamp: 2018-12-30
+-- Timestamp: 2018-12-31
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFutil.lua
 -- "adj" is a global var that is output to OpenTX with a custom script
@@ -26,7 +26,7 @@ local function background()
 	if active then
 		-- Do not leave loaded configuration scripts in the background
 		if getTime() - lastRun > 100 then
-			LdUnload(files[selection])
+			Unload(files[selection])
 			active = false
 		end
 	else
@@ -46,8 +46,8 @@ local function run(event)
 	if active then
 		-- Run the active function
 		lastRun = getTime()
-		if LdRun(files[selection], event) then
-			LdUnload(files[selection])
+		if RunLoadable(files[selection], event) then
+			Unload(files[selection])
 			active = false
 		end
 	else

@@ -1,5 +1,5 @@
 -- JF F3K Timing and score keeping, fixed part
--- Timestamp: 2018-12-26
+-- Timestamp: 2018-12-31
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 
@@ -223,7 +223,7 @@ end  --  background()
 
 -- Forward run() call to the loadable part
 local function run(event)
-	return LdRun(sk.run, event)
+	return RunLoadable(sk.run, event)
 end
 
 return {background = background, run = run}

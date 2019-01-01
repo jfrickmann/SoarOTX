@@ -1,6 +1,6 @@
 -- JF F3K Timing and score keeping, fixed part
 -- Standalone version for third part Taranis models.
--- Timestamp: 2018-12-30
+-- Timestamp: 2018-12-31
 -- Created by Jesper Frickmann
 
 wTmr = 0 -- Controls window timer with MIXES script
@@ -146,14 +146,14 @@ elseif tx == TX_QX7 or tx == TX_LITE then
 end
 
 -- Unload a program
-function LdUnload(file)
+function Unload(file)
 	programs[file] = nil
 	states[file] = nil
 	return collectgarbage()
-end -- LdUnload()
+end -- Unload()
 
 -- Load program or forward run() call to the program
-function LdRun(file, event)
+function RunLoadable(file, event)
 	if states[file] == nil then
 		-- First, acquire the lock
 		if locked then
@@ -176,7 +176,7 @@ function LdRun(file, event)
 		-- Sweep inactive programs
 		for f, st in pairs(states) do
 			if st == ST_MARKED then
-				LdUnload(f)
+				Unload(f)
 			end
 		end
 		states[file] = ST_STANDBY
@@ -211,7 +211,7 @@ function LdRun(file, event)
 		-- Pass on the run(event) call to the loaded program
 		return programs[file].run(event)
 	end
-end -- LdRun()
+end -- RunLoadable()
 
 -- End of JFutil.lua ---------------------------------------------------------
 
@@ -413,7 +413,7 @@ end  --  background()
 
 -- Forward run() call to the loadable part
 local function run(event)
-	return LdRun(sk.run, event)
+	return RunLoadable(sk.run, event)
 end
 
 return {background = background, run = run}
