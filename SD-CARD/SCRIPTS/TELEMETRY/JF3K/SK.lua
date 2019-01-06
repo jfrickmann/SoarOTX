@@ -1,16 +1,22 @@
 -- User interface for several score keeper plugins
--- Timestamp: 2018-12-29
+-- Timestamp: 2019-01-06
 -- Created by Jesper Frickmann
 
 local 	exitTask = 0 -- Prompt to save task before EXIT
 local stopWindow = 0 -- Prompt to stop flight timer first
 local Draw -- Function to draw the screen for specific transmitter
 
+-- Convert time to minutes and seconds
+local function MinSec(t)
+	local m = math.floor(t / 60)
+	return m, t - 60 * m
+end -- MinSec()
+
 -- Transmitter specific
 if tx == TX_X9D then
 
 	Draw = function()
-		local x = 10
+		local x = 0
 		local y = 9
 		local split
 		local att -- Screen drawing attribues
@@ -26,17 +32,14 @@ if tx == TX_X9D then
 
 		for i = 1, sk.taskScores do
 			if i == split then
-				x = 58
+				x = 52
 				y = 9
 			end
 
-			lcd.drawNumber(x, y, i, RIGHT + MIDSIZE)
-			lcd.drawText(x, y, ".", MIDSIZE)
-
 			if i <= #sk.scores then
-				lcd.drawTimer(x + 4, y, sk.scores[i], MIDSIZE)
+				lcd.drawText(x, y, string.format("%i. %02i:%02i", i, MinSec(sk.scores[i])), MIDSIZE)
 			else
-				lcd.drawText(x + 5, y, "- - -", MIDSIZE)
+				lcd.drawText(x, y, string.format("%i. - - -", i), MIDSIZE)
 			end
 
 			y = y + 14
@@ -98,6 +101,10 @@ if tx == TX_X9D then
 
 else -- TX_QX7 or X-lite
 
+	-- The smaller screens can only fit 7 flights
+	sk.launches = math.min(7, sk.launches)
+	sk.taskScores = math.min(7, sk.taskScores)
+	
 	Draw = function()
 		local y = 8
 		local att -- Screen drawing attribues
@@ -110,9 +117,9 @@ else -- TX_QX7 or X-lite
 			lcd.drawText(7, y, ".")
 
 			if i <= #sk.scores then
-				lcd.drawTimer(11, y, sk.scores[i])
+				lcd.drawText(0, y, string.format("%i. %02i:%02i", i, MinSec(sk.scores[i])))
 			else
-				lcd.drawText(12, y, "- - -")
+				lcd.drawText(0, y, string.format("%i. - - -", i))
 			end
 
 			y = y + 8

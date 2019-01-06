@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for F3K tasks
--- Timestamp: 2018-12-31
+-- Timestamp: 2019-01-06
 -- Created by Jesper Frickmann
 
 -- If no task is selected, then return name and task list to the menu
@@ -38,7 +38,7 @@ if sk.state == sk.STATE_IDLE then
 			{ 420, -1, 1, false, 300, 2, false }, -- A. Last flight
 			{ 420, -1, 2, false, 180, 2, false }, -- B. Two last 3:00
 			{ 600, -1, 2, false, 240, 2, false }, -- B. Two last 4:00
-			{ 0, 7, 7, true, 180, 2, false }, -- C. AULD
+			{ 0, 8, 8, true, 180, 2, false }, -- C. AULD
 			{ 600, -1, 7, true, 1, 3, false }, -- D. Ladder
 			{ 600, -1, 5, true, 2, 3, true }, -- E. Poker
 			{ 600, 6, 3, false, 180, 1, false }, -- F. 3 best of 6

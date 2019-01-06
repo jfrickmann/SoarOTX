@@ -1,5 +1,5 @@
 -- JF F3K Timing and score keeping, fixed part
--- Timestamp: 2018-12-31
+-- Timestamp: 2019-01-06
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 
@@ -135,6 +135,7 @@ local function background()
 	
 		if sk.state == sk.STATE_WINDOW then
 			if sk.winTimer <= 0 and model.getTimer(1).start > 0 then
+				playTone(880, 1000, 0)
 				sk.state = sk.STATE_FINISHED
 			elseif launchPulled then
 				sk.state = sk.STATE_READY
@@ -202,6 +203,7 @@ local function background()
 				
 				-- Change state
 				if sk.winTimer <= 0 or (sk.finalScores and #sk.scores == sk.taskScores) or sk.launches == 0 then
+					playTone(880, 1000, 0)
 					sk.state = sk.STATE_FINISHED
 				elseif sk.quickRelaunch then
 					sk.state = sk.STATE_READY

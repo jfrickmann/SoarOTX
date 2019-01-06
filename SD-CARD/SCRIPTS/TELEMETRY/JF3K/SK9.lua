@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for browsing saved scores
--- Timestamp: 2019-01-01
+-- Timestamp: 2019-01-06
 -- Created by Jesper Frickmann
 
 -- If no task is selected, then return name and task list to the menu
@@ -37,7 +37,7 @@ if tx == TX_X9D then
 	
 	function Draw()
 		local n = #taskMaxes
-		local x = 10
+		local x = 8
 		local y = 9
 		local split
 		local totalSecs = 0
@@ -67,12 +67,12 @@ if tx == TX_X9D then
 
 			if i <= #scores then
 				if nbr then
-					lcd.drawTimer(x + 4, y, nbr, MIDSIZE)
+					lcd.drawTimer(x + 6, y, nbr, MIDSIZE)
 				else
-					lcd.drawText(x + 34, y, scores[i], MIDSIZE + RIGHT)				
+					lcd.drawText(x + 36, y, scores[i], MIDSIZE + RIGHT)				
 				end
 			else
-				lcd.drawText(x + 5, y, "- - -", MIDSIZE)
+				lcd.drawText(x + 7, y, "- - -", MIDSIZE)
 			end
 
 			y = y + 14
@@ -81,8 +81,11 @@ if tx == TX_X9D then
 
 		lcd.drawText(105, 10, planeName, DBLSIZE)
 		lcd.drawText(105, 32, string.format("%s %s", dateStr, timeStr), MIDSIZE)
-		lcd.drawText(105, 48, string.format("Total %i sec.", totalSecs), MIDSIZE)
-
+		
+		if totalSecs > 0 then
+			lcd.drawText(105, 48, string.format("Total %i sec.", totalSecs), MIDSIZE)
+		end
+	
 		-- Warn if the log file is growing too large
 		if #indices > 200 then
 			lcd.drawText(40, 57, " Log is getting too large ", BLINK + INVERS)
@@ -125,8 +128,11 @@ else -- QX7 or X-lite
 
 		lcd.drawText(50, 10, planeName, MIDSIZE)
 		lcd.drawText(50, 28, string.format("%s %s", dateStr, timeStr))
-		lcd.drawText(50, 42, string.format("Total %i sec.", totalSecs))
-
+		
+		if totalSecs > 0 then
+			lcd.drawText(50, 42, string.format("Total %i sec.", totalSecs))
+		end
+		
 		-- Warn if the log file is growing too large
 		if #indices > 200 then
 			lcd.drawText(5, 57, " Log getting too large ", BLINK + INVERS)

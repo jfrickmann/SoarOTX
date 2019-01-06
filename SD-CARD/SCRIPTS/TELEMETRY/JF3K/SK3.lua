@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin part for altimeter based tasks
--- Timestamp: 2019-01-01
+-- Timestamp: 2019-01-06
 -- Created by Jesper Frickmann
 
 -- If no task is selected, then return name and task list to the menu
@@ -7,8 +7,7 @@ if sk.task == 0 then
 	local name = "Altimeter"
 
 	local tasks = {
-		"V. Height gain",	
-		"W. First to +50",
+		"W. Height gain",	
 		"X. Under ceiling",
 		"Y. Throw low 2:00",
 		"Z. Height Poker"
@@ -42,10 +41,9 @@ if sk.state == sk.STATE_IDLE then
 
 	-- Task index constants, shared between task definition and UI
 	plugin.TASK_HEIGHT_GAIN = 1
-	plugin.TASK_1ST2GAIN50 = 2
-	plugin.TASK_CEILING = 3
-	plugin.TASK_THROW_LOW = 4
-	plugin.TASK_HEIGHT_POKER = 5
+	plugin.TASK_CEILING = 2
+	plugin.TASK_THROW_LOW = 3
+	plugin.TASK_HEIGHT_POKER = 4
 
 	if tx == TX_X9D then
 		plugin.heightInt = 4 -- Interval for recording heights
@@ -69,7 +67,6 @@ if sk.state == sk.STATE_IDLE then
 
 		local taskData = {
 			{ 3, false, 1, 0, 1 }, -- Height gain
-			{ 1, false, 1, 0, 2 }, -- First to gain 50
 			{ 1, false, 2, 300, 3 }, -- Under ceiling
 			{ 3, false, 3, 120, 4 }, -- Throw low 2:00
 			{ 3, true,  4, 0, 5 } -- Height poker
@@ -226,6 +223,11 @@ if sk.state == sk.STATE_IDLE then
 				plugin.heights[#plugin.heights + 1] = getValue(plugin.altId)			
 			end
 
+			if sk.state <= sk.STATE_READY and sk.task == plugin.TASK_THROW_LOW and sk.winTimer < sk.TargetTime() then
+				playTone(880, 1000, 0)
+				sk.state = sk.STATE_FINISHED
+			end
+			
 			if sk.state == sk.STATE_READY then
 				plugin.launchHeight = 0
 				plugin.maxHeight = 0

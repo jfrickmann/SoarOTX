@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for practice tasks
--- Timestamp: 2018-12-27
+-- Timestamp: 2019-01-06
 -- Created by Jesper Frickmann
 
 -- If no task is selected, then return name and task list to the menu
@@ -7,8 +7,8 @@ if sk.task == 0 then
 	local name = "Practice"
 
 	local tasks = {
-		"Quick Relaunch!",
-		"Just Fly!"
+		"Just Fly!",
+		"Quick Relaunch!"
 	}
 
 	return name, tasks
@@ -24,8 +24,8 @@ if sk.state == sk.STATE_IDLE then
 
 	do -- Discard from memory after use
 		local taskData = {
-			{ 0, -1, 7, false, 1, 1, true }, -- QR
-			{ 0, -1, 7, false, 0, 1, false } -- Just fly
+			{ 0, -1, 8, false, 0, 1, false }, -- Just fly
+			{ 0, -1, 8, false, 1, 1, true } -- QR
 		}
 		
 		sk.taskWindow = taskData[sk.task][1]
