@@ -1,5 +1,5 @@
 -- JF F5J Timing and score keeping, loadable part
--- Timestamp: 2018-12-01
+-- Timestamp: 2019-01-05
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F5J.
 
@@ -16,41 +16,41 @@ if tx == TX_X9D then
 		local fmNbr, fmName = getFlightMode()
 		DrawMenu(" " .. fmName .. " ")	
 
-		lcd.drawText(58, 57, " JF F5J Score Keeper ", SMLSIZE)
-		lcd.drawText(10, 20, "Landing", MIDSIZE)
-		lcd.drawText(10, 42, "Start", MIDSIZE)
+		lcd.drawText(0, 20, "Landing", MIDSIZE)
+		lcd.drawText(0, 42, "Start", MIDSIZE)
 		lcd.drawText(110, 42, "Motor", MIDSIZE)
-		lcd.drawTimer(162, 38, mt.value, DBLSIZE)
+		lcd.drawTimer(212, 38, mt.value, DBLSIZE + RIGHT)
 
 		if sk.state == sk.STATE_INITIAL then
 			lcd.drawText(110, 20, "Target", MIDSIZE)
-			lcd.drawTimer(162, 16, ft.value, DBLSIZE + BLINK + INVERS)
+			lcd.drawTimer(212, 16, ft.value, DBLSIZE + RIGHT + BLINK + INVERS)
 		elseif sk.state <= sk.STATE_GLIDE then
 			lcd.drawText(110, 20, "Remain", MIDSIZE)
-			lcd.drawTimer(162, 16, ft.value, DBLSIZE)
+			lcd.drawTimer(212, 16, ft.value, DBLSIZE + RIGHT)
 		else
 			lcd.drawText(110, 20, "Flight", MIDSIZE)
-			lcd.drawTimer(162, 16, ft.value, DBLSIZE)
+			lcd.drawTimer(212, 16, ft.value, DBLSIZE + RIGHT)
 		end
 
 		if sk.state < sk.STATE_LANDINGPTS then
-			lcd.drawText(93, 16, "--", DBLSIZE + RIGHT)
+			lcd.drawText(95, 16, "--", DBLSIZE + RIGHT)
 		elseif sk.state == sk.STATE_LANDINGPTS then
-			lcd.drawNumber(93, 16, sk.landingPts, DBLSIZE + RIGHT + BLINK + INVERS)
+			lcd.drawNumber(95, 16, sk.landingPts, DBLSIZE + RIGHT + BLINK + INVERS)
 		else
-			lcd.drawNumber(93, 16, sk.landingPts, DBLSIZE + RIGHT)
+			lcd.drawNumber(95, 16, sk.landingPts, DBLSIZE + RIGHT)
 		end
 
 		if sk.state < sk.STATE_LANDINGPTS then
-			lcd.drawText(93, 38, "---", DBLSIZE + RIGHT)
+			lcd.drawText(95, 38, "---", DBLSIZE + RIGHT)
 		elseif sk.state == sk.STATE_STARTHEIGHT then
-			lcd.drawNumber(93, 38, sk.startHeight * 10, PREC1 + DBLSIZE + RIGHT + BLINK + INVERS)
+			lcd.drawNumber(95, 38, sk.startHeight * 10, PREC1 + DBLSIZE + RIGHT + BLINK + INVERS)
 		else
-			lcd.drawNumber(93, 38, sk.startHeight * 10, PREC1 + DBLSIZE + RIGHT)
+			lcd.drawNumber(95, 38, sk.startHeight * 10, PREC1 + DBLSIZE + RIGHT)
 		end
 		
 		if getValue(armId) >0 then
-			lcd.drawText(10, 16, "     MOTOR    ARMED     ", DBLSIZE + BLINK + INVERS)
+			lcd.clear()
+			lcd.drawText(50, 16, "MOTOR  ARMED", DBLSIZE + BLINK + INVERS)
 		end
 	end  --  Draw()
 else -- QX7 or X-lite
@@ -58,41 +58,41 @@ else -- QX7 or X-lite
 		local fmNbr, fmName = getFlightMode()
 		DrawMenu(fmName)	
 
-		lcd.drawText(47, 58, " JF F5J ", SMLSIZE)
-		lcd.drawText(7, 20, "Landing", SMLSIZE)
-		lcd.drawText(7, 42, "Start", SMLSIZE)
-		lcd.drawText(68, 42, "Mot", SMLSIZE)
-		lcd.drawTimer(90, 38, mt.value, MIDSIZE)
+		lcd.drawText(0, 20, "Landing")
+		lcd.drawText(0, 42, "Start")
+		lcd.drawText(72, 42, "Mot")
+		lcd.drawTimer(128, 38, mt.value, MIDSIZE + RIGHT)
 
 		if sk.state == sk.STATE_INITIAL then
-			lcd.drawText(68, 20, "Tgt", SMLSIZE)
-			lcd.drawTimer(90, 16, ft.value, MIDSIZE + BLINK + INVERS)
+			lcd.drawText(72, 20, "Tgt")
+			lcd.drawTimer(128, 16, ft.value, MIDSIZE + RIGHT + BLINK + INVERS)
 		elseif sk.state <= sk.STATE_GLIDE then
-			lcd.drawText(68, 20, "Rem", SMLSIZE)
-			lcd.drawTimer(90, 16, ft.value, MIDSIZE)
+			lcd.drawText(72, 20, "Rem")
+			lcd.drawTimer(128, 16, ft.value, MIDSIZE + RIGHT)
 		else
-			lcd.drawText(68, 20, "Flt", SMLSIZE)
-			lcd.drawTimer(90, 16, ft.value, MIDSIZE)
+			lcd.drawText(72, 20, "Flt")
+			lcd.drawTimer(128, 16, ft.value, MIDSIZE + RIGHT)
 		end
 
 		if sk.state < sk.STATE_LANDINGPTS then
-			lcd.drawText(64, 16, "--", MIDSIZE + RIGHT)
+			lcd.drawText(60, 16, "--", MIDSIZE + RIGHT)
 		elseif sk.state == sk.STATE_LANDINGPTS then
-			lcd.drawNumber(64, 16, sk.landingPts, MIDSIZE + RIGHT + BLINK + INVERS)
+			lcd.drawNumber(60, 16, sk.landingPts, MIDSIZE + RIGHT + BLINK + INVERS)
 		else
-			lcd.drawNumber(64, 16, sk.landingPts, MIDSIZE + RIGHT)
+			lcd.drawNumber(60, 16, sk.landingPts, MIDSIZE + RIGHT)
 		end
 
 		if sk.state < sk.STATE_LANDINGPTS then
-			lcd.drawText(64, 38, "---", MIDSIZE + RIGHT)
+			lcd.drawText(60, 38, "---", MIDSIZE + RIGHT)
 		elseif sk.state == sk.STATE_STARTHEIGHT then
-			lcd.drawNumber(64, 38, sk.startHeight * 10, PREC1 + MIDSIZE + RIGHT + BLINK + INVERS)
+			lcd.drawNumber(60, 38, sk.startHeight * 10, PREC1 + MIDSIZE + RIGHT + BLINK + INVERS)
 		else
-			lcd.drawNumber(64, 38, sk.startHeight * 10, PREC1 + MIDSIZE + RIGHT)
+			lcd.drawNumber(60, 38, sk.startHeight * 10, PREC1 + MIDSIZE + RIGHT)
 		end
 		
 		if getValue(armId) >0 then
-			lcd.drawText(7, 16, "MOTOR ARMED", DBLSIZE + BLINK + INVERS)
+			lcd.clear()
+			lcd.drawText(2, 16, "MOTOR  ARMED", DBLSIZE + BLINK + INVERS)
 		end
 	end -- Draw()
 end

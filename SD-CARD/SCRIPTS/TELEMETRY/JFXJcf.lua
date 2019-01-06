@@ -72,12 +72,12 @@ local function run(event)
 		if tx == TX_X9D then
 			DrawMenu(" JF FxJ Configuration ")
 			att = 0
-			x = 10
-			lcd.drawPixmap(159, 11, "/IMAGES/Lua-girl.bmp")
+			x = 2
+			lcd.drawPixmap(156, 8, "/IMAGES/Lua-girl.bmp")
 		else -- QX7 or X-lite
 			DrawMenu("Configuration")
 			att = SMLSIZE
-			x = 5
+			x = 0
 		end
 		
 		for i = 1, #texts do
@@ -88,7 +88,7 @@ local function run(event)
 				inv = 0
 			end
 			
-			lcd.drawText(x, 3 + 10 * i, texts[i], att + inv)
+			lcd.drawText(x, 11 * i - 1, texts[i], att + inv)
 		end
 	end
 end

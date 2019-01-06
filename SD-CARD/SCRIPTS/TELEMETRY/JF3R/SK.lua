@@ -1,5 +1,5 @@
 -- JF F3RES Timing and score keeping, loadable part
--- Timestamp: 2018-12-02
+-- Timestamp: 2019-01-05
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F3RES.
 
@@ -30,21 +30,20 @@ if tx == TX_X9D then
 			txtFt = "Flight"
 		end
 		
-		lcd.drawText(58, 57, " JF F3RES Score Keeper ", SMLSIZE)
-		lcd.drawText(10, 20, "Landing", MIDSIZE)
+		lcd.drawText(0, 20, "Landing", MIDSIZE)
 
 		lcd.drawText(110, 20, "Window", MIDSIZE)
-		lcd.drawTimer(162, 16, wt.value, DBLSIZE + blnkWt)
+		lcd.drawTimer(212, 16, wt.value, DBLSIZE + RIGHT + blnkWt)
 
 		lcd.drawText(110, 42, txtFt, MIDSIZE)
-		lcd.drawTimer(162, 38, ft.value, DBLSIZE + blnkFt)
+		lcd.drawTimer(212, 38, ft.value, DBLSIZE + RIGHT + blnkFt)
 
 		if sk.state < sk.STATE_LANDINGPTS then
-			lcd.drawText(93, 16, "--", DBLSIZE + RIGHT)
+			lcd.drawText(95, 16, "--", DBLSIZE + RIGHT)
 		elseif sk.state == sk.STATE_LANDINGPTS then
-			lcd.drawNumber(93, 16, sk.landingPts, DBLSIZE + RIGHT + BLINK + INVERS)
+			lcd.drawNumber(95, 16, sk.landingPts, DBLSIZE + RIGHT + BLINK + INVERS)
 		else
-			lcd.drawNumber(93, 16, sk.landingPts, DBLSIZE + RIGHT)
+			lcd.drawNumber(95, 16, sk.landingPts, DBLSIZE + RIGHT)
 		end
 	end  --  Draw()
 else -- QX7 or X-lite
@@ -68,14 +67,13 @@ else -- QX7 or X-lite
 			txtFt = "Flt"
 		end
 		
-		lcd.drawText(44, 58, " JF F3RES ", SMLSIZE)
-		lcd.drawText(7, 20, "Landing ", SMLSIZE)
+		lcd.drawText(0, 20, "Landing ")
 
-		lcd.drawText(68, 20, "Win", SMLSIZE)
-		lcd.drawTimer(90, 16, wt.value, MIDSIZE + blnkWt)
+		lcd.drawText(72, 20, "Win")
+		lcd.drawTimer(128, 16, wt.value, MIDSIZE + RIGHT + blnkWt)
 
-		lcd.drawText(68, 42, txtFt, SMLSIZE)
-		lcd.drawTimer(90, 38, ft.value, MIDSIZE + blnkFt)
+		lcd.drawText(72, 42, txtFt)
+		lcd.drawTimer(128, 38, ft.value, MIDSIZE + RIGHT + blnkFt)
 
 		if sk.state < sk.STATE_LANDINGPTS then
 			lcd.drawText(60, 16, "--", MIDSIZE + RIGHT)

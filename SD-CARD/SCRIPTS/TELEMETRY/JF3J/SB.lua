@@ -1,5 +1,5 @@
 -- JF F3J Score Browser
--- Timestamp: 2018-06-01
+-- Timestamp: 2019-01-04
 -- Created by Jesper Frickmann
 -- Telemetry script for browsing scores recorded in the log file.
 
@@ -16,42 +16,40 @@ local Draw -- Draw() function is defined for specific transmitter
 -- Transmitter specific
 if tx == TX_X9D then
 	function Draw()
-		lcd.drawText(10, 20, "Landing", MIDSIZE)
-		lcd.drawNumber(93, 16, lineData[4], DBLSIZE + RIGHT)
+		lcd.drawText(0, 20, "Landing", MIDSIZE)
+		lcd.drawNumber(95, 16, lineData[4], DBLSIZE + RIGHT)
 
-		lcd.drawText(10, 42, "Start", MIDSIZE)
-		lcd.drawNumber(93, 38, lineData[5] * 10, PREC1 + DBLSIZE + RIGHT)
+		lcd.drawText(0, 42, "Start", MIDSIZE)
+		lcd.drawNumber(95, 38, lineData[5] * 10, PREC1 + DBLSIZE + RIGHT)
 
-		lcd.drawText(106, 20, "Remain", MIDSIZE)
-		lcd.drawTimer(162, 16, lineData[7], DBLSIZE)
+		lcd.drawText(110, 20, "Remain", MIDSIZE)
+		lcd.drawTimer(212, 16, lineData[7], DBLSIZE + RIGHT)
 
-		lcd.drawText(106, 42, "Flight", MIDSIZE)
-		lcd.drawTimer(162, 38, lineData[8], DBLSIZE)
+		lcd.drawText(110, 42, "Flight", MIDSIZE)
+		lcd.drawTimer(212, 38, lineData[8], DBLSIZE + RIGHT)
 
-		lcd.drawText(55, 58, " JF F3J Score Browser ", SMLSIZE)	
 		-- Warn if the log file is growing too large
 		if #indices > 200 then
-			lcd.drawText(55, 57, " Log getting too large ", SMLSIZE + BLINK + INVERS)
+			lcd.drawText(40, 57, " Log getting too large ", BLINK + INVERS)
 		end
 	end -- Draw()
 else -- QX7, X-lite
 	function Draw()
-		lcd.drawText(7, 20, "Landing", SMLSIZE)
-		lcd.drawNumber(64, 16, lineData[4], MIDSIZE + RIGHT)
+		lcd.drawText(0, 20, "Landing")
+		lcd.drawNumber(62, 16, lineData[4], MIDSIZE + RIGHT)
 
-		lcd.drawText(7, 42, "Start", SMLSIZE)
-		lcd.drawNumber(64, 38, lineData[5] * 10, PREC1 + MIDSIZE + RIGHT)
+		lcd.drawText(0, 42, "Start")
+		lcd.drawNumber(62, 38, lineData[5] * 10, PREC1 + MIDSIZE + RIGHT)
 
-		lcd.drawText(66, 20, "Rem", SMLSIZE)
-		lcd.drawTimer(90, 16, lineData[7], MIDSIZE)
+		lcd.drawText(66, 20, "Rem")
+		lcd.drawTimer(128, 16, lineData[7], MIDSIZE + RIGHT)
 
-		lcd.drawText(66, 42, "Flt", SMLSIZE)
-		lcd.drawTimer(90, 38, lineData[8], MIDSIZE)
+		lcd.drawText(66, 42, "Flt")
+		lcd.drawTimer(128, 38, lineData[8], MIDSIZE + RIGHT)
 
-		lcd.drawText(47, 58, " JF F3J ", SMLSIZE)	
 		-- Warn if the log file is growing too large
 		if #indices > 200 then
-			lcd.drawText(12, 57, " Log getting too large ", SMLSIZE + BLINK + INVERS)
+			lcd.drawText(5, 57, " Log getting too large ", BLINK + INVERS)
 		end
 	end -- Draw()
 end
