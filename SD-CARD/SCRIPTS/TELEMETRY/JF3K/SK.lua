@@ -1,5 +1,5 @@
 -- User interface for several score keeper plugins
--- Timestamp: 2019-01-06
+-- Timestamp: 2019-01-08
 -- Created by Jesper Frickmann
 
 local 	exitTask = 0 -- Prompt to save task before EXIT
@@ -254,23 +254,17 @@ local function run(event)
 		end
 
 		if event == EVT_ENTER_BREAK then
-			-- Add 10 sec. to window timer, if a new task is started
-			if sk.state == sk.STATE_IDLE and sk.winTimer > 0 then
-				sk.winTimer = sk.winTimer + 10
-				model.setTimer(1, { start=sk.winTimer, value=sk.winTimer })
-			end
-
 			if sk.state <= sk.STATE_PAUSE then
 				-- Start task window
 				sk.state = sk.STATE_WINDOW
-				playTone(1760, 100, PLAY_NOW)
 			elseif sk.state == sk.STATE_WINDOW then
 				-- Pause task window
 				sk.state = sk.STATE_PAUSE
-				playTone(1760, 100, PLAY_NOW)
 			elseif sk.state >= sk.STATE_READY then
 				stopWindow = getTime() + 100
 			end
+			
+			playTone(1760, 100, PLAY_NOW)
 		end
 		
 		if (event == EVT_MENU_LONG or event == EVT_SHIFT_LONG) and sk.state == sk.STATE_COMMITTED then
@@ -297,6 +291,8 @@ local function run(event)
 			else
 				exitTask = getTime() + 100
 			end
+			
+			playTone(1760, 100, PLAY_NOW)
 		end
 	end
 end  --  run()
