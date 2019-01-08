@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable user interface for altimeter based tasks
--- Timestamp: 2019-01-05
+-- Timestamp: 2019-01-08
 -- Created by Jesper Frickmann
 
 local 	exitTask = 0 -- Prompt to save task before EXIT
@@ -154,17 +154,7 @@ if tx == TX_X9D then
 		DrawGraph(DOTTED)
 		
 		-- Timers
-		lcd.drawText(LCD_W - 46, 15, "W")
-		
-		if sk.state == sk.STATE_FINISHED then
-			att = BLINK + INVERS
-		else
-			att = 0
-		end
-		
-		lcd.drawTimer(LCD_W, 12, sk.winTimer, MIDSIZE + RIGHT + att)
-
-		lcd.drawText(LCD_W - 46, 33, "F")
+		lcd.drawText(LCD_W - 46, 15, "F")
 		
 		if sk.flightTimer < 0 then
 			att = BLINK + INVERS
@@ -172,7 +162,17 @@ if tx == TX_X9D then
 			att = 0
 		end
 		
-		lcd.drawTimer(LCD_W, 30, sk.flightTimer,  MIDSIZE  + RIGHT + att)
+		lcd.drawTimer(LCD_W, 12, sk.flightTimer, MIDSIZE + RIGHT + att)
+
+		lcd.drawText(LCD_W - 46, 33, "W")
+		
+		if sk.state == sk.STATE_FINISHED then
+			att = BLINK + INVERS
+		else
+			att = 0
+		end
+		
+		lcd.drawTimer(LCD_W, 30, sk.winTimer,  MIDSIZE  + RIGHT + att)
 
 		-- QR and EoW
 		if sk.eowTimerStop then
@@ -207,21 +207,21 @@ else -- TX_QX7 or X-lite
 		DrawGraph(SOLID)
 		
 		-- Timers
-		if sk.state == sk.STATE_FINISHED then
-			att = BLINK + INVERS
-		else
-			att = 0
-		end
-		
-		lcd.drawTimer(LCD_W, 12, sk.winTimer, MIDSIZE + RIGHT + att)
-
 		if sk.flightTimer < 0 then
 			att = BLINK + INVERS
 		else
 			att = 0
 		end
 		
-		lcd.drawTimer(LCD_W, 30, sk.flightTimer,  MIDSIZE + RIGHT + att)
+		lcd.drawTimer(LCD_W, 12, sk.flightTimer, MIDSIZE + RIGHT + att)
+
+		if sk.state == sk.STATE_FINISHED then
+			att = BLINK + INVERS
+		else
+			att = 0
+		end
+		
+		lcd.drawTimer(LCD_W, 30, sk.winTimer,  MIDSIZE + RIGHT + att)
 
 		-- QR and EoW
 		if sk.eowTimerStop then
@@ -339,23 +339,17 @@ local function run(event)
 		end
 
 		if event == EVT_ENTER_BREAK then
-			-- Add 10 sec. to window timer, if a new task is started
-			if sk.state == sk.STATE_IDLE and sk.winTimer > 0 then
-				sk.winTimer = sk.winTimer + 10
-				model.setTimer(1, { start=sk.winTimer, value=sk.winTimer })
-			end
-
 			if sk.state <= sk.STATE_PAUSE then
 				-- Start task window
 				sk.state = sk.STATE_WINDOW
-				playTone(1760, 100, PLAY_NOW)
 			elseif sk.state == sk.STATE_WINDOW then
 				-- Pause task window
 				sk.state = sk.STATE_PAUSE
-				playTone(1760, 100, PLAY_NOW)
 			elseif sk.state >= sk.STATE_READY then
 				stopWindow = getTime() + 100
 			end
+			
+			playTone(1760, 100, PLAY_NOW)
 		end
 		
 		if (event == EVT_MENU_LONG or event == EVT_SHIFT_LONG) and sk.state == sk.STATE_COMMITTED then
@@ -381,6 +375,8 @@ local function run(event)
 			else
 				exitTask = getTime() + 100
 			end
+			
+			playTone(1760, 100, PLAY_NOW)
 		end
 	end
 end  --  run()
