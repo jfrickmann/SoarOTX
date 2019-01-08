@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for F3K tasks
--- Timestamp: 2019-01-06
+-- Timestamp: 2019-01-07
 -- Created by Jesper Frickmann
 
 -- If no task is selected, then return name and task list to the menu
@@ -75,12 +75,6 @@ if sk.state == sk.STATE_IDLE then
 			end
 		end
 		
-		sk.Background = function()
-			if sk.state == sk.STATE_COMMITTED then
-				plugin.pokerCalled = true
-			end
-		end
-
 	elseif targetType == 3 then -- 1234
 		-- Find the best target time, given what has already been scored, as well as the remaining time of the window.
 		-- Note: maxTarget ensures that recursive calls to this function only test shorter target times. That way, we start with
@@ -221,6 +215,26 @@ if sk.state == sk.STATE_IDLE then
 			
 			sk.scores[#sk.scores + 1] = score
 		end
+	end
+	
+	if targetType == 2 then -- Poker
+		sk.Background = function()
+			if sk.state < sk.STATE_FLYING and sk.state ~= sk.STATE_FINISHED and sk.winTimer < sk.TargetTime() then
+				playTone(880, 1000, 0)
+				sk.state = sk.STATE_FINISHED
+			elseif sk.state == sk.STATE_COMMITTED then
+				plugin.pokerCalled = true
+			end
+		end
+
+	elseif scoreType == 3 then -- Other "must make time" tasks
+		sk.Background = function()
+			if sk.state < sk.STATE_FLYING and sk.state ~= sk.STATE_FINISHED and sk.winTimer < sk.TargetTime() then
+				playTone(880, 1000, 0)
+				sk.state = sk.STATE_FINISHED
+			end
+		end
+
 	end
 
 end -- Setup task definition.
