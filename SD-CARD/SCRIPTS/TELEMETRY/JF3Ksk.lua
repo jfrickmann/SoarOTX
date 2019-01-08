@@ -1,5 +1,5 @@
 -- JF F3K Timing and score keeping, fixed part
--- Timestamp: 2019-01-07
+-- Timestamp: 2019-01-08
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 
@@ -125,9 +125,11 @@ local function background()
 		end
 
 	else
-		-- Start task window timer
-		wTmr = 1
-
+		-- Start task window timer (wait if task window started by pulling launch)
+		if sk.state ~= sk.STATE_READY then
+			wTmr = 1
+		end
+		
 		-- Beep at the beginning and end of the task window
 		if (winTimerOld > 0 and sk.winTimer <= 0) or (winTimerOld > sk.taskWindow and sk.winTimer <= sk.taskWindow) then
 			playTone(880, 1000, PLAY_NOW)
