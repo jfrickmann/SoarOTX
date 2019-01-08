@@ -1,6 +1,6 @@
 -- JF F3K Timing and score keeping, fixed part
 -- Standalone version for third part Taranis models.
--- Timestamp: 2019-01-06
+-- Timestamp: 2019-01-07
 -- Created by Jesper Frickmann
 
 wTmr = 0 -- Controls window timer with MIXES script
@@ -323,11 +323,15 @@ local function background()
 			playTone(880, 1000, PLAY_NOW)
 		end
 	
+		-- Did the window expire?
+		if sk.state < sk.STATE_FLYING and sk.state ~= sk.STATE_FINISHED
+		and sk.winTimer <= 0 and model.getTimer(1).start > 0 then
+			playTone(880, 1000, 0)
+			sk.state = sk.STATE_FINISHED
+		end
+		
 		if sk.state == sk.STATE_WINDOW then
-			if sk.winTimer <= 0 and model.getTimer(1).start > 0 then
-				playTone(880, 1000, 0)
-				sk.state = sk.STATE_FINISHED
-			elseif launchPulled then
+			if launchPulled then
 				sk.state = sk.STATE_READY
 			elseif launchReleased then
 				-- Play tone to warn that timer is NOT running
@@ -392,7 +396,7 @@ local function background()
 				sk.Score()
 				
 				-- Change state
-				if sk.winTimer <= 0 or (sk.finalScores and #sk.scores == sk.taskScores) or sk.launches == 0 then
+				if (sk.finalScores and #sk.scores == sk.taskScores) or sk.launches == 0 then
 					playTone(880, 1000, 0)
 					sk.state = sk.STATE_FINISHED
 				elseif sk.quickRelaunch then
