@@ -1,5 +1,5 @@
 -- JF Library
--- Timestamp: 2018-12-31
+-- Timestamp: 2019-01-05
 -- Created by Jesper Frickmann
 -- Has a few shared functions and variables for telemetry and functions scripts
 -- Works together with a small shell script to load and unload program and telemetry scripts.
