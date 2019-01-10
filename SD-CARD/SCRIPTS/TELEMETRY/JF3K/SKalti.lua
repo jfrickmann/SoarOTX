@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable user interface for altimeter based tasks
--- Timestamp: 2019-01-08
+-- Timestamp: 2019-01-09
 -- Created by Jesper Frickmann
 
 local 	exitTask = 0 -- Prompt to save task before EXIT
@@ -189,12 +189,10 @@ if tx == TX_X9D then
 			
 			if i > #sk.scores then
 				lcd.drawText(126, dy * i, string.format("%i. - - -", i))
-			elseif sk.task == plugin.TASK_THROW_LOW then
-				lcd.drawText(126, dy * i, string.format("%i. %4ip", i, sk.scores[i].gain))
-			elseif sk.task == plugin.TASK_HEIGHT_GAIN or sk.task == plugin.TASK_HEIGHT_POKER then
-				lcd.drawText(126, dy * i, string.format("%i. %4im", i, sk.scores[i].gain))
-			else
+			elseif plugin.unit == "s" then
 				lcd.drawText(126, dy * i, string.format("%i. %02i:%02i", i, MinSec(sk.scores[i].time)))
+			else
+				lcd.drawText(126, dy * i, string.format("%i. %4i%s", i, sk.scores[i].gain, plugin.unit))
 			end
 		end
 	end  --  Draw()
@@ -238,12 +236,10 @@ else -- TX_QX7 or X-lite
 			
 			if i > #sk.scores then
 				lcd.drawText(73, dy * i, "- - -", SMLSIZE)
-			elseif sk.task == plugin.TASK_THROW_LOW then
-				lcd.drawText(73, dy * i, string.format("%4ip", sk.scores[i].gain), SMLSIZE)
-			elseif sk.task == plugin.TASK_HEIGHT_GAIN or sk.task == plugin.TASK_HEIGHT_POKER then
-				lcd.drawText(73, dy * i, string.format("%4im", sk.scores[i].gain), SMLSIZE)
-			else
+			elseif plugin.unit == "s" then
 				lcd.drawText(73, dy * i, string.format("%02i:%02i", MinSec(sk.scores[i].time)), SMLSIZE)
+			else
+				lcd.drawText(73, dy * i, string.format("%4i%s", sk.scores[i].gain, plugin.unit), SMLSIZE)
 			end
 		end
 	end  --  Draw()
@@ -266,19 +262,17 @@ local function run(event)
 		-- Record scores if user pressed ENTER
 		if menuReply == "OK" then
 			local now = getDateTime()
-			local dateStr = string.format("%04d-%02d-%02d", now.year, now.mon, now.day)
-			local timeStr = string.format("%02d:%02d", now.hour, now.min)
+			local dateStr = string.format("%04i-%02i-%02i", now.year, now.mon, now.day)
+			local timeStr = string.format("%02i:%02i", now.hour, now.min)
 			local nameStr = model.getInfo().name
 			local logFile = io.open("/LOGS/JF F3K Scores.csv", "a")
 			if logFile then
-				io.write(logFile, string.format("%s,%s,%s,%s", nameStr, sk.taskName, dateStr, timeStr))
+				io.write(logFile, string.format("%s,%s,%s,%s,%s", nameStr, sk.taskName, dateStr, timeStr, plugin.unit))
 				for i = 1, #sk.scores do
-					if sk.task == plugin.TASK_HEIGHT_GAIN or sk.task == plugin.TASK_HEIGHT_POKER then
-						io.write(logFile, string.format(",%im", sk.scores[i].gain))
-					elseif sk.task == plugin.TASK_THROW_LOW then
-						io.write(logFile, string.format(",%ip", sk.scores[i].gain))
-					else
+					if plugin.unit == "s" then
 						io.write(logFile, string.format(",%i", sk.scores[i].time))
+					else
+						io.write(logFile, string.format(",%i", sk.scores[i].gain))
 					end
 				end
 				io.write(logFile, "\n")

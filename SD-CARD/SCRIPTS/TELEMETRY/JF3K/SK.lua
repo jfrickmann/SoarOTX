@@ -1,5 +1,5 @@
 -- User interface for several score keeper plugins
--- Timestamp: 2019-01-08
+-- Timestamp: 2019-01-09
 -- Created by Jesper Frickmann
 
 local 	exitTask = 0 -- Prompt to save task before EXIT
@@ -187,14 +187,14 @@ local function run(event)
 		-- Record scores if user pressed ENTER
 		if menuReply == "OK" then
 			local now = getDateTime()
-			local dateStr = string.format("%04d-%02d-%02d", now.year, now.mon, now.day)
-			local timeStr = string.format("%02d:%02d", now.hour, now.min)
+			local dateStr = string.format("%04i-%02i-%02i", now.year, now.mon, now.day)
+			local timeStr = string.format("%02i:%02i", now.hour, now.min)
 			local nameStr = model.getInfo().name
 			local logFile = io.open("/LOGS/JF F3K Scores.csv", "a")
 			if logFile then
-				io.write(logFile, string.format("%s,%s,%s,%s", nameStr, sk.taskName, dateStr, timeStr))
+				io.write(logFile, string.format("%s,%s,%s,%s,s", nameStr, sk.taskName, dateStr, timeStr))
 				for i = 1, #sk.scores do
-					io.write(logFile, string.format(",%d", sk.scores[i]))
+					io.write(logFile, string.format(",%i", sk.scores[i]))
 				end
 				io.write(logFile, "\n")
 				io.close(logFile)

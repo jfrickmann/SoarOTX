@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for browsing saved scores
--- Timestamp: 2019-01-06
+-- Timestamp: 2019-01-09
 -- Created by Jesper Frickmann
 
 -- If no task is selected, then return name and task list to the menu
@@ -13,37 +13,77 @@ if sk.task == 0 then
 	return name, tasks
 end
 
+local LOG_FILE = "/LOGS/JF F3K Scores.csv"
 local logFile -- Log file handle
+local task -- Task of the current record
 local scores -- Scores recorded
 local taskMaxes = { } -- Number of scores for task
 local taskName -- Name of current task
 local planeName -- Name of plane
 local dateStr -- Date saved
 local timeStr -- Time saved
-local lastTime -- Last time that run() was called, used for refreshing
-local indices -- Vector of indices pointing to start of lines in the log file
-local index -- Index to currently selected line in log file
-local maxScores = { } -- Maximum times that can be scored in various tasks
-local taskList -- List of task descriptions for title - shared with score browser script
-local TASK_JUSTFLY = 13 -- Index of the Just Fly! task
-local LOG_FILE = "/LOGS/JF F3K Scores.csv"
-
+local unitStr -- Unit of score(s)
+local lastTime = 0 -- Last time that run() was called, used for refreshing
+local indices = {0} -- Vector of indices pointing to start of lines in the log file
+local index = 1 -- Index to currently selected line in log file
 local Draw -- Draw() function is defined for specific transmitter
+
+ -- List of patterns for matching task names
+local taskList = {
+	"A%.",
+	"B%..+3",
+	"B%..+4",
+	"C%.",
+	"D%.",
+	"E%.",
+	"F%.",
+	"G%.",
+	"H%.",
+	"I%.",
+	"J%.",
+	"K%."
+}
+
+-- Maximum times that can be scored in various tasks
+local maxScores = {
+	{300},
+	{180, 180},
+	{240, 240},
+	{180, 180, 180, 180, 180, 180, 180, 180},
+	{30, 45, 60, 75, 90, 105, 120},
+	{599, 599, 599, 599, 599},
+	{180, 180, 180},
+	{120, 120, 120, 120, 120},
+	{240, 180, 120, 60},
+	{200, 200, 200},
+	{180, 180, 180},
+	{60, 90, 120, 150, 180},
+	{9999, 9999, 9999, 9999, 9999, 9999, 9999, 9999} -- Last one is the default
+}
+
+-- Convert time to minutes and seconds
+local function MinSec(t)
+	local m = math.floor(t / 60)
+	return m, t - 60 * m
+end -- MinSec()
 
 -- Transmitter specific
 if tx == TX_X9D then
-	maxScores[4] = {180, 180, 180, 180, 180, 180, 180, 180}
-	maxScores[TASK_JUSTFLY] = {9999, 9999, 9999, 9999, 9999, 9999, 9999, 9999}
-	
 	function Draw()
-		local n = #taskMaxes
-		local x = 8
+		local n
+		local x = 0
 		local y = 9
 		local split
-		local totalSecs = 0
+		local totalScore = 0
 
-		DrawMenu(" " .. taskName .. " ")
+		DrawMenu(taskName)
 
+		if task == #maxScores then
+			n = #scores
+		else
+			n = #taskMaxes
+		end
+		
 		if n == 5 or n == 6 then
 			split = 4
 		else
@@ -51,39 +91,33 @@ if tx == TX_X9D then
 		end
 
 		for i = 1, n do
-			local nbr = tonumber(scores[i])
-
-			if nbr then
-				totalSecs = totalSecs + math.min(nbr, taskMaxes[i])
-			end
-			
 			if i == split then
-				x = 58
+				x = 50
 				y = 9
 			end
 
-			lcd.drawNumber(x, y, i, RIGHT + MIDSIZE)
-			lcd.drawText(x, y, ".", MIDSIZE)
+			local nbr = tonumber(scores[i])
 
-			if i <= #scores then
-				if nbr then
-					lcd.drawTimer(x + 6, y, nbr, MIDSIZE)
+			if nbr then
+				if unitStr == "s" then
+					lcd.drawText(x, y, string.format("%i. %02i:%02i", i, MinSec(nbr)), MIDSIZE)
 				else
-					lcd.drawText(x + 36, y, scores[i], MIDSIZE + RIGHT)				
+					lcd.drawText(x, y, string.format("%i. %3i%s", i, nbr, unitStr), MIDSIZE)
 				end
+
+				totalScore = totalScore + math.min(nbr, taskMaxes[i])
 			else
-				lcd.drawText(x + 7, y, "- - -", MIDSIZE)
+				lcd.drawText(x, y, string.format("%i. - - -", i), MIDSIZE)
 			end
-
+			
 			y = y + 14
-
 		end
 
 		lcd.drawText(105, 10, planeName, DBLSIZE)
 		lcd.drawText(105, 32, string.format("%s %s", dateStr, timeStr), MIDSIZE)
 		
-		if totalSecs > 0 then
-			lcd.drawText(105, 48, string.format("Total %i sec.", totalSecs), MIDSIZE)
+		if totalScore > 0 then
+			lcd.drawText(105, 48, string.format("Total %i %s", totalScore, unitStr), MIDSIZE)
 		end
 	
 		-- Warn if the log file is growing too large
@@ -93,34 +127,33 @@ if tx == TX_X9D then
 		
 	end -- Draw()
 else -- QX7 or X-lite
-	maxScores[4] = {180, 180, 180, 180, 180, 180, 180}
-	maxScores[TASK_JUSTFLY] = {9999, 9999, 9999, 9999, 9999, 9999, 9999}
-	
 	function Draw()
-		local n = #taskMaxes
+		local n
 		local y = 8
-		local totalSecs = 0
+		local totalScore = 0
 		
 		DrawMenu(taskName)
+		
+		if task == #maxScores then
+			n = #scores
+		else
+			-- Only 7 scores on small screens
+			n = math.min(7, #taskMaxes)
+		end
 		
 		for i = 1, n do
 			local nbr = tonumber(scores[i])
 
-			if nbr then
-				totalSecs = totalSecs + math.min(nbr, taskMaxes[i])
-			end
-			
-			lcd.drawNumber(6, y, i, RIGHT)
-			lcd.drawText(7, y, ".")
-
-			if i <= #scores then
-				if nbr then
-					lcd.drawTimer(11, y, nbr)
-				else
-					lcd.drawText(34, y, scores[i], RIGHT)				
-				end
+			if not nbr then
+				lcd.drawText(0, y, string.format("%i. - - -", i))
 			else
-				lcd.drawText(12, y, "- - -")
+				if unitStr == "s" then
+					lcd.drawText(0, y, string.format("%i. %02i:%02i", i, MinSec(nbr)))
+				else
+					lcd.drawText(0, y, string.format("%i. %3i%s", i, nbr, unitStr))
+				end
+
+				totalScore = totalScore + math.min(nbr, taskMaxes[i])
 			end
 
 			y = y + 8
@@ -129,8 +162,8 @@ else -- QX7 or X-lite
 		lcd.drawText(50, 10, planeName, MIDSIZE)
 		lcd.drawText(50, 28, string.format("%s %s", dateStr, timeStr))
 		
-		if totalSecs > 0 then
-			lcd.drawText(50, 42, string.format("Total %i sec.", totalSecs))
+		if totalScore > 0 then
+			lcd.drawText(50, 42, string.format("Total %i %s", totalScore, unitStr))
 		end
 		
 		-- Warn if the log file is growing too large
@@ -164,8 +197,7 @@ end  --  ReadLine()
 local function ReadLineData(charPos)
 	local lineStr
 	local i = 0
-	local task
-	scores = {}
+	scores = { }
 
 	charPos, lineStr = ReadLine(logFile, charPos)
 	
@@ -176,26 +208,25 @@ local function ReadLineData(charPos)
 			planeName = field
 		elseif i == 2 then
 			taskName = field
+			task = #maxScores -- Default to last record in maxScores
 			
 			-- Find the right task and max. score times
 			for j = 1, #taskList do
 				if string.find(field, taskList[j]) then
 					task = j
-					taskMaxes = maxScores[task]
 				end
 			end
 			
-			-- Default to Just Fly!
-			if not task then
-				task = TASK_JUSTFLY
-				taskMaxes = maxScores[task]
-			end
+			taskMaxes = maxScores[task]
+			
 		elseif i == 3 then
 			dateStr = field
 		elseif i == 4 then
 			timeStr = field
+		elseif i == 5 then
+			unitStr = field
 		else
-			scores[i - 4] = field
+			scores[i - 5] = field
 		end
 	end
 end  --  ReadLineData()
@@ -227,38 +258,6 @@ local function Scan()
 end -- Scan()
 
 local function init()
-	lastTime = 0
-	
-	-- Patterns for matching task names
-	taskList = {
-		"A%.",
-		"B%..+3",
-		"B%..+4",
-		"C%.",
-		"D%.",
-		"E%.",
-		"F%.",
-		"G%.",
-		"H%.",
-		"I%.",
-		"J%.",
-		"K%."
-	}
-
-	maxScores[1] = {300}
-	maxScores[2] = {180, 180}
-	maxScores[3] = {240, 240}
-	maxScores[5] = {30, 45, 60, 75, 90, 105, 120}
-	maxScores[6] = {599, 599, 599, 599, 599}
-	maxScores[7] = {180, 180, 180}
-	maxScores[8] = {120, 120, 120, 120, 120}
-	maxScores[9] = {240, 180, 120, 60}
-	maxScores[10] = {200, 200, 200}
-	maxScores[11] = {180, 180, 180}
-	maxScores[12] = {60, 90, 120, 150, 180}
-	
-	indices = {0}
-	index = 1
 	ReadLineData(indices[index])
 	Scan()
 end  --  init()

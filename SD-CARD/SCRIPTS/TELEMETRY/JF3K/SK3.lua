@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin part for altimeter based tasks
--- Timestamp: 2019-01-06
+-- Timestamp: 2019-01-08
 -- Created by Jesper Frickmann
 
 -- If no task is selected, then return name and task list to the menu
@@ -45,6 +45,15 @@ if sk.state == sk.STATE_IDLE then
 	plugin.TASK_THROW_LOW = 3
 	plugin.TASK_HEIGHT_POKER = 4
 
+	-- Unit of scores
+	if sk.task == plugin.TASK_CEILING then
+		plugin.unit = "s"
+	elseif sk.task == plugin.TASK_THROW_LOW then
+		plugin.unit = "p"
+	else
+		plugin.unit = "m"
+	end
+	
 	if tx == TX_X9D then
 		plugin.heightInt = 4 -- Interval for recording heights
 	else -- TX_QX7 or X-lite
