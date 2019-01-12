@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable user interface for altimeter based tasks
--- Timestamp: 2019-01-09
+-- Timestamp: 2019-01-11
 -- Created by Jesper Frickmann
 
 local 	exitTask = 0 -- Prompt to save task before EXIT
@@ -369,8 +369,6 @@ local function run(event)
 			else
 				exitTask = getTime() + 100
 			end
-			
-			playTone(1760, 100, PLAY_NOW)
 		end
 	end
 end  --  run()
