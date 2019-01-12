@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable menu for selecting task
--- Timestamp: 2018-12-31
+-- Timestamp: 2019-01-11
 -- Created by Jesper Frickmann
 
 local pluginFile = "/SCRIPTS/TELEMETRY/JF3K/SK%i.lua"
@@ -49,7 +49,7 @@ local function run(event)
 			local att = 0
 			
 			if plugin == sk.selectedPlugin then att = INVERS end
-			lcd.drawText(2, y0, plugins[plugin][2], att)
+			lcd.drawText(0, y0, string.format("%i. %s", plugin, plugins[plugin][2]), att)
 		end
 
 		if event == EVT_ENTER_BREAK then
@@ -92,7 +92,7 @@ local function run(event)
 			local att = 0
 			
 			if task == sk.selectedTask then att = INVERS end
-			lcd.drawText(2, y0, tasks[task], att)
+			lcd.drawText(0, y0, tasks[task], att)
 		end
 
 		if event == EVT_ENTER_BREAK then
