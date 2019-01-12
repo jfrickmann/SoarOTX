@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for F3K tasks
--- Timestamp: 2019-01-07
+-- Timestamp: 2019-01-12
 -- Created by Jesper Frickmann
 
 -- If no task is selected, then return name and task list to the menu
@@ -134,7 +134,7 @@ if sk.state == sk.STATE_IDLE then
 		end
 		
 		-- A few extra counts in 1234
-		counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45, 60, 65, 70, 75, 120,
+		sk.counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45, 60, 65, 70, 75, 120,
 			125, 130, 135, 180, 185, 190, 195, 240}
 
 	elseif targetType == 4 then -- Big ladder
