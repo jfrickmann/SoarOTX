@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for practice tasks
--- Timestamp: 2019-01-06
+-- Timestamp: 2019-01-18
 -- Created by Jesper Frickmann
 
 -- If no task is selected, then return name and task list to the menu
@@ -35,6 +35,11 @@ if sk.state == sk.STATE_IDLE then
 		targetType = taskData[sk.task][5]
 		scoreType = taskData[sk.task][6]
 		sk.quickRelaunch = taskData[sk.task][7]
+	end
+
+	-- MaxScore() is used for calculating the total score
+	plugin.MaxScore = function(iFlight)
+		return 9999 -- No max. time here
 	end
 
 	if targetType == 1 then -- Adjustable

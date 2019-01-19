@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for F3K tasks
--- Timestamp: 2019-01-12
+-- Timestamp: 2019-01-18
 -- Created by Jesper Frickmann
 
 -- If no task is selected, then return name and task list to the menu
@@ -58,12 +58,35 @@ if sk.state == sk.STATE_IDLE then
 		sk.quickRelaunch = taskData[sk.task][7]
 	end
 
+	-- MaxScore() is used for calculating the total score
 	if targetType == 1 then -- Ladder
-		sk.TargetTime = function() 
-			return 30 + 15 * #sk.scores
+		plugin.MaxScore = function(iFlight) 
+			return 15 + 15 * iFlight
 		end
 		
 	elseif targetType == 2 then -- Poker
+		plugin.MaxScore = function(iFlight)
+			return 9999
+		end
+		
+	elseif targetType == 3 then -- 1234
+		plugin.MaxScore = function(iFlight) 
+			return 300 - 60 * iFlight
+		end
+		
+	elseif targetType == 4 then -- Big ladder
+		plugin.MaxScore = function(iFlight)
+			return 30 + 30 * iFlight
+		end
+		
+	else -- TargetTime = targetType
+		plugin.MaxScore = function(iFlight) 
+			return targetType
+		end
+	end
+
+	-- TargetTime is used by JF3Ksk.lua
+	if targetType == 2 then -- Poker
 		sk.TargetTime = function()
 			if plugin.pokerCalled then
 				return model.getTimer(0).start
@@ -137,14 +160,9 @@ if sk.state == sk.STATE_IDLE then
 		sk.counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45, 60, 65, 70, 75, 120,
 			125, 130, 135, 180, 185, 190, 195, 240}
 
-	elseif targetType == 4 then -- Big ladder
+	else -- TargetTime = MaxScore
 		sk.TargetTime = function() 
-			return 60 + 30 * #sk.scores
-		end
-		
-	else -- TargetTime = targetType
-		sk.TargetTime = function() 
-			return targetType
+			return plugin.MaxScore(#sk.scores + 1)
 		end
 	end
 	
