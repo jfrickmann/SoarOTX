@@ -269,16 +269,21 @@ local function run(event)
 				io.write(logFile, string.format(",%04i-%02i-%02i", now.year, now.mon, now.day))
 				io.write(logFile, string.format(",%02i:%02i", now.hour, now.min))
 				
-				io.write(logFile, string.format(",s,%i", sk.taskScores))
+				io.write(logFile, string.format(",%s,%i", plugin.unit, sk.taskScores))
+				
+				local what = "gain"
+				if plugin.unit == "s" then
+					what = "time"
+				end
 				
 				local totalScore = 0
 				for i = 1, #sk.scores do
-					totalScore = totalScore + sk.scores[i]
+					totalScore = totalScore + sk.scores[i][what]
 				end
 				io.write(logFile, string.format(",%i", totalScore))
 				
 				for i = 1, #sk.scores do
-					io.write(logFile, string.format(",%i", sk.scores[i]))
+					io.write(logFile, string.format(",%i", sk.scores[i][what]))
 				end
 				
 				io.write(logFile, "\n")

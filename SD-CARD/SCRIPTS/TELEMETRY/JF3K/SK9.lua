@@ -57,13 +57,11 @@ if tx == TX_X9D then
 				y = 9
 			end
 
-			local nbr = tonumber(scores[i])
-
-			if nbr then
+			if scores[i] then
 				if unitStr == "s" then
-					lcd.drawText(x, y, string.format("%i. %02i:%02i", i, MinSec(nbr)), MIDSIZE)
+					lcd.drawText(x, y, string.format("%i. %02i:%02i", i, MinSec(scores[i])), MIDSIZE)
 				else
-					lcd.drawText(x, y, string.format("%i. %3i%s", i, nbr, unitStr), MIDSIZE)
+					lcd.drawText(x, y, string.format("%i. %4i%s", i, scores[i], unitStr), MIDSIZE)
 				end
 			else
 				lcd.drawText(x, y, string.format("%i. - - -", i), MIDSIZE)
@@ -89,16 +87,14 @@ else -- QX7 or X-lite
 		DrawMenu(taskName)
 		
 		for i = 1, taskScores do
-			local nbr = tonumber(scores[i])
-
-			if not nbr then
-				lcd.drawText(0, y, string.format("%i. - - -", i))
-			else
+			if scores[i] then
 				if unitStr == "s" then
-					lcd.drawText(0, y, string.format("%i. %02i:%02i", i, MinSec(nbr)))
+					lcd.drawText(0, y, string.format("%i. %02i:%02i", i, MinSec(scores[i])))
 				else
-					lcd.drawText(0, y, string.format("%i. %3i%s", i, nbr, unitStr))
+					lcd.drawText(0, y, string.format("%i. %4i%s", i, scores[i], unitStr))
 				end
+			else
+				lcd.drawText(0, y, string.format("%i. - - -", i))
 			end
 
 			y = y + 8
