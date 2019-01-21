@@ -1,5 +1,5 @@
 -- User interface for several score keeper plugins
--- Timestamp: 2019-01-20
+-- Timestamp: 2019-01-21
 -- Created by Jesper Frickmann
 
 local 	exitTask = 0 -- Prompt to save task before EXIT
@@ -71,8 +71,11 @@ if tx == TX_X9D then
 		lcd.drawText(133, 31, "Win", MIDSIZE)
 		att = 0
 		
-		if sk.state < sk.STATE_WINDOW then
-			lcd.drawText(LCD_W, 50, string.format("Total %i %s", plugin.totalScore, plugin.unit), MIDSIZE + RIGHT)
+		if sk.state == sk.STATE_PAUSE then
+			lcd.drawText(104, 50, string.format("Total %i sec.", plugin.totalScore), MIDSIZE)
+		elseif sk.state == sk.STATE_FINISHED then
+			lcd.drawText(104, 50, "Done!", MIDSIZE + BLINK)
+			lcd.drawText(LCD_W, 50, string.format("%i sec.", plugin.totalScore), MIDSIZE + RIGHT)
 		else
 			if sk.winTimer < 0 then
 				att = INVERS + BLINK
@@ -81,7 +84,7 @@ if tx == TX_X9D then
 			if sk.launches >= 0 then
 				local s = ""
 				if sk.launches ~= 1 then s = "es" end
-				lcd.drawText(LCD_W, 50, string.format("%i launch%s left", sk.launches, s), MIDSIZE + RIGHT)
+				lcd.drawText(102, 50, string.format("%i launch%s left", sk.launches, s), MIDSIZE)
 			end
 
 			if sk.state >= sk.STATE_COMMITTED and sk.taskScores - #sk.scores > 1 and plugin.pokerCalled then
@@ -150,8 +153,11 @@ else -- TX_QX7 or X-lite
 		lcd.drawText(62, 33, "Win")
 		att = 0
 		
-		if sk.state < sk.STATE_WINDOW then
-			lcd.drawText(LCD_W, 54, string.format("Total %i %s", plugin.totalScore, plugin.unit), RIGHT)
+		if sk.state == sk.STATE_PAUSE then
+			lcd.drawText(LCD_W, 53, string.format("Total score %i s", plugin.totalScore), RIGHT)
+		elseif sk.state == sk.STATE_FINISHED then
+			lcd.drawText(45, 53, "Done!", BLINK)
+			lcd.drawText(LCD_W, 53, string.format("Total %i s", plugin.totalScore), RIGHT)
 		else
 			if sk.winTimer < 0 then
 				att = INVERS + BLINK
@@ -160,7 +166,7 @@ else -- TX_QX7 or X-lite
 			if sk.launches >= 0 then
 				local s = ""
 				if sk.launches ~= 1 then s = "es" end
-				lcd.drawText(LCD_W, 54, string.format("%i launch%s left", sk.launches, s), RIGHT)
+				lcd.drawText(45, 53, string.format("%i launch%s left", sk.launches, s))
 			end
 
 			if sk.state >= sk.STATE_COMMITTED and sk.taskScores - #sk.scores > 1 and plugin.pokerCalled then

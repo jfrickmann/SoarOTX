@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for F3K tasks
--- Timestamp: 2019-01-20
+-- Timestamp: 2019-01-21
 -- Created by Jesper Frickmann
 
 -- If no task is selected, then return name and task list to the menu
@@ -34,7 +34,6 @@ if sk.state == sk.STATE_IDLE then
 	--  Variables shared between task def. and UI must be added to own list
 	plugin = { }
 	plugin.totalScore = 0
-	plugin.unit = "s"
 	
 	do -- Discard from memory after use
 		local taskData = {
