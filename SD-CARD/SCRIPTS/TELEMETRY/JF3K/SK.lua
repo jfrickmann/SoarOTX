@@ -1,5 +1,5 @@
 -- User interface for several score keeper plugins
--- Timestamp: 2019-01-17
+-- Timestamp: 2019-01-20
 -- Created by Jesper Frickmann
 
 local 	exitTask = 0 -- Prompt to save task before EXIT
@@ -70,7 +70,10 @@ if tx == TX_X9D then
 
 		lcd.drawText(133, 31, "Win", MIDSIZE)
 		att = 0
-		if sk.state >= sk.STATE_WINDOW then
+		
+		if sk.state < sk.STATE_WINDOW then
+			lcd.drawText(LCD_W, 50, string.format("Total %i %s", plugin.totalScore, plugin.unit), MIDSIZE + RIGHT)
+		else
 			if sk.winTimer < 0 then
 				att = INVERS + BLINK
 			end
@@ -89,13 +92,8 @@ if tx == TX_X9D then
 				lcd.drawText(104, 50, "Next call", MIDSIZE)
 				lcd.drawTimer(LCD_W, 50, t, RIGHT + MIDSIZE)
 			end
-
-		else
-
-			if sk.state == sk.STATE_FINISHED then
-				lcd.drawText(LCD_W - 4, 50, "GAME OVER!", MIDSIZE + RIGHT + BLINK)
-			end
 		end
+		
 		lcd.drawTimer(LCD_W, 28, model.getTimer(1).value, DBLSIZE + RIGHT + att)
 	end  --  Draw()
 
@@ -133,7 +131,8 @@ else -- TX_QX7 or X-lite
 			lcd.drawText(40, 33, "EoW", INVERS)
 		end
 
-		att = 0			
+		att = 0
+		
 		if sk.state >= sk.STATE_FLYING then
 			lcd.drawText(62, 15, "Flt")
 		else
@@ -150,7 +149,10 @@ else -- TX_QX7 or X-lite
 
 		lcd.drawText(62, 33, "Win")
 		att = 0
-		if sk.state >= sk.STATE_WINDOW then
+		
+		if sk.state < sk.STATE_WINDOW then
+			lcd.drawText(LCD_W, 54, string.format("Total %i %s", plugin.totalScore, plugin.unit), RIGHT)
+		else
 			if sk.winTimer < 0 then
 				att = INVERS + BLINK
 			end
@@ -169,13 +171,8 @@ else -- TX_QX7 or X-lite
 				lcd.drawText(45, 53, "Next call")
 				lcd.drawTimer(LCD_W, 50, t, RIGHT + MIDSIZE)
 			end
-
-		else
-
-			if sk.state == sk.STATE_FINISHED then
-				lcd.drawText(LCD_W - 4, 50, "GAME OVER!", MIDSIZE + RIGHT + BLINK)
-			end
 		end
+		
 		lcd.drawTimer(LCD_W, 28, model.getTimer(1).value, DBLSIZE + RIGHT + att)
 	end -- Draw()
 end
@@ -192,15 +189,9 @@ local function run(event)
 
 				local now = getDateTime()				
 				io.write(logFile, string.format(",%04i-%02i-%02i", now.year, now.mon, now.day))
-				io.write(logFile, string.format(",%02i:%02i", now.hour, now.min))
-				
+				io.write(logFile, string.format(",%02i:%02i", now.hour, now.min))				
 				io.write(logFile, string.format(",s,%i", sk.taskScores))
-				
-				local totalScore = 0
-				for i = 1, #sk.scores do
-					totalScore = totalScore + math.min(plugin.MaxScore(i), sk.scores[i])
-				end
-				io.write(logFile, string.format(",%i", totalScore))
+				io.write(logFile, string.format(",%i", plugin.totalScore))
 				
 				for i = 1, #sk.scores do
 					io.write(logFile, string.format(",%i", sk.scores[i]))
