@@ -1,5 +1,5 @@
 -- User interface for several score keeper plugins
--- Timestamp: 2019-01-21
+-- Timestamp: 2019-01-22
 -- Created by Jesper Frickmann
 
 local 	exitTask = 0 -- Prompt to save task before EXIT
@@ -75,7 +75,7 @@ if tx == TX_X9D then
 			lcd.drawText(104, 50, string.format("Total %i sec.", plugin.totalScore), MIDSIZE)
 		elseif sk.state == sk.STATE_FINISHED then
 			lcd.drawText(104, 50, "Done!", MIDSIZE + BLINK)
-			lcd.drawText(LCD_W, 50, string.format("%i sec.", plugin.totalScore), MIDSIZE + RIGHT)
+			lcd.drawText(150, 50, string.format("%i sec.", plugin.totalScore), MIDSIZE)
 		else
 			if sk.winTimer < 0 then
 				att = INVERS + BLINK
