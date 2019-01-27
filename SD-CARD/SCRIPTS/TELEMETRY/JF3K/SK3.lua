@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin part for altimeter based tasks
--- Timestamp: 2019-01-08
+-- Timestamp: 2019-01-27
 -- Created by Jesper Frickmann
 
 -- If no task is selected, then return name and task list to the menu
@@ -251,7 +251,7 @@ if sk.state == sk.STATE_IDLE then
 				
 				if sk.state < sk.STATE_FREEZE then
 					-- Update launch and max. height
-					local mh = getValue(altMaxId)
+					local mh = math.floor(getValue(altMaxId))
 					local now = getTime()
 					
 					if plugin.launchHeight == 0 and sk.flightTime > 10 then
