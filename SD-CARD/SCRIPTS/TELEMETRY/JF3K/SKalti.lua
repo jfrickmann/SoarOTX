@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable user interface for altimeter based tasks
--- Timestamp: 2019-01-18
+-- Timestamp: 2019-01-27
 -- Created by Jesper Frickmann
 
 local 	exitTask = 0 -- Prompt to save task before EXIT
@@ -176,13 +176,17 @@ if tx == TX_X9D then
 
 		-- QR and EoW
 		if sk.eowTimerStop then
-			lcd.drawText(LCD_W - 18, 50, "EoW", SMLSIZE + INVERS)
+			lcd.drawText(LCD_W - 18, 48, "EoW", SMLSIZE + INVERS)
 		end
 		
 		if sk.quickRelaunch then
-			lcd.drawText(LCD_W - 33, 50, "QR", SMLSIZE + INVERS)
+			lcd.drawText(LCD_W - 33, 48, "QR", SMLSIZE + INVERS)
 		end
 
+		if plugin.launchHeight > 0 then
+			lcd.drawText(126, 56, string.format("Launch %i m", plugin.launchHeight))
+		end
+		
 		-- Scores
 		for i = 1, sk.taskScores do
 			local dy = 14
@@ -223,13 +227,17 @@ else -- TX_QX7 or X-lite
 
 		-- QR and EoW
 		if sk.eowTimerStop then
-			lcd.drawText(LCD_W - 18, 50, "EoW", SMLSIZE + INVERS)
+			lcd.drawText(LCD_W - 18, 48, "EoW", SMLSIZE + INVERS)
 		end
 		
 		if sk.quickRelaunch then
-			lcd.drawText(LCD_W - 33, 50, "QR", SMLSIZE + INVERS)
+			lcd.drawText(LCD_W - 33, 48, "QR", SMLSIZE + INVERS)
 		end
 
+		if plugin.launchHeight > 0 then
+			lcd.drawText(73, 58, string.format("Launch %i m", plugin.launchHeight), SMLSIZE)
+		end
+		
 		-- Scores
 		for i = 1, sk.taskScores do
 			local dy = 14
