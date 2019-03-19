@@ -1,5 +1,5 @@
 -- JF FXJ flap curve adjustment
--- Timestamp: 2018-05-20
+-- Timestamp: 2019-02-20
 -- Created by Jesper Frickmann
 -- Script for adjusting the flaps curves for the JF FXJ program.
 
@@ -14,7 +14,7 @@ local crv ={} -- Data structures defining the curves
 local Draw -- Draw() function is defined for specific transmitter
 
 local function DrawCurve(x, y, w, h, crv, i)
-	local x1, x2, y1, y2
+	local x1, x2, y1, y2, y3
 	local n = #(crv.y)
 	
 	for j = 1, n do
@@ -25,6 +25,7 @@ local function DrawCurve(x, y, w, h, crv, i)
 		-- Mark point i
 		if j == i then
 			att = SMLSIZE + INVERS
+			y3 = crv.y[j]
 		else
 			att = SMLSIZE
 		end
@@ -41,6 +42,9 @@ local function DrawCurve(x, y, w, h, crv, i)
 	-- Draw reference lines
 	lcd.drawLine(x, y + 0.5 * h, x + w, y + 0.5 * h, DOTTED, FORCE)
 	lcd.drawLine(x + 0.5 * w, y, x + 0.5 * w, y + h, DOTTED, FORCE)
+
+	-- Draw the value being edited
+	lcd.drawNumber(x + w, y + h - 6, y3, RIGHT + SMLSIZE)
 end -- DrawCurve()
 
 -- Transmitter specific
