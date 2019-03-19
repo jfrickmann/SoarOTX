@@ -1,5 +1,5 @@
 -- User interface for several score keeper plugins
--- Timestamp: 2019-01-22
+-- Timestamp: 2019-03-18
 -- Created by Jesper Frickmann
 
 local 	exitTask = 0 -- Prompt to save task before EXIT
@@ -274,7 +274,8 @@ local function run(event)
 			playTone(1760, 100, PLAY_NOW)
 		end
 		
-		if (event == EVT_MENU_LONG or event == EVT_SHIFT_LONG) and sk.state == sk.STATE_COMMITTED then
+		if (event == EVT_MENU_LONG or event == EVT_SHIFT_LONG) 
+		and (sk.state == sk.STATE_COMMITTED or sk.state == sk.STATE_FREEZE) then
 			-- Record a zero score!
 			sk.flightTime = 0
 			sk.Score()
