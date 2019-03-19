@@ -1,5 +1,5 @@
 -- JF Library
--- Timestamp: 2019-01-05
+-- Timestamp: 2019-02-23
 -- Created by Jesper Frickmann
 -- Has a few shared functions and variables for telemetry and functions scripts
 -- Works together with a small shell script to load and unload program and telemetry scripts.
@@ -42,6 +42,8 @@ local ST_MARKED = 4 -- Programs are marked inactive and swept if not running
 local RBat
 do
 	local batField = getFieldInfo("RBat")
+	if not batField then batField = getFieldInfo("RxBt") end
+	if not batField then batField = getFieldInfo("A1") end
 	
 	if batField then
 		RBat = function()
@@ -58,7 +60,7 @@ end
 if tx == TX_X9D then
 	function DrawMenu(title)
 		local now = getDateTime()
-		local infoStr = string.format("%1.1fV %02d:%02d", RBat(), now.hour, now.min)
+		local infoStr = string.format("%1.2fV %02i:%02i", RBat(), now.hour, now.min)
 
 		lcd.clear()
 		lcd.drawText(LCD_W, 0, infoStr, RIGHT)
@@ -67,7 +69,7 @@ if tx == TX_X9D then
 elseif tx == TX_QX7 or tx == TX_LITE then
 	function DrawMenu(title)
 		local now = getDateTime()
-		local infoStr = string.format("%1.1fV %02d:%02d", RBat(), now.hour, now.min)
+		local infoStr = string.format("%1.2fV %02i:%02i", RBat(), now.hour, now.min)
 
 		lcd.clear()
 		lcd.drawScreenTitle(title, 0, 0)
