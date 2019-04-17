@@ -1,5 +1,5 @@
 -- JF Log Data Graph, loadable part for reading data
--- Timestamp: 2018-12-31
+-- Timestamp: 2019-04-13
 -- Created by Jesper Frickmann
 
 -- International users - un-comment ONE of the following lines:
@@ -7,7 +7,7 @@ local FIRST_EXCLUDED = "Rud" -- ENGLISH or DUTCH log files
 --local FIRST_EXCLUDED = "Sei" -- GERMAN log files
 --local FIRST_EXCLUDED = "Dir" -- FRENCH log files
 --local FIRST_EXCLUDED = "Rod" -- SWEDISH log files
---local FIRST_EXCLUDED = "Sme" -- CHECH log files
+--local FIRST_EXCLUDED = "Pln" -- CHECH log files
 
 -- Constants
 local FM_LAUNCH = 1 -- Launch flight mode
