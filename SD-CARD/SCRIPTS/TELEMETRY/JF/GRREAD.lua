@@ -1,5 +1,5 @@
 -- JF Log Data Graph, loadable part for reading data
--- Timestamp: 2019-04-13
+-- Timestamp: 2019-05-03
 -- Created by Jesper Frickmann
 
 -- International users - un-comment ONE of the following lines:
@@ -14,7 +14,7 @@ local FM_LAUNCH = 1 -- Launch flight mode
 local ALTI_PLOT ="Alti(m)" -- Default plot variable
 local TIME_GAP = 20 -- Time gap that triggers a new flight
 local MIN_TIME = 20 -- Minimum time of flight that will be plotted
-local READ_MAX = 12 -- Max. no. of record to read in one go
+local READ_MAX = 8 -- Max. no. of record to read in one go
 
 -- Construct the file name for today's log file for the current model
 local logFileName = string.gsub (model.getInfo().name, " ", "_") -- Log file name
@@ -28,7 +28,6 @@ end
 local logFile -- Log file handle
 local logFilePos -- current position in log file
 local lineData -- Holds the data fields of a line
-local fmIndex = 0 -- Index of the field holding the flight mode variable
 
 local function TimeSerial(str)
 	local hr = string.sub(str, 1, 2)
@@ -80,12 +79,9 @@ if not gr.yValues then
 	gr.yValues = { } -- Y values to be plotted
 	gr.flightTable = { } -- Table for finding position in file and start and end times of flights
 	gr.flightIndex = 0 -- Index of current flight in the above table
-	gr.viewStats = false -- View statistics instead of graph
 	gr.logFileHeaders = { } -- Header line fields in log file
-
-	for i = 1, LCD_W - 21 do
-		gr.yValues[i] = 0
-	end
+	gr.viewMode = 1 -- View mode; 1=normal, 2=stats, 3=details/slope
+	gr.x0 = 0 -- Left side of the plot; determines the plot width
 
 	local scanPos = 0 -- Last position in log file that was scanned
 	local fmLaunchCount = 0 -- Count consecutive records with flight mode Launch, and set start of flight to second record
@@ -116,9 +112,12 @@ if not gr.yValues then
 			end
 
 			-- Look for trigger field and default plot variable field
+			gr.plotIndex = 3
+			gr.plotIndexLast = #gr.logFileHeaders
+
 			for i = 1, #lineData do
 				if gr.logFileHeaders[i] == "FM" then
-					fmIndex = i
+					gr.fmIndex = i
 				end
 				
 				if gr.logFileHeaders[i] == ALTI_PLOT then
@@ -129,9 +128,6 @@ if not gr.yValues then
 					gr.plotIndexLast = i - 1
 				end
 			end
-			
-			if not gr.plotIndex then gr.plotIndex = 3 end
-			if not gr.plotIndexLast then gr.plotIndexLast = #gr.logFileHeaders end
 		end
 	end  --  StartScan()
 
@@ -168,8 +164,8 @@ if not gr.yValues then
 				timeStamp = TimeSerial(lineData[2])
 				
 				-- Count consecutive records with flight trigger activated
-				if fmIndex > 0 then
-					if 1 * lineData[fmIndex] == FM_LAUNCH then
+				if gr.fmIndex then
+					if 1 * lineData[gr.fmIndex] == FM_LAUNCH then
 						fmLaunchCount = fmLaunchCount + 1
 					else
 						fmLaunchCount = 0
@@ -220,7 +216,8 @@ else -- No yValues
 	local findLaunchAlt -- Do we want to find launch altitude?
 	local timerStart -- Time of starting flight timer
 	local indexRead -- Index of X, Y point currently being read
-
+	local timeSerialStart, timeSerialEnd -- Start and end of current flight
+	
 	-- X and Y values used for interpolation of flight graph
 	local x1
 	local x2
@@ -247,18 +244,25 @@ else -- No yValues
 		end
 		
 		logFile = io.open(logFileName, "r")
-
 		logFilePos = gr.flightTable[gr.flightIndex][1]
-		gr.timeSerialStart = TimeSerial(gr.flightTable[gr.flightIndex][2])
-		gr.timeSerialEnd = TimeSerial(gr.flightTable[gr.flightIndex][3])
-		gr.xScaleMax = gr.timeSerialEnd - gr.timeSerialStart		
 		
-		-- Read first two lines of data to set x1 x2 y1 y2
-		ReadX2Y2()
-		x1 = x2
-		y1 = y2
+		timeSerialStart = TimeSerial(gr.flightTable[gr.flightIndex][2])
+		timeSerialEnd = TimeSerial(gr.flightTable[gr.flightIndex][3])
 		
-		if fmIndex > 0 then
+		if gr.tMin then
+			timeSerialStart = timeSerialStart + gr.tMin
+			timeSerialEnd = timeSerialStart + gr.tSpan		
+		else
+			gr.tSpan = timeSerialEnd - timeSerialStart
+		end
+		
+		gr.xWidth = LCD_W - 20 - gr.x0
+
+		for i = 0, gr.xWidth do
+			gr.yValues[i] = 0
+		end
+
+		if gr.fmIndex then
 			if gr.logFileHeaders[gr.plotIndex] == ALTI_PLOT then
 				findLaunchAlt = 1
 			else
@@ -266,34 +270,34 @@ else -- No yValues
 			end
 		end
 		
-		ReadX2Y2()
-		gr.yMax = y2
-		gr.yMin = y2
 		gr.launchAlt = 0
-		indexRead = 1
+		indexRead = 0
+		
+		-- Read first two lines of data
+		ReadX2Y2()
+		x1 = x2
+		y1 = y2		
+		ReadX2Y2()
 	end  --  StartReading()
 
 	local function Read()
 		local i = 0
-		local climb
+		local y
 
 		repeat
 			-- X value that we are looking for
-			local x0 = gr.timeSerialStart + (indexRead - 1) * gr.xScaleMax / (LCD_W - 22)
+			local x0 =  timeSerialStart + indexRead * gr.tSpan / gr.xWidth
 
-			if x0 < gr.timeSerialEnd then
+			if x0 < timeSerialEnd + 1E-8 then
 				-- Start searching for bracketing X values
-				while x2 < x0 do
+				while x2 < x0 - 1E-8 do
 					x1 = x2
 					y1 = y2
 					ReadX2Y2()
 					
-					gr.yMax = math.max(y2, gr.yMax)
-					gr.yMin = math.min(y2, gr.yMin)
-
 					if findLaunchAlt == 1 then
 						-- Set timerStart when Launch is ended
-						if 1 * lineData[fmIndex] ~= FM_LAUNCH then
+						if 1 * lineData[gr.fmIndex] ~= FM_LAUNCH then
 							timerStart = x2
 							findLaunchAlt = 2
 						end
@@ -308,14 +312,26 @@ else -- No yValues
 					-- If max. records have been read; take a break
 					i = i + 1
 					if i > READ_MAX then
-						return
+						return collectgarbage()
 					end
-				end			
-				gr.yValues[indexRead] = y1 + (x0 - x1) / (x2 - x1) * (y2 - y1)
+				end
+				
+				-- Interpolate to find y-value
+				y = y1 + (x0 - x1) / (x2 - x1) * (y2 - y1)
+				
+				if indexRead == 0 then
+					gr.yMax = y
+					gr.yMin = y
+				else
+					gr.yMax = math.max(y, gr.yMax)
+					gr.yMin = math.min(y, gr.yMin)
+				end
+				
+				gr.yValues[indexRead] = y
 			end
 
 			indexRead = indexRead + 1
-		until x0 >= gr.timeSerialEnd
+		until indexRead > gr.xWidth
 
 		-- All values have been read; time to plot
 		io.close(logFile)
