@@ -1,10 +1,11 @@
 -- JF F5J Timing and score keeping, loadable part
--- Timestamp: 2019-01-05
+-- Timestamp: 2019-04-13
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F5J.
 
+local sbFile = "/SCRIPTS/TELEMETRY/JF5J/SB.lua" -- Score browser user interface file
 local sk = sk -- Local reference is faster than a global
-local armId = getFieldInfo("ls18").id -- Input ID for motor arming
+local armId = getFieldInfo("ls19").id -- Input ID for motor arming
 local ft -- Flight timer
 local mt -- Motor timer
 
@@ -23,12 +24,15 @@ if tx == TX_X9D then
 
 		if sk.state == sk.STATE_INITIAL then
 			lcd.drawText(110, 20, "Target", MIDSIZE)
-			lcd.drawTimer(212, 16, ft.value, DBLSIZE + RIGHT + BLINK + INVERS)
 		elseif sk.state <= sk.STATE_GLIDE then
 			lcd.drawText(110, 20, "Remain", MIDSIZE)
-			lcd.drawTimer(212, 16, ft.value, DBLSIZE + RIGHT)
 		else
 			lcd.drawText(110, 20, "Flight", MIDSIZE)
+		end
+
+		if sk.state == sk.STATE_INITIAL or sk.state == sk.STATE_TIME then
+			lcd.drawTimer(212, 16, ft.value, DBLSIZE + RIGHT + BLINK + INVERS)
+		else
 			lcd.drawTimer(212, 16, ft.value, DBLSIZE + RIGHT)
 		end
 
@@ -65,12 +69,15 @@ else -- QX7 or X-lite
 
 		if sk.state == sk.STATE_INITIAL then
 			lcd.drawText(72, 20, "Tgt")
-			lcd.drawTimer(128, 16, ft.value, MIDSIZE + RIGHT + BLINK + INVERS)
 		elseif sk.state <= sk.STATE_GLIDE then
 			lcd.drawText(72, 20, "Rem")
-			lcd.drawTimer(128, 16, ft.value, MIDSIZE + RIGHT)
 		else
 			lcd.drawText(72, 20, "Flt")
+		end
+
+		if sk.state == sk.STATE_INITIAL or sk.state == sk.STATE_TIME then
+			lcd.drawTimer(128, 16, ft.value, MIDSIZE + RIGHT + BLINK + INVERS)
+		else
 			lcd.drawTimer(128, 16, ft.value, MIDSIZE + RIGHT)
 		end
 
@@ -101,14 +108,14 @@ local function run(event)
 	ft = model.getTimer(0)
 	mt = model.getTimer(1)
 	
-	if event == EVT_MENU_BREAK or event == EVT_UP_BREAK and sk.state > sk.STATE_LANDINGPTS and ft.value > 0 then
-		-- Go back one step
-		sk.state  = sk.state  - 1
-	end
-	
 	if sk.state == sk.STATE_INITIAL then -- Set flight time before the flight
 		local dt = 0
 		
+		-- Show score browser
+		if event == EVT_MENU_BREAK then
+			sk.myFile = sbFile
+		end
+	
 		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_PLUS_REPT or event == EVT_RIGHT_BREAK then
 			dt = 60
 		end
@@ -167,12 +174,35 @@ local function run(event)
 		sk.startHeight = sk.startHeight + dm
 		if sk.startHeight < 0 then
 			sk.startHeight = 0
-		elseif sk.startHeight  > 999 then
-			sk.startHeight = 999
+		elseif sk.startHeight  > 300 then
+			sk.startHeight = 300
+		end
+		
+		if event == EVT_ENTER_BREAK then
+			sk.state = sk.STATE_TIME
+		elseif event == EVT_MENU_BREAK or event == EVT_UP_BREAK then
+			sk.state = sk.STATE_LANDINGPTS
+		end
+	elseif sk.state == sk.STATE_TIME then -- Input flight time
+		local dt = 0
+		
+		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_PLUS_REPT or event == EVT_RIGHT_BREAK then
+			dt = 1
+		end
+		
+		if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_MINUS_REPT or event == EVT_LEFT_BREAK then
+			dt = -1
+		end
+		
+		if dt ~= 0 then
+			ft.value = ft.value + dt
+			model.setTimer(0, ft)
 		end
 		
 		if event == EVT_ENTER_BREAK then
 			sk.state = sk.STATE_SAVE
+		elseif event == EVT_MENU_BREAK or event == EVT_UP_BREAK then
+			sk.state = sk.STATE_STARTHEIGHT
 		end
 	elseif sk.state == sk.STATE_SAVE then
 		if event == EVT_ENTER_BREAK then -- Record scores if user pressed ENTER
@@ -192,10 +222,10 @@ local function run(event)
 			end
 			
 			sk.state = sk.STATE_INITIAL
-		end
-
-		if event == EVT_EXIT_BREAK then -- Do not record scores if user pressed EXIT
+		elseif event == EVT_EXIT_BREAK then -- Do not record scores if user pressed EXIT
 			sk.state = sk.STATE_INITIAL
+		elseif event == EVT_MENU_BREAK or event == EVT_UP_BREAK then
+			sk.state = sk.STATE_TIME
 		end
 	end
 	

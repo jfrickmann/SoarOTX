@@ -1,9 +1,10 @@
 -- JF F5J Score Browser
--- Timestamp: 2019-01-05
+-- Timestamp: 2019-03-03
 -- Created by Jesper Frickmann
 -- Telemetry script for browsing scores recorded in the log file.
 
-local LOG_FILE = "/LOGS/JF F5J Scores.csv"
+local LOG_FILE = "/LOGS/JF F5J Scores.csv" -- Log file
+local skFile = "/SCRIPTS/TELEMETRY/JF5J/SK.lua" -- Score keeper user interface file
 
 local logFile -- Log file handle
 local lastTime -- Last time that run() was called, used for refreshing
@@ -128,6 +129,11 @@ local function run(event)
 	end
 
 	lastTime = thisTime
+	
+	-- Show score keeper
+	if event == EVT_MENU_BREAK then
+		sk.myFile = skFile
+	end
 	
 	-- Go to previous record
 	if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK then

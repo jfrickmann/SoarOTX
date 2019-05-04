@@ -1,13 +1,12 @@
 -- JF F5J Timing and score keeping, fixed part
--- Timestamp: 2018-12-31
+-- Timestamp: 2019-04-13
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F5J.
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 -- Depends on custom script exporting the value of global "tmr" to OpenTX
 
-local myFile = "/SCRIPTS/TELEMETRY/JF5J/SK.lua" -- Lua file to be loaded and unloaded
-local motorId = getFieldInfo("ls20").id -- Input ID for motor run
-local triggerId = getFieldInfo("ls25").id -- Input ID for the trigger switch 
+local motorId = getFieldInfo("ls21").id -- Input ID for motor run
+local triggerId = getFieldInfo("ls26").id -- Input ID for the trigger switch
 local altiId = getFieldInfo("Alti+").id -- Input ID for the Alti sensor
 local altiTime -- Time for recording start height
 local prevMt -- Previous motor timer value
@@ -21,8 +20,10 @@ sk.STATE_MOTOR= 1 -- Motor running
 sk.STATE_GLIDE = 2 -- Gliding
 sk.STATE_LANDINGPTS = 3 -- Landed, input landing points
 sk.STATE_STARTHEIGHT = 4 -- Input start height
-sk.STATE_SAVE = 5 -- Ready to save
+sk.STATE_TIME = 5 -- Input flight time
+sk.STATE_SAVE = 6 -- Ready to save
 sk.state = sk.STATE_INITIAL
+sk.myFile = "/SCRIPTS/TELEMETRY/JF5J/SK.lua" -- Score keeper user interface file
 
 local function background()
 	if sk.state == sk.STATE_INITIAL then
@@ -113,7 +114,7 @@ end  --  background()
 
 -- Forward run() call to the loadable part
 local function run(event)
-	return RunLoadable(myFile, event)
+	return RunLoadable(sk.myFile, event)
 end
 
 return {background = background, run = run}
