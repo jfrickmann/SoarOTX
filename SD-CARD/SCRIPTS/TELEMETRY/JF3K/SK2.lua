@@ -1,6 +1,8 @@
 -- Timing and score keeping, loadable plugin for practice tasks
--- Timestamp: 2019-01-20
+-- Timestamp: 2019-05-11
 -- Created by Jesper Frickmann
+
+local TASK_DEUCES = 3
 
 -- If no task is selected, then return name and task list to the menu
 if sk.task == 0 then
@@ -8,7 +10,8 @@ if sk.task == 0 then
 
 	local tasks = {
 		"Just Fly!",
-		"Quick Relaunch!"
+		"Quick Relaunch!",
+		"Deuces"
 	}
 
 	return name, tasks
@@ -25,7 +28,8 @@ if sk.state == sk.STATE_IDLE then
 	do -- Discard from memory after use
 		local taskData = {
 			{ 0, -1, 8, false, 0, false }, -- Just fly
-			{ 0, -1, 8, false, 1, true } -- QR
+			{ 0, -1, 8, false, 1, true }, -- QR
+			{ 600, 2, 2, true, 2, false } -- Deuces
 		}
 		
 		sk.taskWindow = taskData[sk.task][1]
@@ -42,6 +46,17 @@ if sk.state == sk.STATE_IDLE then
 			local s = math.floor((1024 + getValue(sk.set2id)) / 34.2)
 
 			return math.max(5, 60 * m + s)
+		end
+		
+	elseif targetType == 2 then -- Deuces
+		sk.TargetTime = function()
+			if #sk.scores == 0 then
+				return math.max(0, math.floor(sk.winTimer / 2))
+			elseif #sk.scores == 1 then
+				return math.max(0, math.min(sk.winTimer, sk.scores[1]))
+			else
+				return 0
+			end
 		end
 		
 	else -- TargetTime = targetType
@@ -67,8 +82,16 @@ if sk.state == sk.STATE_IDLE then
 		
 		plugin.totalScore = 0
 		
-		for i = 1, #sk.scores do
-			plugin.totalScore = plugin.totalScore + sk.scores[i]
+		if sk.task == TASK_DEUCES then
+			if #sk.scores < 2 then
+				plugin.totalScore = 0
+			else
+				plugin.totalScore = math.min(sk.scores[1], sk.scores[2])
+			end
+		else
+			for i = 1, #sk.scores do
+				plugin.totalScore = plugin.totalScore + sk.scores[i]
+			end
 		end
 	end
 
