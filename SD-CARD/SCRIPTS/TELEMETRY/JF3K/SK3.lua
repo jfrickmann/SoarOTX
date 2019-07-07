@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin part for altimeter based tasks
--- Timestamp: 2019-01-27
+-- Timestamp: 2019-07-07
 -- Created by Jesper Frickmann
 
 -- If no task is selected, then return name and task list to the menu
@@ -105,7 +105,7 @@ if sk.state == sk.STATE_IDLE then
 	elseif ceilingType == 2 then -- Set ceiling with knob
 		Ceiling = function()
 			if sk.state == sk.STATE_IDLE then
-				return 50 + 5 * math.floor(0.99 + getValue(sk.set1id) / 204.8)
+				return 50 + 5 * math.floor(0.99 + getValue(sk.dial) / 204.8)
 			else
 				return plugin.ceiling
 			end
@@ -118,7 +118,7 @@ if sk.state == sk.STATE_IDLE then
 	else -- Set ceiling to launch + adjustable
 		Ceiling = function()
 			if not plugin.pokerCalled then
-				plugin.targetGain = 25 + math.floor(0.99 + getValue(sk.set1id) / 41)
+				plugin.targetGain = 25 + math.floor(0.99 + getValue(sk.dial) / 41)
 			end
 			 
 			if plugin.launchHeight == 0 then

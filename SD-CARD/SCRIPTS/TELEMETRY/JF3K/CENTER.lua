@@ -1,5 +1,5 @@
 -- JF F3K air brake and aileron travel adjustment
--- Timestamp: 2018-12-30
+-- Timestamp: 2019-07-05
 -- Created by Jesper Frickmann
 
 local gvAil = 0 -- Index of global variable used for aileron travel
@@ -59,7 +59,7 @@ local function run(event)
 	local difComp = 100.0 / math.max(50.0, math.min(100.0, 100.0 + dif))
 	
 	-- Calculate aileron travel from current air brak travel
-	local ail = math.min(100, 2 * (100 - brk) * difComp)
+	local ail = math.min(200, 2 * (100 - brk) * difComp)
 	
 	model.setGlobalVariable(gvAil, 0, ail)
 	Draw(ail, brk)

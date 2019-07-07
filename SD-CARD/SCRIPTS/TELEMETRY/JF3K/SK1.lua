@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for F3K tasks
--- Timestamp: 2019-01-21
+-- Timestamp: 2019-07-07
 -- Created by Jesper Frickmann
 
 -- If no task is selected, then return name and task list to the menu
@@ -98,14 +98,41 @@ if sk.state == sk.STATE_IDLE then
 	
 	-- TargetTime is used by JF3Ksk.lua
 	if targetType == 2 then -- Poker
+		sk.PokerCall = function()
+			local t1, t2, dt, tOut
+			local tIn = getValue(sk.dial)
+			
+			if tIn <= -512 then
+				t1 = 0
+				t2 = 60
+				dt = 5
+				tIn = tIn + 1024
+			elseif tIn <= 0 then
+				t1 = 60
+				t2 = 180
+				dt = 10
+				tIn = tIn + 512
+			elseif tIn <= 512 then
+				t1 = 180
+				t2 = 360
+				dt = 15
+			else
+				t1 = 360
+				t2 = sk.taskWindow
+				dt = 30
+				tIn = tIn - 512
+			end
+			
+			tOut = t1 + dt * math.floor((t2 - t1) / 512 * tIn / dt)
+			
+			return math.max(5, math.min(sk.winTimer - 1, tOut))
+		end -- PokerCall()
+
 		sk.TargetTime = function()
 			if plugin.pokerCalled then
 				return model.getTimer(0).start
 			else
-				local m = math.floor((1024 + getValue(sk.set1id)) / 205)
-				local s = math.floor((1024 + getValue(sk.set2id)) / 34.2)
-
-				return math.max(5, math.min(sk.winTimer - 1, 60 * m + s))
+				return sk.PokerCall()
 			end
 		end
 		
@@ -168,8 +195,7 @@ if sk.state == sk.STATE_IDLE then
 		end
 		
 		-- A few extra counts in 1234
-		sk.counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45, 60, 65, 70, 75, 120,
-			125, 130, 135, 180, 185, 190, 195, 240}
+		sk.counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45, 65, 70, 75, 125, 130, 135, 185, 190, 195}
 
 	else -- TargetTime = MaxScore
 		sk.TargetTime = function() 

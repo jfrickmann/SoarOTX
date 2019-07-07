@@ -1,7 +1,14 @@
 -- JF F3K mix adjustment
--- Timestamp: 2018-12-30
+-- Timestamp: 2019-07-05
 -- Created by Jesper Frickmann
 
+-- For updating aileron throws with negative differential
+local gvAil = 0 -- Index of global variable used for aileron travel
+local gvBrk = 1 -- Index of global variable used for air brake travel
+local gvDif = 3 -- Index of global variable used for aileron differential
+
+-- This is pretty messy, but getValue works better for getting values for the current flight mode,
+-- whereas getGlobalVariable works better for flight mode 0 and for setting GVs from Lua 
 local gv3 = getFieldInfo("gvar3").id
 local gv4 = getFieldInfo("gvar4").id
 local gv5 = getFieldInfo("gvar5").id
@@ -39,6 +46,13 @@ if tx == TX_X9D then
 		lcd.drawNumber(LCD_W, 24, getValue(gv4), RIGHT)
 		lcd.drawNumber(LCD_W, 36, getValue(gv5), RIGHT)
 		lcd.drawNumber(LCD_W, 48, getValue(gv6), RIGHT)
+
+		-- Update aileron throws as in CENTER.lua
+		local brk = model.getGlobalVariable(gvBrk, 0)
+		local dif = model.getGlobalVariable(gvDif, 0)
+		local difComp = 100.0 / math.max(50.0, math.min(100.0, 100.0 + dif))
+		local ail = math.min(200, 2 * (100 - brk) * difComp)	
+		model.setGlobalVariable(gvAil, 0, ail)
 	end -- run()
 else
 	function run(event)
@@ -69,6 +83,13 @@ else
 		lcd.drawNumber(LCD_W, 24, getValue(gv4), RIGHT + SMLSIZE)
 		lcd.drawNumber(LCD_W, 36, getValue(gv5), RIGHT + SMLSIZE)
 		lcd.drawNumber(LCD_W, 48, getValue(gv6), RIGHT + SMLSIZE)
+
+		-- Update aileron throws as in CENTER.lua
+		local brk = model.getGlobalVariable(gvBrk, 0)
+		local dif = model.getGlobalVariable(gvDif, 0)
+		local difComp = 100.0 / math.max(50.0, math.min(100.0, 100.0 + dif))
+		local ail = math.min(200, 2 * (100 - brk) * difComp)	
+		model.setGlobalVariable(gvAil, 0, ail)
 	end -- run()
 end
 

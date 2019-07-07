@@ -1,5 +1,5 @@
 -- User interface for several score keeper plugins
--- Timestamp: 2019-03-18
+-- Timestamp: 2019-07-07
 -- Created by Jesper Frickmann
 
 local 	exitTask = 0 -- Prompt to save task before EXIT
@@ -87,13 +87,9 @@ if tx == TX_X9D then
 				lcd.drawText(102, 50, string.format("%i launch%s left", sk.launches, s), MIDSIZE)
 			end
 
-			if sk.state >= sk.STATE_COMMITTED and sk.taskScores - #sk.scores > 1 and plugin.pokerCalled then
-				local m = math.floor((1024 + getValue(sk.set1id)) / 205)
-				local s = math.floor((1024 + getValue(sk.set2id)) / 34.2)
-				local t = math.max(5, math.min(sk.winTimer - 1, 60 * m + s))
-				
+			if sk.state >= sk.STATE_COMMITTED and sk.taskScores - #sk.scores > 1 and plugin.pokerCalled then				
 				lcd.drawText(104, 50, "Next call", MIDSIZE)
-				lcd.drawTimer(LCD_W, 50, t, RIGHT + MIDSIZE)
+				lcd.drawTimer(LCD_W, 50, sk.PokerCall(), RIGHT + MIDSIZE)
 			end
 		end
 		
@@ -170,12 +166,8 @@ else -- TX_QX7 or X-lite
 			end
 
 			if sk.state >= sk.STATE_COMMITTED and sk.taskScores - #sk.scores > 1 and plugin.pokerCalled then
-				local m = math.floor((1024 + getValue(sk.set1id)) / 205)
-				local s = math.floor((1024 + getValue(sk.set2id)) / 34.2)
-				local t = math.max(5, math.min(sk.winTimer - 1, 60 * m + s))
-				
 				lcd.drawText(45, 53, "Next call")
-				lcd.drawTimer(LCD_W, 50, t, RIGHT + MIDSIZE)
+				lcd.drawTimer(LCD_W, 50, sk.PokerCall(), RIGHT + MIDSIZE)
 			end
 		end
 		
