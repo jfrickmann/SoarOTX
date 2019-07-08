@@ -1,6 +1,6 @@
 -- JF F3K Timing and score keeping, fixed part
 -- Standalone version for third part Taranis models.
--- Timestamp: 2019-01-08
+-- Timestamp: 2019-07-07
 -- Created by Jesper Frickmann
 
 wTmr = 0 -- Controls window timer with MIXES script
@@ -45,22 +45,15 @@ sk.counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45, 60, 120, 180, 240
 
 -- Find dials for setting target time in Poker and height ceilings etc.
 for input = 0, 31 do
-	for line = 0,  model.getInputsCount(input) - 1 do
-		local tbl = model.getInput(input, line)
-		
-		if tbl.name == "Mins" then
-			sk.set1id = tbl.source
-		end
-		
-		if tbl.name == "Secs" then
-			sk.set2id = tbl.source
-		end
+	local tbl = model.getInput(input, 0)
+	
+	if tbl and tbl.name == "Dial" then
+		sk.dial = tbl.source
 	end
 end
 
 -- If input lines were not found, then default to S1 and S2
-if not sk.set1id then sk.set1id = getFieldInfo("s1").id end
-if not sk.set2id then sk.set2id = getFieldInfo("s2").id end
+if not sk.dial then sk.dial = getFieldInfo("s1").id end
 
 -- Local variables
 local FM_LAUNCH = 1 -- Flight mode used for launch
@@ -73,29 +66,10 @@ local countIndex -- Index of timer count
 local winT0 = 0 -- Start point of window timer
 local flightT0 = 0 -- Start point of flight timer
 
--- Copied from JFutil,lua -----------------------------------------------------
-
--- Transmitter specific
-TX_UNKNOWN = 0
-TX_X9D = 1 
-TX_QX7 = 2
-TX_LITE = 3
-
-do
-	local ver, radio = getVersion()
-
-	if string.find(radio, "x7") then -- Qx7
-		tx = TX_QX7
-		GRAY = 0
-	elseif string.find(radio, "x9d") then -- X9D		
-		tx = TX_X9D
-		GRAY = GREY_DEFAULT
-	elseif string.find(radio, "lite") then -- X-lite
-		tx = TX_LITE
-		GRAY = 0
-	else
-		tx = TX_UNKNOWN
-	end
+if LCD_W == 128 then
+	GRAY = 0
+else
+	GRAY = GREY_DEFAULT
 end
 
 -- For loading and unloading of programs with the small shell script
@@ -125,23 +99,23 @@ do
 end
 
 -- Draw the basic menu with border and title
-if tx == TX_X9D then
+if LCD_W == 128 then
 	function DrawMenu(title)
 		local now = getDateTime()
 		local infoStr = string.format("%1.1fV %02d:%02d", RBat(), now.hour, now.min)
 
 		lcd.clear()
-		lcd.drawText(LCD_W, 0, infoStr, RIGHT)
 		lcd.drawScreenTitle(title, 0, 0)
+		lcd.drawText(LCD_W, 0, infoStr, RIGHT)
 	end -- DrawMenu()
-elseif tx == TX_QX7 or tx == TX_LITE then
+else
 	function DrawMenu(title)
 		local now = getDateTime()
 		local infoStr = string.format("%1.1fV %02d:%02d", RBat(), now.hour, now.min)
 
 		lcd.clear()
-		lcd.drawScreenTitle(title, 0, 0)
 		lcd.drawText(LCD_W, 0, infoStr, RIGHT)
+		lcd.drawScreenTitle(title, 0, 0)
 	end -- DrawMenu()
 end
 

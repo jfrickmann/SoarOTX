@@ -1,5 +1,5 @@
 -- JF F3RES Timing and score keeping, loadable part
--- Timestamp: 2019-01-05
+-- Timestamp: 2019-07-07
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F3RES.
 
@@ -9,44 +9,7 @@ local ft -- Flight timer
 local Draw -- Draw() function is defined for specific transmitter
 
 -- Transmitter specific
-if tx == TX_X9D then
-	function Draw()
-		local blnkWt = 0
-		local blnkFt = 0
-		local txtFt = "Remain"
-		
-		local fmNbr, fmName = getFlightMode()
-		DrawMenu(" " .. fmName .. " ")	
-
-		if sk.state == sk.STATE_SETWINTMR then
-			blnkWt = BLINK + INVERS
-		elseif sk.state == sk.STATE_SETFLTTMR then
-			blnkFt = BLINK + INVERS
-		end
-		
-		if sk.state <= sk.STATE_SETFLTTMR then
-			txtFt = "Target"
-		elseif sk.state > sk.STATE_WINDOW then
-			txtFt = "Flight"
-		end
-		
-		lcd.drawText(0, 20, "Landing", MIDSIZE)
-
-		lcd.drawText(110, 20, "Window", MIDSIZE)
-		lcd.drawTimer(212, 16, wt.value, DBLSIZE + RIGHT + blnkWt)
-
-		lcd.drawText(110, 42, txtFt, MIDSIZE)
-		lcd.drawTimer(212, 38, ft.value, DBLSIZE + RIGHT + blnkFt)
-
-		if sk.state < sk.STATE_LANDINGPTS then
-			lcd.drawText(95, 16, "--", DBLSIZE + RIGHT)
-		elseif sk.state == sk.STATE_LANDINGPTS then
-			lcd.drawNumber(95, 16, sk.landingPts, DBLSIZE + RIGHT + BLINK + INVERS)
-		else
-			lcd.drawNumber(95, 16, sk.landingPts, DBLSIZE + RIGHT)
-		end
-	end  --  Draw()
-else -- QX7 or X-lite
+if LCD_W == 128 then
 	function Draw()
 		local blnkWt = 0
 		local blnkFt = 0
@@ -83,6 +46,43 @@ else -- QX7 or X-lite
 			lcd.drawNumber(60, 16, sk.landingPts, MIDSIZE + RIGHT)
 		end
 	end -- Draw()
+else
+	function Draw()
+		local blnkWt = 0
+		local blnkFt = 0
+		local txtFt = "Remain"
+		
+		local fmNbr, fmName = getFlightMode()
+		DrawMenu(" " .. fmName .. " ")	
+
+		if sk.state == sk.STATE_SETWINTMR then
+			blnkWt = BLINK + INVERS
+		elseif sk.state == sk.STATE_SETFLTTMR then
+			blnkFt = BLINK + INVERS
+		end
+		
+		if sk.state <= sk.STATE_SETFLTTMR then
+			txtFt = "Target"
+		elseif sk.state > sk.STATE_WINDOW then
+			txtFt = "Flight"
+		end
+		
+		lcd.drawText(0, 20, "Landing", MIDSIZE)
+
+		lcd.drawText(110, 20, "Window", MIDSIZE)
+		lcd.drawTimer(212, 16, wt.value, DBLSIZE + RIGHT + blnkWt)
+
+		lcd.drawText(110, 42, txtFt, MIDSIZE)
+		lcd.drawTimer(212, 38, ft.value, DBLSIZE + RIGHT + blnkFt)
+
+		if sk.state < sk.STATE_LANDINGPTS then
+			lcd.drawText(95, 16, "--", DBLSIZE + RIGHT)
+		elseif sk.state == sk.STATE_LANDINGPTS then
+			lcd.drawNumber(95, 16, sk.landingPts, DBLSIZE + RIGHT + BLINK + INVERS)
+		else
+			lcd.drawNumber(95, 16, sk.landingPts, DBLSIZE + RIGHT)
+		end
+	end  --  Draw()
 end
 
 local function run(event)

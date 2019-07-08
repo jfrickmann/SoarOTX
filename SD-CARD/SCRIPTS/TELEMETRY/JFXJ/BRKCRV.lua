@@ -1,5 +1,5 @@
 -- JF FXJ flap curve adjustment
--- Timestamp: 2019-02-20
+-- Timestamp: 2019-07-07
 -- Created by Jesper Frickmann
 -- Script for adjusting the flaps curves for the JF FXJ program.
 
@@ -48,7 +48,16 @@ local function DrawCurve(x, y, w, h, crv, i)
 end -- DrawCurve()
 
 -- Transmitter specific
-if tx == TX_X9D then
+if LCD_W == 128 then
+	function Draw()
+		DrawMenu("Airbrakes")
+		lcd.drawText(12, 13, "Flap", SMLSIZE)
+		DrawCurve(11, 12, 48, 48, crv[1], lasti)
+		lcd.drawLine(64, 10, 64, 61, SOLID, FORCE)
+		lcd.drawText(70, 13, "Aile", SMLSIZE)
+		DrawCurve(69, 12, 48, 48, crv[2], lasti)
+	end -- Draw()
+else
 	function Draw()
 		DrawMenu(" Airbrake curves ")
 		lcd.drawText(10, 14, "Use throttle to ")
@@ -62,15 +71,6 @@ if tx == TX_X9D then
 		lcd.drawLine(155, 10, 155, 61, SOLID, FORCE)
 		lcd.drawText(158, 13, "Aile", SMLSIZE)
 		DrawCurve(157, 12, 48, 48, crv[2], lasti)
-	end -- Draw()
-else
-	function Draw()
-		DrawMenu("Airbrakes")
-		lcd.drawText(12, 13, "Flap", SMLSIZE)
-		DrawCurve(11, 12, 48, 48, crv[1], lasti)
-		lcd.drawLine(64, 10, 64, 61, SOLID, FORCE)
-		lcd.drawText(70, 13, "Aile", SMLSIZE)
-		DrawCurve(69, 12, 48, 48, crv[2], lasti)
 	end -- Draw()
 end
 

@@ -54,10 +54,10 @@ if sk.state == sk.STATE_IDLE then
 		plugin.unit = "m"
 	end
 	
-	if tx == TX_X9D then
-		plugin.heightInt = 4 -- Interval for recording heights
-	else -- TX_QX7 or X-lite
-		plugin.heightInt = 7
+	if LCD_W == 128 then
+		plugin.heightInt = 7 -- Interval for recording heights
+	else 
+		plugin.heightInt = 4
 	end
 	
 	do

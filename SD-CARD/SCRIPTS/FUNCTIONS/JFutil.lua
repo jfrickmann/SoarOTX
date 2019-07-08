@@ -5,30 +5,10 @@
 -- Works together with a small shell script to load and unload program and telemetry scripts.
 -- Method for loading and unloading telemetry scripts was provided by Guido ter Horst "l shems"
 
--- Transmitter specific
-TX_UNKNOWN = 0
-TX_X9D = 1 
-TX_QX7 = 2
-TX_LITE = 3
-
-do
-	local ver, radio = getVersion()
-
-	if string.find(radio, "x7") then -- Qx7
-		tx = TX_QX7
-		GRAY = 0
-	elseif string.find(radio, "x9d") then -- X9D		
-		tx = TX_X9D
-		GRAY = GREY_DEFAULT
-	elseif string.find(radio, "x9e") then -- X9E ~ X9D		
-		tx = TX_X9D
-		GRAY = GREY_DEFAULT
-	elseif string.find(radio, "lite") then -- X-lite
-		tx = TX_LITE
-		GRAY = 0
-	else
-		tx = TX_UNKNOWN
-	end
+if LCD_W == 128 then
+	GRAY = 0
+else
+	GRAY = GREY_DEFAULT
 end
 
 -- For loading and unloading of programs with the small shell script

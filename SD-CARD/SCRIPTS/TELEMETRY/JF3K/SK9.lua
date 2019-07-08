@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for browsing saved scores
--- Timestamp: 2019-01-18
+-- Timestamp: 2019-07-07
 -- Created by Jesper Frickmann
 
 -- If no task is selected, then return name and task list to the menu
@@ -37,7 +37,37 @@ local function MinSec(t)
 end -- MinSec()
 
 -- Transmitter specific
-if tx == TX_X9D then
+if LCD_W == 128 then
+	function Draw()
+		local y = 8
+		
+		DrawMenu(taskName)
+		
+		for i = 1, taskScores do
+			if scores[i] then
+				if unitStr == "s" then
+					lcd.drawText(0, y, string.format("%i. %02i:%02i", i, MinSec(scores[i])))
+				else
+					lcd.drawText(0, y, string.format("%i. %4i%s", i, scores[i], unitStr))
+				end
+			else
+				lcd.drawText(0, y, string.format("%i. - - -", i))
+			end
+
+			y = y + 8
+		end	
+
+		lcd.drawText(50, 10, planeName, MIDSIZE)
+		lcd.drawText(50, 28, string.format("%s %s", dateStr, timeStr))
+		lcd.drawText(50, 42, string.format("Total %i %s", totalScore, unitStr))
+		
+		-- Warn if the log file is growing too large
+		if #indices > 200 then
+			lcd.drawText(5, 57, " Log getting too large ", BLINK + INVERS)
+		end
+
+	end -- Draw()
+else
 	function Draw()
 		local x = 0
 		local y = 9
@@ -79,36 +109,6 @@ if tx == TX_X9D then
 			lcd.drawText(40, 57, " Log is getting too large ", BLINK + INVERS)
 		end
 		
-	end -- Draw()
-else -- QX7 or X-lite
-	function Draw()
-		local y = 8
-		
-		DrawMenu(taskName)
-		
-		for i = 1, taskScores do
-			if scores[i] then
-				if unitStr == "s" then
-					lcd.drawText(0, y, string.format("%i. %02i:%02i", i, MinSec(scores[i])))
-				else
-					lcd.drawText(0, y, string.format("%i. %4i%s", i, scores[i], unitStr))
-				end
-			else
-				lcd.drawText(0, y, string.format("%i. - - -", i))
-			end
-
-			y = y + 8
-		end	
-
-		lcd.drawText(50, 10, planeName, MIDSIZE)
-		lcd.drawText(50, 28, string.format("%s %s", dateStr, timeStr))
-		lcd.drawText(50, 42, string.format("Total %i %s", totalScore, unitStr))
-		
-		-- Warn if the log file is growing too large
-		if #indices > 200 then
-			lcd.drawText(5, 57, " Log getting too large ", BLINK + INVERS)
-		end
-
 	end -- Draw()
 end
 	

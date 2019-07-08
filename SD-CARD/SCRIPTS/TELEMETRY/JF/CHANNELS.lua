@@ -1,5 +1,5 @@
 -- JF Channel configuration
--- Timestamp: 2018-12-30
+-- Timestamp: 2019-07-07
 -- Created by Jesper Frickmann
 
 local N = 32 -- Highest channel number to swap
@@ -21,16 +21,7 @@ local srcBase = 	getFieldInfo("ch1").id - 1 -- ASSUMING that channel sources are
 local stage = 1 -- 1:Show warning 2:Run
 
 -- Transmitter specific
-if tx == TX_X9D then
-	MENUTXT = "JF Channel Configurator "
-	XDOT = 15
-	XREV = 58
-	CENTER = 140
-	SCALE = 0.045
-	XTXT = 30
-	ATT1 = MIDSIZE
-	ATT2 = 0
-else -- QX7 or X-lite
+if LCD_W == 128 then
 	MENUTXT = "Channel Config"
 	XDOT = 12
 	XREV = 45
@@ -39,6 +30,15 @@ else -- QX7 or X-lite
 	XTXT = 7
 	ATT1 = 0
 	ATT2 = SMLSIZE
+else
+	MENUTXT = "JF Channel Configurator "
+	XDOT = 15
+	XREV = 58
+	CENTER = 140
+	SCALE = 0.045
+	XTXT = 30
+	ATT1 = MIDSIZE
+	ATT2 = 0
 end
 
 local editing = 0 --[[ Selected channel is being edited

@@ -1,5 +1,5 @@
 -- JF F3RES Configuration Menu
--- Timestamp: 2018-12-31
+-- Timestamp: 2019-07-07
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 -- "adj" is a global var that is output to OpenTX with a custom script
@@ -63,15 +63,15 @@ local function run(event)
 		end
 		
 		-- Show the menu
-		if tx == TX_X9D then
+		if LCD_W == 128 then
+			DrawMenu("Configuration")
+			att = SMLSIZE
+			x = 0
+		else
 			DrawMenu(" JF F3RES Configuration ")
 			att = 0
 			x = 2
 			lcd.drawPixmap(156, 8, "/IMAGES/Lua-girl.bmp")
-		else -- QX7 or X-lite
-			DrawMenu("Configuration")
-			att = SMLSIZE
-			x = 0
 		end
 		
 		for i = 1, #texts do

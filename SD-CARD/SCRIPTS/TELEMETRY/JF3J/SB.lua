@@ -1,9 +1,10 @@
 -- JF F3J Score Browser
--- Timestamp: 2019-01-04
+-- Timestamp: 2019-07-07
 -- Created by Jesper Frickmann
 -- Telemetry script for browsing scores recorded in the log file.
 
-local LOG_FILE = "/LOGS/JF F3J Scores.csv"
+local LOG_FILE = "/LOGS/JF F3J Scores.csv" -- Log file
+local skFile = "/SCRIPTS/TELEMETRY/JF3J/SK.lua" -- Score keeper user interface file
 
 local logFile -- Log file handle
 local lastTime -- Last time that run() was called, used for refreshing
@@ -14,26 +15,7 @@ local lineData = {} -- Array of data fields from a line
 local Draw -- Draw() function is defined for specific transmitter
 
 -- Transmitter specific
-if tx == TX_X9D then
-	function Draw()
-		lcd.drawText(0, 20, "Landing", MIDSIZE)
-		lcd.drawNumber(95, 16, lineData[4], DBLSIZE + RIGHT)
-
-		lcd.drawText(0, 42, "Start", MIDSIZE)
-		lcd.drawNumber(95, 38, lineData[5] * 10, PREC1 + DBLSIZE + RIGHT)
-
-		lcd.drawText(110, 20, "Remain", MIDSIZE)
-		lcd.drawTimer(212, 16, lineData[7], DBLSIZE + RIGHT)
-
-		lcd.drawText(110, 42, "Flight", MIDSIZE)
-		lcd.drawTimer(212, 38, lineData[8], DBLSIZE + RIGHT)
-
-		-- Warn if the log file is growing too large
-		if #indices > 200 then
-			lcd.drawText(40, 57, " Log getting too large ", BLINK + INVERS)
-		end
-	end -- Draw()
-else -- QX7, X-lite
+if LCD_W == 128 then
 	function Draw()
 		lcd.drawText(0, 20, "Landing")
 		lcd.drawNumber(62, 16, lineData[4], MIDSIZE + RIGHT)
@@ -50,6 +32,25 @@ else -- QX7, X-lite
 		-- Warn if the log file is growing too large
 		if #indices > 200 then
 			lcd.drawText(5, 57, " Log getting too large ", BLINK + INVERS)
+		end
+	end -- Draw()
+else
+	function Draw()
+		lcd.drawText(0, 20, "Landing", MIDSIZE)
+		lcd.drawNumber(95, 16, lineData[4], DBLSIZE + RIGHT)
+
+		lcd.drawText(0, 42, "Start", MIDSIZE)
+		lcd.drawNumber(95, 38, lineData[5] * 10, PREC1 + DBLSIZE + RIGHT)
+
+		lcd.drawText(110, 20, "Remain", MIDSIZE)
+		lcd.drawTimer(212, 16, lineData[7], DBLSIZE + RIGHT)
+
+		lcd.drawText(110, 42, "Flight", MIDSIZE)
+		lcd.drawTimer(212, 38, lineData[8], DBLSIZE + RIGHT)
+
+		-- Warn if the log file is growing too large
+		if #indices > 200 then
+			lcd.drawText(40, 57, " Log getting too large ", BLINK + INVERS)
 		end
 	end -- Draw()
 end
@@ -128,6 +129,11 @@ local function run(event)
 	end
 
 	lastTime = thisTime
+	
+	-- Show score keeper
+	if event == EVT_MENU_BREAK then
+		sk.myFile = skFile
+	end
 	
 	-- Go to previous record
 	if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK then

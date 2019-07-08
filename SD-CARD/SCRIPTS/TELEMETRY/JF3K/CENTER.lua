@@ -1,5 +1,5 @@
 -- JF F3K air brake and aileron travel adjustment
--- Timestamp: 2019-07-05
+-- Timestamp: 2019-07-07
 -- Created by Jesper Frickmann
 
 local gvAil = 0 -- Index of global variable used for aileron travel
@@ -9,23 +9,7 @@ local gvDif = 3 -- Index of global variable used for aileron differential
 local Draw -- Draw() function is defined for specific transmitter
 
 -- Transmitter specific
-if tx == TX_X9D then
-	function Draw(ail, brk)
-		DrawMenu(" Flaperon centering ")
-
-		lcd.drawText(5, 12, "Use the throttle trim to ", 0)
-		lcd.drawText(5, 24, "center the flaperons to", 0)
-		lcd.drawText(5, 36, "their maximum reflex", 0)
-		lcd.drawText(5, 48, "position (Speed mode).", 0)
-
-		lcd.drawLine(155, 8, 155, LCD_H, SOLID, FORCE)		
-
-		lcd.drawText(164, 12, "Ail")
-		lcd.drawNumber(LCD_W, 12, ail, RIGHT)
-		lcd.drawText(164, 24, "Brk")
-		lcd.drawNumber(LCD_W, 24, brk, RIGHT)
-	end -- Draw()
-else
+if LCD_W == 128 then
 	function Draw(ail, brk)
 		DrawMenu("Flaperons")
 
@@ -39,6 +23,22 @@ else
 		lcd.drawText(88, 12, "Ail")
 		lcd.drawNumber(LCD_W, 12, ail, RIGHT)
 		lcd.drawText(88, 24, "Brk")
+		lcd.drawNumber(LCD_W, 24, brk, RIGHT)
+	end -- Draw()
+else
+	function Draw(ail, brk)
+		DrawMenu(" Flaperon centering ")
+
+		lcd.drawText(5, 12, "Use the throttle trim to ", 0)
+		lcd.drawText(5, 24, "center the flaperons to", 0)
+		lcd.drawText(5, 36, "their maximum reflex", 0)
+		lcd.drawText(5, 48, "position (Speed mode).", 0)
+
+		lcd.drawLine(155, 8, 155, LCD_H, SOLID, FORCE)		
+
+		lcd.drawText(164, 12, "Ail")
+		lcd.drawNumber(LCD_W, 12, ail, RIGHT)
+		lcd.drawText(164, 24, "Brk")
 		lcd.drawNumber(LCD_W, 24, brk, RIGHT)
 	end -- Draw()
 end
