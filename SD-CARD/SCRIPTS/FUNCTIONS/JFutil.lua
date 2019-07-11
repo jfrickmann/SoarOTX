@@ -1,15 +1,9 @@
 -- JF Library
--- Timestamp: 2019-07-07
+-- Timestamp: 2019-07-09
 -- Created by Jesper Frickmann
 -- Has a few shared functions and variables for telemetry and functions scripts
 -- Works together with a small shell script to load and unload program and telemetry scripts.
 -- Method for loading and unloading telemetry scripts was provided by Guido ter Horst "l shems"
-
-if LCD_W == 128 then
-	GRAY = 0
-else
-	GRAY = GREY_DEFAULT
-end
 
 -- For loading and unloading of programs with the small shell script
 local programs = {} -- List of loaded programs

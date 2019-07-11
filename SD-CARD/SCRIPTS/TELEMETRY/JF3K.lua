@@ -1,6 +1,6 @@
 -- JF F3K Timing and score keeping, fixed part
 -- Standalone version for third part Taranis models.
--- Timestamp: 2019-07-07
+-- Timestamp: 2019-07-09
 -- Created by Jesper Frickmann
 
 wTmr = 0 -- Controls window timer with MIXES script
@@ -52,7 +52,7 @@ for input = 0, 31 do
 	end
 end
 
--- If input lines were not found, then default to S1 and S2
+-- If input lines were not found, then default to S1
 if not sk.dial then sk.dial = getFieldInfo("s1").id end
 
 -- Local variables
@@ -65,12 +65,6 @@ local countIndex -- Index of timer count
 -- Standalone version variables
 local winT0 = 0 -- Start point of window timer
 local flightT0 = 0 -- Start point of flight timer
-
-if LCD_W == 128 then
-	GRAY = 0
-else
-	GRAY = GREY_DEFAULT
-end
 
 -- For loading and unloading of programs with the small shell script
 local programs = {} -- List of loaded programs

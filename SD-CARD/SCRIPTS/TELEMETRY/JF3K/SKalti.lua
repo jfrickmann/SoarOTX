@@ -1,10 +1,17 @@
 -- Timing and score keeping, loadable user interface for altimeter based tasks
--- Timestamp: 2019-07-07
+-- Timestamp: 2019-07-09
 -- Created by Jesper Frickmann
 
 local 	exitTask = 0 -- Prompt to save task before EXIT
 local stopWindow = 0 -- Prompt to stop flight timer first
 local yScaleMax = 50 -- For plotting
+
+local GREY
+if LCD_W == 128 then
+	GREY = 0
+else
+	GREY = GREY_DEFAULT
+end
 
 local Draw -- Function to draw the screen for specific transmitter
 
@@ -38,14 +45,14 @@ local function DrawGraph(dot)
 	-- Horizontal grid lines
 	for i = 25, yScaleMax, 25 do
 		yy1 = m * i + LCD_H - 1
-		lcd.drawLine(0, yy1, xMax, yy1, DOTTED, GRAY)
+		lcd.drawLine(0, yy1, xMax, yy1, DOTTED, GREY)
 		lcd.drawNumber(xMax + 1, yy1 - 3, i, SMLSIZE)
 	end
 	
 	-- Vertical grid lines
 	for i = 0, sk.taskWindow, 60 do
 		xx1 = i / plugin.heightInt
-		lcd.drawLine(xx1, LCD_H, xx1, 8, DOTTED, GRAY)
+		lcd.drawLine(xx1, LCD_H, xx1, 8, DOTTED, GREY)
 	end
 
 	-- Plot the graph

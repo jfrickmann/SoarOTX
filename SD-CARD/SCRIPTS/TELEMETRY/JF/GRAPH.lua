@@ -1,8 +1,15 @@
 -- JF Log Data Graph, loadable part for interactive plot 
--- Timestamp: 2019-07-07
+-- Timestamp: 2019-07-09
 -- Created by Jesper Frickmann
 -- Telemetry script for plotting telemetry parameters recorded in the log file.
 -- The graph design was inspired by Nigel Sheffield's script
+
+local GREY
+if LCD_W == 128 then
+	GREY = 0
+else
+	GREY = GREY_DEFAULT
+end
 
 local function DrawGraph()
 	local mag
@@ -83,7 +90,7 @@ local function DrawGraph()
 	for i = math.ceil(gr.yScaleMin / yTick) * yTick, math.floor(gr.yScaleMax / yTick) * yTick, yTick do
 		yy1 = m * i + b
 		if math.abs(i) > 1E-8 then
-			lcd.drawLine(gr.x0, yy1, LCD_W, yy1, DOTTED, GRAY)
+			lcd.drawLine(gr.x0, yy1, LCD_W, yy1, DOTTED, GREY)
 			lcd.drawNumber(LCD_W, yy1 - 3, math.floor(precFac * i + 0.5), SMLSIZE + RIGHT + flags)
 		end
 	end
@@ -113,17 +120,17 @@ local function DrawGraph()
 		
 		if xx1 >= 0 and xx1 <= gr.xWidth then
 			xx1 = xx1 + gr.x0
-			lcd.drawLine(xx1, LCD_H, xx1, 8, DOTTED, GRAY)
+			lcd.drawLine(xx1, LCD_H, xx1, 8, DOTTED, GREY)
 		end
 	end
 
 	-- Plot the graph
-	lcd.drawLine(gr.x0, m * gr.yValues[0] + b, gr.x0, b2, SOLID, GRAY)
+	lcd.drawLine(gr.x0, m * gr.yValues[0] + b, gr.x0, b2, SOLID, GREY)
 	for i = 1, gr.xWidth do
 		yy1 = m * gr.yValues[i - 1] + b
 		yy2 = m * gr.yValues[i] + b
 		
-		lcd.drawLine(gr.x0 + i, yy2, gr.x0 + i, b2, SOLID, GRAY)
+		lcd.drawLine(gr.x0 + i, yy2, gr.x0 + i, b2, SOLID, GREY)
 		lcd.drawLine(gr.x0 + i - 1, yy1, gr.x0 + i, yy2, SOLID, FORCE)
 	end
 
