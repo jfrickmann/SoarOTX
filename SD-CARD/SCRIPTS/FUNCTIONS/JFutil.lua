@@ -1,32 +1,9 @@
 -- JF Library
--- Timestamp: 2019-02-23
+-- Timestamp: 2019-07-09
 -- Created by Jesper Frickmann
 -- Has a few shared functions and variables for telemetry and functions scripts
 -- Works together with a small shell script to load and unload program and telemetry scripts.
 -- Method for loading and unloading telemetry scripts was provided by Guido ter Horst "l shems"
-
--- Transmitter specific
-TX_UNKNOWN = 0
-TX_X9D = 1 
-TX_QX7 = 2
-TX_LITE = 3
-
-do
-	local ver, radio = getVersion()
-
-	if string.find(radio, "x7") then -- Qx7
-		tx = TX_QX7
-		GRAY = 0
-	elseif string.find(radio, "x9d") then -- X9D		
-		tx = TX_X9D
-		GRAY = GREY_DEFAULT
-	elseif string.find(radio, "lite") then -- X-lite
-		tx = TX_LITE
-		GRAY = 0
-	else
-		tx = TX_UNKNOWN
-	end
-end
 
 -- For loading and unloading of programs with the small shell script
 local programs = {} -- List of loaded programs
@@ -57,23 +34,23 @@ do
 end
 
 -- Draw the basic menu with border and title
-if tx == TX_X9D then
+if LCD_W == 128 then
 	function DrawMenu(title)
 		local now = getDateTime()
 		local infoStr = string.format("%1.2fV %02i:%02i", RBat(), now.hour, now.min)
 
 		lcd.clear()
-		lcd.drawText(LCD_W, 0, infoStr, RIGHT)
 		lcd.drawScreenTitle(title, 0, 0)
+		lcd.drawText(LCD_W, 0, infoStr, RIGHT)
 	end -- DrawMenu()
-elseif tx == TX_QX7 or tx == TX_LITE then
+else
 	function DrawMenu(title)
 		local now = getDateTime()
 		local infoStr = string.format("%1.2fV %02i:%02i", RBat(), now.hour, now.min)
 
 		lcd.clear()
-		lcd.drawScreenTitle(title, 0, 0)
 		lcd.drawText(LCD_W, 0, infoStr, RIGHT)
+		lcd.drawScreenTitle(title, 0, 0)
 	end -- DrawMenu()
 end
 

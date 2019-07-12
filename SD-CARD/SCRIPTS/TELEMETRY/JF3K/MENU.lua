@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable menu for selecting task
--- Timestamp: 2019-01-11
+-- Timestamp: 2019-07-07
 -- Created by Jesper Frickmann
 
 local pluginFile = "/SCRIPTS/TELEMETRY/JF3K/SK%i.lua"
@@ -19,6 +19,7 @@ sk.launches = -1
 sk.taskScores = 0
 sk.finalScores = false
 
+sk.PokerCall = function() return 0 end
 sk.TargetTime = function() return 0 end
 sk.Score = function() return end
 sk.Background = nil

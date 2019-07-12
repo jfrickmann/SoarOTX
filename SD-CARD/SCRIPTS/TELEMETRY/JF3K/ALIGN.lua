@@ -1,5 +1,5 @@
 -- JF F3K Flaperon Adjustment
--- Timestamp: 2019-02-20
+-- Timestamp: 2019-07-07
 -- Created by Jesper Frickmann
 -- Script for adjusting the flaperon output curves for the JF F3K program.
 
@@ -52,7 +52,14 @@ local function DrawCurve(x, y, w, h, crv, i)
 end -- DrawCurve()
 
 -- Transmitter specific
-if tx == TX_X9D then
+if LCD_W == 128 then
+	function Draw(i)
+		DrawMenu("Alignment")
+		DrawCurve(2, 8, 56, 56, crvLft, nPoints - i + 1)
+		lcd.drawLine(64, 8, 64, LCD_H, SOLID, FORCE)
+		DrawCurve(70, 8, 56, 56, crvRgt, i)
+	end -- Draw()
+else
 	function Draw(i)
 		DrawMenu(" JF F3K Flaperon alignment ")
 		lcd.drawText(2, 12, "Use the throttle")
@@ -64,13 +71,6 @@ if tx == TX_X9D then
 		DrawCurve(94, 8, 56, 56, crvLft, nPoints - i + 1)
 		lcd.drawLine(152, 8, 152, LCD_H, SOLID, FORCE)
 		DrawCurve(154, 8, 56, 56, crvRgt, i)
-	end -- Draw()
-else
-	function Draw(i)
-		DrawMenu("Alignment")
-		DrawCurve(2, 8, 56, 56, crvLft, nPoints - i + 1)
-		lcd.drawLine(64, 8, 64, LCD_H, SOLID, FORCE)
-		DrawCurve(70, 8, 56, 56, crvRgt, i)
 	end -- Draw()
 end
 

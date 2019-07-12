@@ -1,5 +1,5 @@
 -- JF F3K Timing and score keeping, fixed part
--- Timestamp: 2019-01-08
+-- Timestamp: 2019-07-07
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 
@@ -41,26 +41,19 @@ sk.state = sk.STATE_IDLE -- Current program state
 sk.eowTimerStop = true -- Freeze timer automatically at the end of the window
 sk.quickRelaunch = false -- Restart timer immediately
 sk.scores = { } -- List of saved scores
-sk.counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45, 60, 120, 180, 240} -- Flight timer countdown
+sk.counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45} -- Flight timer countdown
 
 -- Find dials for setting target time in Poker and height ceilings etc.
 for input = 0, 31 do
-	for line = 0,  model.getInputsCount(input) - 1 do
-		local tbl = model.getInput(input, line)
-		
-		if tbl.name == "Mins" then
-			sk.set1id = tbl.source
-		end
-		
-		if tbl.name == "Secs" then
-			sk.set2id = tbl.source
-		end
+	local tbl = model.getInput(input, 0)
+	
+	if tbl and tbl.name == "Dial" then
+		sk.dial = tbl.source
 	end
 end
 
 -- If input lines were not found, then default to S1 and S2
-if not sk.set1id then sk.set1id = getFieldInfo("s1").id end
-if not sk.set2id then sk.set2id = getFieldInfo("s2").id end
+if not sk.dial then sk.dial = getFieldInfo("s1").id end
 
 -- Local variables
 local FM_LAUNCH = 1 -- Flight mode used for launch
@@ -173,8 +166,10 @@ local function background()
 					sk.state = sk.STATE_FREEZE
 				end
 			
-				-- Is it time to count down?
-				if sk.flightTimer <= sk.counts[countIndex] and flightTimerOld > sk.counts[countIndex]  then
+				-- Time counts
+				if math.ceil(sk.flightTimer / 60) < math.ceil(flightTimerOld / 60) then
+					playDuration(sk.flightTimer, 0)
+				elseif sk.flightTimer <= sk.counts[countIndex] and flightTimerOld > sk.counts[countIndex]  then
 					if sk.flightTimer > 15 then
 						playDuration(sk.flightTimer, 0)
 					else

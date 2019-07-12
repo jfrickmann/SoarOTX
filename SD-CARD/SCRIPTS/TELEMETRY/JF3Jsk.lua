@@ -1,13 +1,12 @@
 -- JF F3J Timing and score keeping, fixed part
--- Timestamp: 2018-12-31
+-- Timestamp: 2019-05-11
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F3J.
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 -- Depends on custom script exporting the value of global "tmr" to OpenTX
 
-local myFile = "/SCRIPTS/TELEMETRY/JF3J/SK.lua" -- Lua file to be loaded and unloaded
-local winId = getFieldInfo("ls21").id -- Input ID for window timer
-local flightId = getFieldInfo("ls23").id -- Input ID for flight timer
+local winId = getFieldInfo("ls22").id -- Input ID for window timer
+local flightId = getFieldInfo("ls24").id -- Input ID for flight timer
 local altiId = getFieldInfo("Alti+").id -- Input ID for the Alti sensor
 local altiTime -- Time for recording start height
 local prevWt -- Previous window timer value
@@ -19,8 +18,10 @@ local sk = sk -- Local reference is faster than a global
 sk.STATE_INITIAL = 0 -- Set flight time before the flight
 sk.STATE_WINDOW = 1 -- Task window is active
 sk.STATE_LANDINGPTS = 2 -- Landed, input landing points
-sk.STATE_SAVE = 3 -- Ready to save
+sk.STATE_TIME = 3 -- Input flight time
+sk.STATE_SAVE = 4 -- Ready to save
 sk.state = sk.STATE_INITIAL
+sk.myFile = "/SCRIPTS/TELEMETRY/JF3J/SK.lua" -- Score keeper user interface file
 
 local function background()
 	if sk.state == sk.STATE_INITIAL then
@@ -76,7 +77,7 @@ end  --  background()
 
 -- Forward run() call to the loadable part
 local function run(event)
-	return RunLoadable(myFile, event)
+	return RunLoadable(sk.myFile, event)
 end
 
 return {background = background, run = run}

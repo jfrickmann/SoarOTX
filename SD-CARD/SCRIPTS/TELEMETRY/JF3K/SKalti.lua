@@ -1,10 +1,17 @@
 -- Timing and score keeping, loadable user interface for altimeter based tasks
--- Timestamp: 2019-03-18
+-- Timestamp: 2019-07-09
 -- Created by Jesper Frickmann
 
 local 	exitTask = 0 -- Prompt to save task before EXIT
 local stopWindow = 0 -- Prompt to stop flight timer first
 local yScaleMax = 50 -- For plotting
+
+local GREY
+if LCD_W == 128 then
+	GREY = 0
+else
+	GREY = GREY_DEFAULT
+end
 
 local Draw -- Function to draw the screen for specific transmitter
 
@@ -38,14 +45,14 @@ local function DrawGraph(dot)
 	-- Horizontal grid lines
 	for i = 25, yScaleMax, 25 do
 		yy1 = m * i + LCD_H - 1
-		lcd.drawLine(0, yy1, xMax, yy1, DOTTED, GRAY)
+		lcd.drawLine(0, yy1, xMax, yy1, DOTTED, GREY)
 		lcd.drawNumber(xMax + 1, yy1 - 3, i, SMLSIZE)
 	end
 	
 	-- Vertical grid lines
 	for i = 0, sk.taskWindow, 60 do
 		xx1 = i / plugin.heightInt
-		lcd.drawLine(xx1, LCD_H, xx1, 8, DOTTED, GRAY)
+		lcd.drawLine(xx1, LCD_H, xx1, 8, DOTTED, GREY)
 	end
 
 	-- Plot the graph
@@ -146,7 +153,57 @@ local function DrawGraph(dot)
 	end
 end -- DrawGraph()
 
-if tx == TX_X9D then
+if LCD_W == 128 then
+	function Draw()
+		local att
+		
+		DrawMenu(sk.taskName)
+		DrawGraph(SOLID)
+		
+		-- Timers
+		if sk.flightTimer < 0 then
+			att = BLINK + INVERS
+		else
+			att = 0
+		end
+		
+		lcd.drawTimer(LCD_W, 12, sk.flightTimer, MIDSIZE + RIGHT + att)
+
+		if sk.state == sk.STATE_FINISHED then
+			att = BLINK + INVERS
+		else
+			att = 0
+		end
+		
+		lcd.drawTimer(LCD_W, 30, sk.winTimer,  MIDSIZE + RIGHT + att)
+
+		-- QR and EoW
+		if sk.eowTimerStop then
+			lcd.drawText(LCD_W - 18, 48, "EoW", SMLSIZE + INVERS)
+		end
+		
+		if sk.quickRelaunch then
+			lcd.drawText(LCD_W - 33, 48, "QR", SMLSIZE + INVERS)
+		end
+
+		if plugin.launchHeight > 0 then
+			lcd.drawText(73, 58, string.format("Launch %i m", plugin.launchHeight), SMLSIZE)
+		end
+		
+		-- Scores
+		for i = 1, sk.taskScores do
+			local dy = 14
+			
+			if i > #sk.scores then
+				lcd.drawText(73, dy * i, "- - -", SMLSIZE)
+			elseif plugin.unit == "s" then
+				lcd.drawText(73, dy * i, string.format("%02i:%02i", MinSec(sk.scores[i].time)), SMLSIZE)
+			else
+				lcd.drawText(73, dy * i, string.format("%4i%s", sk.scores[i].gain, plugin.unit), SMLSIZE)
+			end
+		end
+	end  --  Draw()
+else
 	function Draw()
 		local att
 		
@@ -197,57 +254,6 @@ if tx == TX_X9D then
 				lcd.drawText(126, dy * i, string.format("%i. %02i:%02i", i, MinSec(sk.scores[i].time)))
 			else
 				lcd.drawText(126, dy * i, string.format("%i. %4i%s", i, sk.scores[i].gain, plugin.unit))
-			end
-		end
-	end  --  Draw()
-
-else -- TX_QX7 or X-lite
-	function Draw()
-		local att
-		
-		DrawMenu(sk.taskName)
-		DrawGraph(SOLID)
-		
-		-- Timers
-		if sk.flightTimer < 0 then
-			att = BLINK + INVERS
-		else
-			att = 0
-		end
-		
-		lcd.drawTimer(LCD_W, 12, sk.flightTimer, MIDSIZE + RIGHT + att)
-
-		if sk.state == sk.STATE_FINISHED then
-			att = BLINK + INVERS
-		else
-			att = 0
-		end
-		
-		lcd.drawTimer(LCD_W, 30, sk.winTimer,  MIDSIZE + RIGHT + att)
-
-		-- QR and EoW
-		if sk.eowTimerStop then
-			lcd.drawText(LCD_W - 18, 48, "EoW", SMLSIZE + INVERS)
-		end
-		
-		if sk.quickRelaunch then
-			lcd.drawText(LCD_W - 33, 48, "QR", SMLSIZE + INVERS)
-		end
-
-		if plugin.launchHeight > 0 then
-			lcd.drawText(73, 58, string.format("Launch %i m", plugin.launchHeight), SMLSIZE)
-		end
-		
-		-- Scores
-		for i = 1, sk.taskScores do
-			local dy = 14
-			
-			if i > #sk.scores then
-				lcd.drawText(73, dy * i, "- - -", SMLSIZE)
-			elseif plugin.unit == "s" then
-				lcd.drawText(73, dy * i, string.format("%02i:%02i", MinSec(sk.scores[i].time)), SMLSIZE)
-			else
-				lcd.drawText(73, dy * i, string.format("%4i%s", sk.scores[i].gain, plugin.unit), SMLSIZE)
 			end
 		end
 	end  --  Draw()
@@ -308,15 +314,15 @@ local function run(event)
 		if getTime() > exitTask then
 			exitTask = 0
 		else
-			if tx == TX_X9D then
-				DrawMenu(" " .. sk.taskName .. " ")
-				lcd.drawText(38, 18, "Stop window timer", MIDSIZE)
-				lcd.drawText(38, 40, "before leaving task.", MIDSIZE)
-			else -- TX_QX7 or X-lite
+			if LCD_W == 128 then
 				DrawMenu(sk.taskName)
 				lcd.drawText(8, 15, "Stop window", MIDSIZE)
 				lcd.drawText(8, 30, "timer before", MIDSIZE)
 				lcd.drawText(8, 45, "leaving task.", MIDSIZE)
+			else
+				DrawMenu(" " .. sk.taskName .. " ")
+				lcd.drawText(38, 18, "Stop window timer", MIDSIZE)
+				lcd.drawText(38, 40, "before leaving task.", MIDSIZE)
 			end
 		end
 	
@@ -324,15 +330,15 @@ local function run(event)
 		if getTime() > stopWindow then
 			stopWindow = 0
 		else
-			if tx == TX_X9D then
-				DrawMenu(" " .. sk.taskName .. " ")
-				lcd.drawText(30, 18, "Stop the flight timer", MIDSIZE)
-				lcd.drawText(30, 40, "before pausing window.", MIDSIZE)
-			else -- TX_QX7 or X-lite
+			if LCD_W == 128 then
 				DrawMenu(sk.taskName)
 				lcd.drawText(8, 15, "Stop the flight", MIDSIZE)
 				lcd.drawText(8, 30, "timer before", MIDSIZE)
 				lcd.drawText(8, 45, "pausing window.", MIDSIZE)
+			else
+				DrawMenu(" " .. sk.taskName .. " ")
+				lcd.drawText(30, 18, "Stop the flight timer", MIDSIZE)
+				lcd.drawText(30, 40, "before pausing window.", MIDSIZE)
 			end
 		end
 	

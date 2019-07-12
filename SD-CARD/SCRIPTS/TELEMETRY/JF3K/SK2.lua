@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for practice tasks
--- Timestamp: 2019-05-11
+-- Timestamp: 2019-07-07
 -- Created by Jesper Frickmann
 
 local TASK_DEUCES = 3
@@ -42,10 +42,33 @@ if sk.state == sk.STATE_IDLE then
 
 	if targetType == 1 then -- Adjustable
 		sk.TargetTime = function()
-			local m = math.floor((1024 + getValue(sk.set1id)) / 205)
-			local s = math.floor((1024 + getValue(sk.set2id)) / 34.2)
-
-			return math.max(5, 60 * m + s)
+			local t1, t2, dt, tOut
+			local tIn = getValue(sk.dial)
+			
+			if tIn <= -512 then
+				t1 = 0
+				t2 = 60
+				dt = 5
+				tIn = tIn + 1024
+			elseif tIn <= 0 then
+				t1 = 60
+				t2 = 180
+				dt = 10
+				tIn = tIn + 512
+			elseif tIn <= 512 then
+				t1 = 180
+				t2 = 360
+				dt = 15
+			else
+				t1 = 360
+				t2 = 900
+				dt = 30
+				tIn = tIn - 512
+			end
+			
+			tOut = t1 + dt * math.floor((t2 - t1) / 512 * tIn / dt)
+			
+			return math.max(5, tOut)
 		end
 		
 	elseif targetType == 2 then -- Deuces

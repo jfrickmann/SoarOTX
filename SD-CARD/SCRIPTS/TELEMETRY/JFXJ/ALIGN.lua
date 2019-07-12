@@ -1,5 +1,5 @@
 -- JF FXJ Flaps and aileron Adjustment
--- Timestamp: 2019-02-20
+-- Timestamp: 2019-07-07
 -- Created by Jesper Frickmann
 -- Script for adjusting the flaps and aileron output curves for the JF FXJ program.
 
@@ -52,25 +52,7 @@ local function DrawCurve(x, y, w, h, crv, i)
 end -- DrawCurve()
 
 -- Transmitter specific
-if tx == TX_X9D then
-	function Draw()
-		DrawMenu(" Flaps/aileron alignment ")
-
-		lcd.drawText(5, 13, "LA", SMLSIZE)
-		DrawCurve(4, 12, 48, 36, crvLft[2], nPoints - lasti + 1)
-
-		lcd.drawText(57, 13, "LF", SMLSIZE)
-		DrawCurve(56, 12, 48, 36, crvLft[1], nPoints - lasti + 1)
-
-		lcd.drawText(109, 13, "RF", SMLSIZE)
-		DrawCurve(108, 12, 48, 36, crvRgt[1], lasti)		
-
-		lcd.drawText(160, 13, "RA", SMLSIZE)
-		DrawCurve(159, 12, 48, 36, crvRgt[2], lasti)
-
-		lcd.drawText(8, 54, "Thr. to move. Rud. and aile. trims to align.", SMLSIZE)
-	end -- Draw()
-else
+if LCD_W == 128 then
 	function Draw()
 		DrawMenu("Alignment")
 
@@ -88,6 +70,24 @@ else
 
 		lcd.drawText(69, 38, "RF", SMLSIZE)
 		DrawCurve(69, 38, 48, 22, crvRgt[1], lasti)
+	end -- Draw()
+else
+	function Draw()
+		DrawMenu(" Flaps/aileron alignment ")
+
+		lcd.drawText(5, 13, "LA", SMLSIZE)
+		DrawCurve(4, 12, 48, 36, crvLft[2], nPoints - lasti + 1)
+
+		lcd.drawText(57, 13, "LF", SMLSIZE)
+		DrawCurve(56, 12, 48, 36, crvLft[1], nPoints - lasti + 1)
+
+		lcd.drawText(109, 13, "RF", SMLSIZE)
+		DrawCurve(108, 12, 48, 36, crvRgt[1], lasti)		
+
+		lcd.drawText(160, 13, "RA", SMLSIZE)
+		DrawCurve(159, 12, 48, 36, crvRgt[2], lasti)
+
+		lcd.drawText(8, 54, "Thr. to move. Rud. and aile. trims to align.", SMLSIZE)
 	end -- Draw()
 end
 
