@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable menu for selecting task
--- Timestamp: 2019-07-07
+-- Timestamp: 2019-08-04
 -- Created by Jesper Frickmann
 
 local pluginFile = "/SCRIPTS/TELEMETRY/JF3K/SK%i.lua"
@@ -8,7 +8,7 @@ local scanPlugin = 1 -- Index of plugin to scan
 
 -- Reset shared variables
 sk.scores = { } -- List of saved scores
-sk.counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45, 60, 120, 180, 240} -- Flight timer countdown
+sk.counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45} -- Flight timer countdown
 sk.state = sk.STATE_IDLE
 
 -- Set up a task that does not record scores
