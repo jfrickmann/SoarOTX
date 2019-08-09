@@ -1,5 +1,5 @@
 -- JF F3K Timing and score keeping, fixed part
--- Timestamp: 2019-07-07
+-- Timestamp: 2019-08-08
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 
@@ -167,15 +167,15 @@ local function background()
 				end
 			
 				-- Time counts
-				if math.ceil(sk.flightTimer / 60) < math.ceil(flightTimerOld / 60) then
-					playDuration(sk.flightTimer, 0)
-				elseif sk.flightTimer <= sk.counts[countIndex] and flightTimerOld > sk.counts[countIndex]  then
+				if sk.flightTimer <= sk.counts[countIndex] and flightTimerOld > sk.counts[countIndex]  then
 					if sk.flightTimer > 15 then
 						playDuration(sk.flightTimer, 0)
 					else
 						playNumber(sk.flightTimer, 0)
 					end
 					if countIndex > 1 then countIndex = countIndex - 1 end
+				elseif math.ceil(sk.flightTimer / 60) < math.ceil(flightTimerOld / 60) then
+					playDuration(sk.flightTimer, 0)
 				end
 			end
 			
