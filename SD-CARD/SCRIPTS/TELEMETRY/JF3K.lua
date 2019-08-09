@@ -1,6 +1,6 @@
 -- JF F3K Timing and score keeping, fixed part
 -- Standalone version for third part Taranis models.
--- Timestamp: 2019-07-09
+-- Timestamp: 2019-08-08
 -- Created by Jesper Frickmann
 
 wTmr = 0 -- Controls window timer with MIXES script
@@ -41,7 +41,7 @@ sk.state = sk.STATE_IDLE -- Current program state
 sk.eowTimerStop = true -- Freeze timer automatically at the end of the window
 sk.quickRelaunch = false -- Restart timer immediately
 sk.scores = { } -- List of saved scores
-sk.counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45, 60, 120, 180, 240} -- Flight timer countdown
+sk.counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45} -- Flight timer countdown
 
 -- Find dials for setting target time in Poker and height ceilings etc.
 for input = 0, 31 do
@@ -339,6 +339,8 @@ local function background()
 						playNumber(sk.flightTimer, 0)
 					end
 					if countIndex > 1 then countIndex = countIndex - 1 end
+				elseif math.ceil(sk.flightTimer / 60) < math.ceil(flightTimerOld / 60) then
+					playDuration(sk.flightTimer, 0)
 				end
 			end
 			
