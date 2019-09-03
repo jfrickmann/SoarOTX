@@ -1,5 +1,5 @@
 -- User interface for several score keeper plugins
--- Timestamp: 2019-07-07
+-- Timestamp: 2019-09-02
 -- Created by Jesper Frickmann
 
 local 	exitTask = 0 -- Prompt to save task before EXIT
@@ -175,11 +175,21 @@ else
 end
 
 local function run(event)
-	if exitTask == -1 then -- Popup menu active
-		local menuReply = popupInput("Save scores?", event, 0, 0, 0)
+	if exitTask == -1 then -- Save scores?
+		if LCD_W == 128 then
+			DrawMenu(sk.taskName)
+			lcd.drawText(8, 15, "Save scores?", MIDSIZE)
+			lcd.drawText(8, 35, "ENTER = SAVE")
+			lcd.drawText(8, 45, "EXIT = DON'T")
+		else
+			DrawMenu(" " .. sk.taskName .. " ")
+			lcd.drawText(38, 15, "Save scores?", DBLSIZE)
+			lcd.drawText(4, LCD_H - 16, "EXIT", MIDSIZE + BLINK)
+			lcd.drawText(LCD_W - 3, LCD_H - 16, "SAVE", MIDSIZE + BLINK + RIGHT)
+		end
 
 		-- Record scores if user pressed ENTER
-		if menuReply == "OK" then
+		if event == EVT_ENTER_BREAK then
 			local logFile = io.open("/LOGS/JF F3K Scores.csv", "a")
 			if logFile then
 				io.write(logFile, string.format("%s,%s", model.getInfo().name, sk.taskName))
@@ -197,10 +207,8 @@ local function run(event)
 				io.write(logFile, "\n")
 				io.close(logFile)
 			end
-		end
-
-		-- Dismiss the popup menu and move on
-		if menuReply ~= 0 then
+			sk.run = sk.menu
+		elseif event == EVT_EXIT_BREAK then
 			sk.run = sk.menu
 		end
 
