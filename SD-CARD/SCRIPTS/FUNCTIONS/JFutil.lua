@@ -1,5 +1,5 @@
 -- JF Library
--- Timestamp: 2019-07-09
+-- Timestamp: 2019-09-12
 -- Created by Jesper Frickmann
 -- Has a few shared functions and variables for telemetry and functions scripts
 -- Works together with a small shell script to load and unload program and telemetry scripts.
@@ -15,44 +15,17 @@ local ST_LOADED = 2 -- Program loaded but not yet initialized
 local ST_RUNNING = 3 -- Program is loaded, initialized, and running
 local ST_MARKED = 4 -- Programs are marked inactive and swept if not running
 
--- Input value for the receiver battery
-local RBat
-do
-	local batField = getFieldInfo("RBat")
-	if not batField then batField = getFieldInfo("RxBt") end
-	if not batField then batField = getFieldInfo("A1") end
+-- Load a file chunk and run it for Tx specific graphics
+function Include(file, ...)
+	-- Add the path to the files for radio's screen resolution
+	file = string.format("/SCRIPTS/TELEMETRY/%ix%i/%s/", LCD_W, LCD_H, file)
 	
-	if batField then
-		RBat = function()
-			return getValue(batField.id)
-		end
-	else
-		RBat = function()
-			return 0
-		end
-	end
-end
+	local chunk = loadScript(file)
+	return chunk(...)
+end  --  Include()
 
--- Draw the basic menu with border and title
-if LCD_W == 128 then
-	function DrawMenu(title)
-		local now = getDateTime()
-		local infoStr = string.format("%1.2fV %02i:%02i", RBat(), now.hour, now.min)
-
-		lcd.clear()
-		lcd.drawScreenTitle(title, 0, 0)
-		lcd.drawText(LCD_W, 0, infoStr, RIGHT)
-	end -- DrawMenu()
-else
-	function DrawMenu(title)
-		local now = getDateTime()
-		local infoStr = string.format("%1.2fV %02i:%02i", RBat(), now.hour, now.min)
-
-		lcd.clear()
-		lcd.drawText(LCD_W, 0, infoStr, RIGHT)
-		lcd.drawScreenTitle(title, 0, 0)
-	end -- DrawMenu()
-end
+-- And now use it to load ransmitter specific global graphics functions
+Include("JFutil.lua")
 
 -- Unload a program
 function Unload(file)
@@ -62,7 +35,7 @@ function Unload(file)
 end -- Unload()
 
 -- Load program or forward run() call to the program
-function RunLoadable(file, event)
+function RunLoadable(file, event, ...)
 	if states[file] == nil then
 		-- First, acquire the lock
 		if locked then
@@ -96,7 +69,7 @@ function RunLoadable(file, event)
 		local chunk, err = loadScript(file) 
 
 		if chunk then
-			programs[file] = chunk()
+			programs[file] = chunk(...)
 			states[file] = ST_LOADED			
 			return collectgarbage()
 		else

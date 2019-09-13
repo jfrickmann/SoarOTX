@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin part for altimeter based tasks
--- Timestamp: 2019-07-07
+-- Timestamp: 2019-09-12
 -- Created by Jesper Frickmann
 
 -- If no task is selected, then return name and task list to the menu
@@ -52,12 +52,6 @@ if sk.state == sk.STATE_IDLE then
 		plugin.unit = "p"
 	else
 		plugin.unit = "m"
-	end
-	
-	if LCD_W == 128 then
-		plugin.heightInt = 7 -- Interval for recording heights
-	else 
-		plugin.heightInt = 4
 	end
 	
 	do
