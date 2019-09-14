@@ -1,12 +1,12 @@
 -- User interface for several score keeper plugins
--- Timestamp: 2019-09-11
+-- Timestamp: 2019-09-13
 -- Created by Jesper Frickmann
 
 local 	exitTask = 0 -- Prompt to save task before EXIT
 local stopWindow = 0 -- Prompt to stop flight timer first
 
 -- Screen size specific graphics functions
-local Draw, PromptScores, NotifyStopWindow, NotifyStopFlight = Include("JF3K/SK.lua")
+local Draw, PromptScores, NotifyStopWindow, NotifyStopFlight = LoadWxH("JF3K/SK.lua")
 
 local function run(event)
 	if exitTask == -1 then -- Save scores?

@@ -1,5 +1,5 @@
 -- JF Library
--- Timestamp: 2019-09-12
+-- Timestamp: 2019-09-13
 -- Created by Jesper Frickmann
 -- Has a few shared functions and variables for telemetry and functions scripts
 -- Works together with a small shell script to load and unload program and telemetry scripts.
@@ -15,17 +15,17 @@ local ST_LOADED = 2 -- Program loaded but not yet initialized
 local ST_RUNNING = 3 -- Program is loaded, initialized, and running
 local ST_MARKED = 4 -- Programs are marked inactive and swept if not running
 
--- Load a file chunk and run it for Tx specific graphics
-function Include(file, ...)
+-- Load a file chunk for Tx specific screen size
+function LoadWxH(file, ...)
 	-- Add the path to the files for radio's screen resolution
 	file = string.format("/SCRIPTS/TELEMETRY/%ix%i/%s/", LCD_W, LCD_H, file)
 	
 	local chunk = loadScript(file)
 	return chunk(...)
-end  --  Include()
+end  --  LoadWxH()
 
 -- And now use it to load ransmitter specific global graphics functions
-Include("JFutil.lua")
+LoadWxH("JFutil.lua")
 
 -- Unload a program
 function Unload(file)

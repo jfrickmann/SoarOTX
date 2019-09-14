@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable user interface for altimeter based tasks
--- Timestamp: 2019-09-12
+-- Timestamp: 2019-09-13
 -- Created by Jesper Frickmann
 
 local 	exitTask = 0 -- Prompt to save task before EXIT
@@ -139,7 +139,7 @@ local function DrawGraph(dot)
 end -- DrawGraph()
 
 -- Screen size specific graphics functions
-local Draw, PromptScores, NotifyStopWindow, NotifyStopFlight = Include("JF3K/SKalti.lua", DrawGraph)
+local Draw, PromptScores, NotifyStopWindow, NotifyStopFlight = LoadWxH("JF3K/SKalti.lua", DrawGraph)
 
 local function run(event)
 	-- Do we have an altimeter?
