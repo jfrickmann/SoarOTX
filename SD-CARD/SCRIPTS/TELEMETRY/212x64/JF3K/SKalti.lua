@@ -1,5 +1,5 @@
 -- 212x64/JF3Kalti/SK.lua
--- Timestamp: 2019-09-12
+-- Timestamp: 2019-09-14
 -- Created by Jesper Frickmann
 
 plugin.heightInt = 4 -- Interval for recording heights
@@ -12,7 +12,7 @@ local function MinSec(t)
 	return m, t - 60 * m
 end -- MinSec()
 
-function Draw()
+local function Draw()
 	local att
 	
 	DrawMenu(sk.taskName)

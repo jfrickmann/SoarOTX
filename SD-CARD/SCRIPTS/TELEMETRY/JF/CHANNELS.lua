@@ -1,18 +1,10 @@
 -- JF Channel configuration
--- Timestamp: 2019-07-07
+-- Timestamp: 2019-09-14
 -- Created by Jesper Frickmann
 
 local N = 32 -- Highest channel number to swap
 local MAXOUT = 1500 -- Maximum output value
 local MINDIF = 100 -- Minimum difference between lower, center and upper values
-local MENUTXT -- Text to show on menu
-local XDOT -- X position of number dot
-local XREV -- X position of channel direction indicator
-local CENTER -- X position of center line
-local SCALE -- X scale
-local XTXT -- Text position of warning message
-local ATT1 -- Text attribute of warning message
-local ATT2 -- Text attribute of warning message
 
 local namedChs = {} -- List of named channels
 local firstLine = 1 -- Named channel displayed on the first line
@@ -20,28 +12,11 @@ local selection = 1 -- Selected named channel
 local srcBase = 	getFieldInfo("ch1").id - 1 -- ASSUMING that channel sources are consecutive!
 local stage = 1 -- 1:Show warning 2:Run
 
--- Transmitter specific
-if LCD_W == 128 then
-	MENUTXT = "Channel Config"
-	XDOT = 12
-	XREV = 45
-	CENTER = 90
-	SCALE = 0.024
-	XTXT = 7
-	ATT1 = 0
-	ATT2 = SMLSIZE
-else
-	MENUTXT = "JF Channel Configurator "
-	XDOT = 15
-	XREV = 58
-	CENTER = 140
-	SCALE = 0.045
-	XTXT = 30
-	ATT1 = MIDSIZE
-	ATT2 = 0
-end
+ -- Screen size specific variables
+local 	MENUTXT, XDOT, XREV, CENTER, SCALE, XTXT, ATT1, ATT2 = LoadWxH("JF/CHANNELS.lua")
 
-local editing = 0 --[[ Selected channel is being edited
+local editing = 0 
+--[[ Selected channel is being edited
 	0 = Not edited
 	1 = Channel no. selected
 	2 = Direction selected

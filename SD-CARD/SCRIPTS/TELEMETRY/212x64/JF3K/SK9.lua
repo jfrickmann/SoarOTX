@@ -4,7 +4,7 @@
 
 local ui = ...
 
-function Draw()
+local function Draw()
 	local x = 0
 	local y = 9
 	local split

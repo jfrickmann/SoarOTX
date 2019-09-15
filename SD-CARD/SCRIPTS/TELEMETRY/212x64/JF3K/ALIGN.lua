@@ -4,7 +4,7 @@
 
 local ui = ... -- List of shared variables
 
-function Draw(i)
+local function Draw(i)
 	DrawMenu(" JF F3K Flaperon alignment ")
 	lcd.drawText(2, 12, "Use the throttle")
 	lcd.drawText(2, 25, "to move flaps.")

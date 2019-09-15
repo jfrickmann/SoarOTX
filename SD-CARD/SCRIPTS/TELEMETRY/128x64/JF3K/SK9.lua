@@ -4,7 +4,7 @@
 
 local ui = ...
 
-function Draw()
+local function Draw()
 	local y = 8
 	
 	DrawMenu(ui.taskName)
