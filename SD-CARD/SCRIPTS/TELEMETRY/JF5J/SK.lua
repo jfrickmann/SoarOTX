@@ -1,112 +1,16 @@
 -- JF F5J Timing and score keeping, loadable part
--- Timestamp: 2019-07-07
+-- Timestamp: 2019-09-16
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F5J.
 
 local sbFile = "/SCRIPTS/TELEMETRY/JF5J/SB.lua" -- Score browser user interface file
-local sk = sk -- Local reference is faster than a global
-local armId = getFieldInfo("ls19").id -- Input ID for motor arming
-local ft -- Flight timer
-local mt -- Motor timer
+local Draw = LoadWxH("JF5J/SK.lua", sk) -- Screen size specific function
 
-local Draw -- Draw() function is defined for specific transmitter
-
--- Transmitter specific
-if LCD_W == 128 then
-	function Draw()
-		local fmNbr, fmName = getFlightMode()
-		DrawMenu(fmName)	
-
-		lcd.drawText(0, 20, "Landing")
-		lcd.drawText(0, 42, "Start")
-		lcd.drawText(72, 42, "Mot")
-		lcd.drawTimer(128, 38, mt.value, MIDSIZE + RIGHT)
-
-		if sk.state == sk.STATE_INITIAL then
-			lcd.drawText(72, 20, "Tgt")
-		elseif sk.state <= sk.STATE_GLIDE then
-			lcd.drawText(72, 20, "Rem")
-		else
-			lcd.drawText(72, 20, "Flt")
-		end
-
-		if sk.state == sk.STATE_INITIAL or sk.state == sk.STATE_TIME then
-			lcd.drawTimer(128, 16, ft.value, MIDSIZE + RIGHT + BLINK + INVERS)
-		else
-			lcd.drawTimer(128, 16, ft.value, MIDSIZE + RIGHT)
-		end
-
-		if sk.state < sk.STATE_LANDINGPTS then
-			lcd.drawText(60, 16, "--", MIDSIZE + RIGHT)
-		elseif sk.state == sk.STATE_LANDINGPTS then
-			lcd.drawNumber(60, 16, sk.landingPts, MIDSIZE + RIGHT + BLINK + INVERS)
-		else
-			lcd.drawNumber(60, 16, sk.landingPts, MIDSIZE + RIGHT)
-		end
-
-		if sk.state < sk.STATE_LANDINGPTS then
-			lcd.drawText(60, 38, "---", MIDSIZE + RIGHT)
-		elseif sk.state == sk.STATE_STARTHEIGHT then
-			lcd.drawNumber(60, 38, sk.startHeight * 10, PREC1 + MIDSIZE + RIGHT + BLINK + INVERS)
-		else
-			lcd.drawNumber(60, 38, sk.startHeight * 10, PREC1 + MIDSIZE + RIGHT)
-		end
-		
-		if getValue(armId) >0 then
-			lcd.clear()
-			lcd.drawText(2, 16, "MOTOR  ARMED", DBLSIZE + BLINK + INVERS)
-		end
-	end -- Draw()
-else
-	function Draw()
-		local fmNbr, fmName = getFlightMode()
-		DrawMenu(" " .. fmName .. " ")	
-
-		lcd.drawText(0, 20, "Landing", MIDSIZE)
-		lcd.drawText(0, 42, "Start", MIDSIZE)
-		lcd.drawText(110, 42, "Motor", MIDSIZE)
-		lcd.drawTimer(212, 38, mt.value, DBLSIZE + RIGHT)
-
-		if sk.state == sk.STATE_INITIAL then
-			lcd.drawText(110, 20, "Target", MIDSIZE)
-		elseif sk.state <= sk.STATE_GLIDE then
-			lcd.drawText(110, 20, "Remain", MIDSIZE)
-		else
-			lcd.drawText(110, 20, "Flight", MIDSIZE)
-		end
-
-		if sk.state == sk.STATE_INITIAL or sk.state == sk.STATE_TIME then
-			lcd.drawTimer(212, 16, ft.value, DBLSIZE + RIGHT + BLINK + INVERS)
-		else
-			lcd.drawTimer(212, 16, ft.value, DBLSIZE + RIGHT)
-		end
-
-		if sk.state < sk.STATE_LANDINGPTS then
-			lcd.drawText(95, 16, "--", DBLSIZE + RIGHT)
-		elseif sk.state == sk.STATE_LANDINGPTS then
-			lcd.drawNumber(95, 16, sk.landingPts, DBLSIZE + RIGHT + BLINK + INVERS)
-		else
-			lcd.drawNumber(95, 16, sk.landingPts, DBLSIZE + RIGHT)
-		end
-
-		if sk.state < sk.STATE_LANDINGPTS then
-			lcd.drawText(95, 38, "---", DBLSIZE + RIGHT)
-		elseif sk.state == sk.STATE_STARTHEIGHT then
-			lcd.drawNumber(95, 38, sk.startHeight * 10, PREC1 + DBLSIZE + RIGHT + BLINK + INVERS)
-		else
-			lcd.drawNumber(95, 38, sk.startHeight * 10, PREC1 + DBLSIZE + RIGHT)
-		end
-		
-		if getValue(armId) >0 then
-			lcd.clear()
-			lcd.drawText(50, 16, "MOTOR  ARMED", DBLSIZE + BLINK + INVERS)
-		end
-	end  --  Draw()
-end
+sk.armId = getFieldInfo("ls19").id -- Input ID for motor arming
 
 local function run(event)
-	ft = model.getTimer(0)
-	mt = model.getTimer(1)
+	sk.fltTmr = model.getTimer(0)
+	sk.motTmr = model.getTimer(1)
 	
 	if sk.state == sk.STATE_INITIAL then -- Set flight time before the flight
 		local dt = 0
@@ -124,7 +28,7 @@ local function run(event)
 			dt = -60
 		end
 		
-		local tgt = ft.start + dt
+		local tgt = sk.fltTmr.start + dt
 		if tgt < 60 then
 			tgt = 5940
 		elseif tgt > 5940 then
@@ -195,8 +99,8 @@ local function run(event)
 		end
 		
 		if dt ~= 0 then
-			ft.value = ft.value + dt
-			model.setTimer(0, ft)
+			sk.fltTmr.value = sk.fltTmr.value + dt
+			model.setTimer(0, sk.fltTmr)
 		end
 		
 		if event == EVT_ENTER_BREAK then
@@ -216,7 +120,7 @@ local function run(event)
 
 				io.write(logFile, string.format("%s,%s,%s,", nameStr, dateStr, timeStr))
 				io.write(logFile, string.format("%s,%4.1f,", sk.landingPts, sk.startHeight))
-				io.write(logFile, string.format("%s,%s\n", ft.start, ft.value))
+				io.write(logFile, string.format("%s,%s\n", sk.fltTmr.start, sk.fltTmr.value))
 
 				io.close(logFile)
 			end
@@ -230,11 +134,6 @@ local function run(event)
 	end
 	
 	Draw()
-
-	if sk.state == sk.STATE_SAVE then
-		lcd.drawText(4, LCD_H - 10, "EXIT", SMLSIZE + BLINK)
-		lcd.drawText(LCD_W - 3, LCD_H - 10, "SAVE", SMLSIZE + BLINK + RIGHT)
-	end
 end  --  run()
 
-return {run = run}	
+return {run = run}
