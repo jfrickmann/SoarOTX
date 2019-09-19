@@ -1,8 +1,15 @@
 -- 212x64/JF3R/ADJMIX.lua
--- Timestamp: 2019-09-16
+-- Timestamp: 2019-09-18
 -- Created by Jesper Frickmann
 
-local ui = ... -- List of shared variables
+local gv1 = ...
 
-local
+local function Draw()
+	DrawMenu(" Adjust mixes ")
+	lcd.drawText(10, 14, "Elev trim = Elev-brake")
+	lcd.drawLine(155, 10, 155, 61, SOLID, FORCE)
+	lcd.drawText(160, 14, "BkE")
+	lcd.drawNumber(202, 14, getValue(gv1), RIGHT)
+end -- Draw()
+
 return Draw

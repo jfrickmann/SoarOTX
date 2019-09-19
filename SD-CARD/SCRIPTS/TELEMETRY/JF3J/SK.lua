@@ -1,112 +1,15 @@
 -- JF F3J Timing and score keeping, loadable part
--- Timestamp: 2019-07-07
+-- Timestamp: 2019-09-18
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F3J.
 
 local sbFile = "/SCRIPTS/TELEMETRY/JF3J/SB.lua" -- Score browser user interface file
-local wt -- Window timer
-local ft -- Flight timer
-
-local Draw -- Draw() function is defined for specific transmitter
-
--- Transmitter specific
-if LCD_W == 128 then
-	function Draw()
-		local fmNbr, fmName = getFlightMode()
-		DrawMenu(fmName)	
-
-		lcd.drawText(0, 20, "Landing")
-		lcd.drawText(0, 42, "Start")
-
-		if sk.state == sk.STATE_INITIAL then
-			lcd.drawText(72, 20, "Tgt")
-		elseif sk.state <= sk.STATE_WINDOW then
-			lcd.drawText(72, 20, "Rem")
-		else
-			lcd.drawText(72, 20, "Win")
-		end
-
-		if sk.state == sk.STATE_INITIAL then
-			lcd.drawTimer(128, 16, wt.value, MIDSIZE + RIGHT + BLINK + INVERS)
-		else
-			lcd.drawTimer(128, 16, wt.value, MIDSIZE + RIGHT)
-		end
-
-		lcd.drawText(72, 42, "Flt")
-
-		if sk.state == sk.STATE_TIME then
-			lcd.drawTimer(128, 38, ft.value, MIDSIZE + RIGHT + BLINK + INVERS)
-		else
-			lcd.drawTimer(128, 38, ft.value, MIDSIZE + RIGHT)
-		end
-
-		if sk.state < sk.STATE_LANDINGPTS then
-			lcd.drawText(60, 16, "--", MIDSIZE + RIGHT)
-		elseif sk.state == sk.STATE_LANDINGPTS then
-			lcd.drawNumber(60, 16, sk.landingPts, MIDSIZE + RIGHT + BLINK + INVERS)
-		else
-			lcd.drawNumber(60, 16, sk.landingPts, MIDSIZE + RIGHT)
-		end
-
-		if sk.state < sk.STATE_LANDINGPTS then
-			lcd.drawText(60, 38, "---", MIDSIZE + RIGHT)
-		elseif sk.state == sk.STATE_STARTHEIGHT then
-			lcd.drawNumber(60, 38, sk.startHeight * 10, PREC1 + MIDSIZE + RIGHT + BLINK + INVERS)
-		else
-			lcd.drawNumber(60, 38, sk.startHeight * 10, PREC1 + MIDSIZE + RIGHT)
-		end
-	end -- Draw()
-else
-	function Draw()
-		local fmNbr, fmName = getFlightMode()
-		DrawMenu(" " .. fmName .. " ")	
-
-		lcd.drawText(0, 20, "Landing", MIDSIZE)
-		lcd.drawText(0, 42, "Start", MIDSIZE)
-
-		if sk.state == sk.STATE_INITIAL then
-			lcd.drawText(110, 20, "Target", MIDSIZE)
-		elseif sk.state <= sk.STATE_WINDOW then
-			lcd.drawText(110, 20, "Remain", MIDSIZE)
-		else
-			lcd.drawText(110, 20, "Window", MIDSIZE)
-		end
-
-		if sk.state == sk.STATE_INITIAL then
-			lcd.drawTimer(212, 16, wt.value, DBLSIZE + RIGHT + BLINK + INVERS)
-		else
-			lcd.drawTimer(212, 16, wt.value, DBLSIZE + RIGHT)
-		end
-
-		lcd.drawText(110, 42, "Flight", MIDSIZE)
-
-		if sk.state == sk.STATE_TIME then
-			lcd.drawTimer(212, 38, ft.value, DBLSIZE + RIGHT + BLINK + INVERS)
-		else
-			lcd.drawTimer(212, 38, ft.value, DBLSIZE + RIGHT)
-		end
-
-		if sk.state < sk.STATE_LANDINGPTS then
-			lcd.drawText(95, 16, "--", DBLSIZE + RIGHT)
-		elseif sk.state == sk.STATE_LANDINGPTS then
-			lcd.drawNumber(95, 16, sk.landingPts, DBLSIZE + RIGHT + BLINK + INVERS)
-		else
-			lcd.drawNumber(95, 16, sk.landingPts, DBLSIZE + RIGHT)
-		end
-
-		if sk.state < sk.STATE_LANDINGPTS then
-			lcd.drawText(95, 38, "---", DBLSIZE + RIGHT)
-		elseif sk.state == sk.STATE_STARTHEIGHT then
-			lcd.drawNumber(95, 38, sk.startHeight * 10, PREC1 + DBLSIZE + RIGHT + BLINK + INVERS)
-		else
-			lcd.drawNumber(95, 38, sk.startHeight * 10, PREC1 + DBLSIZE + RIGHT)
-		end
-	end  --  Draw()
-end
+local ui = {} -- List of  variables shared with loadable user interface
+local Draw = LoadWxH("JF3J/SK.lua", ui) -- Screen size specific function
 
 local function run(event)
-	wt = model.getTimer(0)
-	ft = model.getTimer(1)
+	ui.winTmr = model.getTimer(0)
+	ui.fltTmr = model.getTimer(1)
 	
 	if sk.state == sk.STATE_INITIAL then -- Set flight time before the flight
 		local dt = 0
@@ -124,7 +27,7 @@ local function run(event)
 			dt = -60
 		end
 		
-		local tgt = wt.start + dt
+		local tgt = ui.winTmr.start + dt
 		if tgt < 60 then
 			tgt = 5940
 		elseif tgt > 5940 then
@@ -176,8 +79,8 @@ local function run(event)
 		end
 		
 		if dt ~= 0 then
-			ft.value = ft.value + dt
-			model.setTimer(1, ft)
+			ui.fltTmr.value = ui.fltTmr.value + dt
+			model.setTimer(1, ui.fltTmr)
 		end
 		
 		if event == EVT_ENTER_BREAK then
@@ -197,7 +100,7 @@ local function run(event)
 
 				io.write(logFile, string.format("%s,%s,%s,", nameStr, dateStr, timeStr))
 				io.write(logFile, string.format("%s,%4.1f,", sk.landingPts, sk.startHeight))
-				io.write(logFile, string.format("%s,%s,%s\n", wt.start, wt.value, ft.value))
+				io.write(logFile, string.format("%s,%s,%s\n", ui.winTmr.start, ui.winTmr.value, ui.fltTmr.value))
 
 				io.close(logFile)
 			end
@@ -211,11 +114,6 @@ local function run(event)
 	end
 	
 	Draw()
-
-	if sk.state == sk.STATE_SAVE then
-		lcd.drawText(4, LCD_H - 10, "EXIT", SMLSIZE + BLINK)
-		lcd.drawText(LCD_W - 3, LCD_H - 10, "SAVE", SMLSIZE + BLINK + RIGHT)
-	end
 end  --  run()
 
 return {run = run}

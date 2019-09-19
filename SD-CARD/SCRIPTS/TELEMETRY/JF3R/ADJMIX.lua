@@ -1,29 +1,10 @@
 -- JF F3RES mix adjustment
--- Timestamp: 2019-07-07
+-- Timestamp: 2019-09-18
 -- Created by Jesper Frickmann
 
 local gv1 = getFieldInfo("gvar1").id
 
-local Draw -- Draw() function is defined for specific transmitter
-
--- Transmitter specific
-if LCD_W == 128 then
-	function Draw()
-		DrawMenu("Adjust mixes")
-		lcd.drawText(5, 14, "Elev trim =", SMLSIZE)
-		lcd.drawLine(75, 10, 75, 61, SOLID, FORCE)
-		lcd.drawText(85, 14, "BkE", SMLSIZE)
-		lcd.drawNumber(123, 14, getValue(gv1), RIGHT + SMLSIZE)
-	end -- Draw()
-else
-	function Draw()
-		DrawMenu(" Adjust mixes ")
-		lcd.drawText(10, 14, "Elev trim = Elev-brake")
-		lcd.drawLine(155, 10, 155, 61, SOLID, FORCE)
-		lcd.drawText(160, 14, "BkE")
-		lcd.drawNumber(202, 14, getValue(gv1), RIGHT)
-	end -- Draw()
-end
+local Draw = LoadWxH("JF3R/ADJMIX.lua", gv1) -- Screen size specific function
 
 local function run(event)
 	-- Press EXIT to quit

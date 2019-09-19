@@ -1,5 +1,5 @@
 -- JF F5J Score Browser
--- Timestamp: 2019-09-16
+-- Timestamp: 2019-09-18
 -- Created by Jesper Frickmann
 -- Telemetry script for browsing scores recorded in the log file.
 
@@ -7,8 +7,8 @@ local LOG_FILE = "/LOGS/JF F5J Scores.csv" -- Log file
 local skFile = "/SCRIPTS/TELEMETRY/JF5J/SK.lua" -- Score keeper user interface file
 
 local logFile -- Log file handle
-local lastTime -- Last time that run() was called, used for refreshing
-local index -- Index to currently selected line in log file
+local lastTime = 0 -- Last time that run() was called, used for refreshing
+local index = 1 -- Index to currently selected line in log file
 
 local ui = { } -- List of  variables shared with loadable user interface
 ui.indices = {0} -- Vector of indices pointing to start of lines in the log file
@@ -75,8 +75,6 @@ local function Scan()
 end -- Scan()
 
 local function init()
-	lastTime = 0
-	index = 1
 	ReadLineData(ui.indices[index])
 	Scan()
 end  --  init()

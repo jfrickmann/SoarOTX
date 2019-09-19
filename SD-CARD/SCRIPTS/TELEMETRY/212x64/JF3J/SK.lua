@@ -1,8 +1,8 @@
--- 212x64/JF5J/SK.lua
+-- 212x64/JF3J/SK.lua
 -- Timestamp: 2019-09-18
 -- Created by Jesper Frickmann
 
-local sk = ... -- List of shared variables
+local ui = ... -- List of shared variables
 
 local 	function Draw()
 	local fmNbr, fmName = getFlightMode()
@@ -10,21 +10,27 @@ local 	function Draw()
 
 	lcd.drawText(0, 20, "Landing", MIDSIZE)
 	lcd.drawText(0, 42, "Start", MIDSIZE)
-	lcd.drawText(110, 42, "Motor", MIDSIZE)
-	lcd.drawTimer(212, 38, sk.motTmr.value, DBLSIZE + RIGHT)
 
 	if sk.state == sk.STATE_INITIAL then
 		lcd.drawText(110, 20, "Target", MIDSIZE)
-	elseif sk.state <= sk.STATE_GLIDE then
+	elseif sk.state <= sk.STATE_WINDOW then
 		lcd.drawText(110, 20, "Remain", MIDSIZE)
 	else
-		lcd.drawText(110, 20, "Flight", MIDSIZE)
+		lcd.drawText(110, 20, "Window", MIDSIZE)
 	end
 
-	if sk.state == sk.STATE_INITIAL or sk.state == sk.STATE_TIME then
-		lcd.drawTimer(212, 16, sk.fltTmr.value, DBLSIZE + RIGHT + BLINK + INVERS)
+	if sk.state == sk.STATE_INITIAL then
+		lcd.drawTimer(212, 16, ui.winTmr.value, DBLSIZE + RIGHT + BLINK + INVERS)
 	else
-		lcd.drawTimer(212, 16, sk.fltTmr.value, DBLSIZE + RIGHT)
+		lcd.drawTimer(212, 16, ui.winTmr.value, DBLSIZE + RIGHT)
+	end
+
+	lcd.drawText(110, 42, "Flight", MIDSIZE)
+
+	if sk.state == sk.STATE_TIME then
+		lcd.drawTimer(212, 38, ui.fltTmr.value, DBLSIZE + RIGHT + BLINK + INVERS)
+	else
+		lcd.drawTimer(212, 38, ui.fltTmr.value, DBLSIZE + RIGHT)
 	end
 
 	if sk.state < sk.STATE_LANDINGPTS then
@@ -41,11 +47,6 @@ local 	function Draw()
 		lcd.drawNumber(95, 38, sk.startHeight * 10, PREC1 + DBLSIZE + RIGHT + BLINK + INVERS)
 	else
 		lcd.drawNumber(95, 38, sk.startHeight * 10, PREC1 + DBLSIZE + RIGHT)
-	end
-	
-	if getValue(sk.armId) >0 then
-		lcd.clear()
-		lcd.drawText(50, 16, "MOTOR  ARMED", DBLSIZE + BLINK + INVERS)
 	end
 
 	if sk.state == sk.STATE_SAVE then
