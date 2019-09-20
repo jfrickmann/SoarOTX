@@ -1,12 +1,12 @@
 -- JF F3J Timing and score keeping, fixed part
--- Timestamp: 2019-09-18
+-- Timestamp: 2019-09-19
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F3J.
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 -- Depends on custom script exporting the value of global "tmr" to OpenTX
 
-local winId = getFieldInfo("ls21").id -- Input ID for window timer
-local flightId = getFieldInfo("ls23").id -- Input ID for flight timer
+local winId = getFieldInfo("ls22").id -- Input ID for window timer
+local flightId = getFieldInfo("ls24").id -- Input ID for flight timer
 local altiId = getFieldInfo("Alti+").id -- Input ID for the Alti sensor
 local altiTime -- Time for recording start height
 local prevWt -- Previous window timer value
