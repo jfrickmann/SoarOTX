@@ -1,10 +1,11 @@
 -- JF F3RES Timing and score keeping, fixed part
--- Timestamp: 2018-12-31
+-- Timestamp: 2019-09-20
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F3RES.
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 -- Depends on custom script exporting the value of global "tmr" to OpenTX
 
+local sk = { } -- Variables shared with the loadable part
 local myFile = "/SCRIPTS/TELEMETRY/JF3R/SK.lua" -- Lua file to be loaded and unloaded
 local winId = getFieldInfo("ls16").id -- Input ID for window timer
 local flightId = getFieldInfo("ls18").id -- Input ID for flight timer
@@ -14,8 +15,6 @@ local prevFt -- Previous flight timer value
 local startHeightRec -- Start height has been recorded
 
 -- Program states, shared with loadable part
-sk = {} -- Variables shared with the loadable part
-local sk = sk -- Local reference is faster than a global
 sk.STATE_SETWINTMR = 0 -- Set window time before the flight
 sk.STATE_SETFLTTMR = 1 -- Set flight time before the flight
 sk.STATE_WINDOW = 2 -- Task window is active
@@ -66,7 +65,7 @@ end  --  background()
 
 -- Forward run() call to the loadable part
 local function run(event)
-	return RunLoadable(myFile, event)
+	return RunLoadable(myFile, event, sk)
 end
 
 return {background = background, run = run}

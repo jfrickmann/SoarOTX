@@ -1,11 +1,11 @@
 -- JF F3J Score Browser
--- Timestamp: 2019-09-18
+-- Timestamp: 2019-09-20
 -- Created by Jesper Frickmann
 -- Telemetry script for browsing scores recorded in the log file.
 
 local LOG_FILE = "/LOGS/JF F3J Scores.csv" -- Log file
 local skFile = "/SCRIPTS/TELEMETRY/JF3J/SK.lua" -- Score keeper user interface file
-
+local sk = ...  -- List of variables shared between fixed and loadable parts
 local logFile -- Log file handle
 local lastTime = 0 -- Last time that run() was called, used for refreshing
 local index = 1 -- Index to currently selected line in log file

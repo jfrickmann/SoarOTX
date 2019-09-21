@@ -1,12 +1,11 @@
 -- JF F5J Timing and score keeping, loadable part
--- Timestamp: 2019-09-16
+-- Timestamp: 2019-09-20
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F5J.
 
+local sk = ...  -- List of variables shared between fixed and loadable parts
 local sbFile = "/SCRIPTS/TELEMETRY/JF5J/SB.lua" -- Score browser user interface file
 local Draw = LoadWxH("JF5J/SK.lua", sk) -- Screen size specific function
-
-sk.armId = getFieldInfo("ls19").id -- Input ID for motor arming
 
 local function run(event)
 	sk.fltTmr = model.getTimer(0)

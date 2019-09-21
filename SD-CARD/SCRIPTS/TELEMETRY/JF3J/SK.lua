@@ -1,11 +1,12 @@
 -- JF F3J Timing and score keeping, loadable part
--- Timestamp: 2019-09-18
+-- Timestamp: 2019-09-20
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F3J.
 
 local sbFile = "/SCRIPTS/TELEMETRY/JF3J/SB.lua" -- Score browser user interface file
-local ui = {} -- List of  variables shared with loadable user interface
-local Draw = LoadWxH("JF3J/SK.lua", ui) -- Screen size specific function
+local sk = ...  -- List of variables shared between fixed and loadable parts
+local ui = { } -- List of  variables shared with loadable user interface
+local Draw = LoadWxH("JF3J/SK.lua", sk, ui) -- Screen size specific function
 
 local function run(event)
 	ui.winTmr = model.getTimer(0)

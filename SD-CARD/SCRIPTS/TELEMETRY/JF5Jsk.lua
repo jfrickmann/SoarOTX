@@ -1,10 +1,12 @@
 -- JF F5J Timing and score keeping, fixed part
--- Timestamp: 2019-04-13
+-- Timestamp: 2019-09-20
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F5J.
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 -- Depends on custom script exporting the value of global "tmr" to OpenTX
 
+local sk = { } -- Variables shared with the loadable part
+sk.armId = getFieldInfo("ls19").id -- Input ID for motor arming
 local motorId = getFieldInfo("ls21").id -- Input ID for motor run
 local triggerId = getFieldInfo("ls26").id -- Input ID for the trigger switch
 local altiId = getFieldInfo("Alti+").id -- Input ID for the Alti sensor
@@ -13,8 +15,6 @@ local prevMt -- Previous motor timer value
 local prevFt -- Previous flight timer value
 
 -- Program states, shared with loadable part
-sk = {} -- Variables shared with the loadable part
-local sk = sk -- Local reference is faster than a global
 sk.STATE_INITIAL = 0 -- Set flight time before the flight
 sk.STATE_MOTOR= 1 -- Motor running
 sk.STATE_GLIDE = 2 -- Gliding
@@ -114,7 +114,7 @@ end  --  background()
 
 -- Forward run() call to the loadable part
 local function run(event)
-	return RunLoadable(sk.myFile, event)
+	return RunLoadable(sk.myFile, event, sk)
 end
 
 return {background = background, run = run}

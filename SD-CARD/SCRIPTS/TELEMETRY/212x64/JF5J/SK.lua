@@ -1,5 +1,5 @@
 -- 212x64/JF5J/SK.lua
--- Timestamp: 2019-09-18
+-- Timestamp: 2019-09-20
 -- Created by Jesper Frickmann
 
 local sk = ... -- List of shared variables

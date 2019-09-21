@@ -1,8 +1,8 @@
 -- 128x64/JF3J/SK.lua
--- Timestamp: 2019-09-18
+-- Timestamp: 2019-09-20
 -- Created by Jesper Frickmann
 
-local ui = ... -- List of shared variables
+local sk, ui = ... -- List of shared variables
 
 local 	function Draw()
 	local fmNbr, fmName = getFlightMode()
