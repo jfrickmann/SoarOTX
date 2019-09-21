@@ -1,6 +1,8 @@
 -- 212x64/JF3K/SK.lua
--- Timestamp: 2019-09-11
+-- Timestamp: 2019-09-20
 -- Created by Jesper Frickmann
+
+local sk = ...  -- List of variables shared between fixed and loadable parts
 
 -- Convert time to minutes and seconds
 local function MinSec(t)
@@ -52,7 +54,7 @@ local function Draw()
 	else
 		lcd.drawText(133, 13, "Tgt", MIDSIZE)
 
-		if plugin.pokerCalled then
+		if sk.p.pokerCalled then
 			att = INVERS + BLINK
 		end
 	end
@@ -65,10 +67,10 @@ local function Draw()
 	att = 0
 	
 	if sk.state == sk.STATE_PAUSE then
-		lcd.drawText(104, 50, string.format("Total %i sec.", plugin.totalScore), MIDSIZE)
+		lcd.drawText(104, 50, string.format("Total %i sec.", sk.p.totalScore), MIDSIZE)
 	elseif sk.state == sk.STATE_FINISHED then
 		lcd.drawText(104, 50, "Done!", MIDSIZE + BLINK)
-		lcd.drawText(150, 50, string.format("%i sec.", plugin.totalScore), MIDSIZE)
+		lcd.drawText(150, 50, string.format("%i sec.", sk.p.totalScore), MIDSIZE)
 	else
 		if sk.winTimer < 0 then
 			att = INVERS + BLINK
@@ -80,7 +82,7 @@ local function Draw()
 			lcd.drawText(102, 50, string.format("%i launch%s left", sk.launches, s), MIDSIZE)
 		end
 
-		if sk.state >= sk.STATE_COMMITTED and sk.taskScores - #sk.scores > 1 and plugin.pokerCalled then				
+		if sk.state >= sk.STATE_COMMITTED and sk.taskScores - #sk.scores > 1 and sk.p.pokerCalled then				
 			lcd.drawText(104, 50, "Next call", MIDSIZE)
 			lcd.drawTimer(LCD_W, 50, sk.PokerCall(), RIGHT + MIDSIZE)
 		end

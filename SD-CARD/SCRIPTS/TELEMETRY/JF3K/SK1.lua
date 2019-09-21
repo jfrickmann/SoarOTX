@@ -1,6 +1,8 @@
 -- Timing and score keeping, loadable plugin for F3K tasks
--- Timestamp: 2019-07-07
+-- Timestamp: 2019-09-20
 -- Created by Jesper Frickmann
+
+local sk = ...  -- List of variables shared between fixed and loadable parts
 
 -- If no task is selected, then return name and task list to the menu
 if sk.task == 0 then
@@ -32,8 +34,8 @@ if sk.state == sk.STATE_IDLE then
 	local MaxScore
 	
 	--  Variables shared between task def. and UI must be added to own list
-	plugin = { }
-	plugin.totalScore = 0
+	sk.p = { }
+	sk.p.totalScore = 0
 	
 	do -- Discard from memory after use
 		local taskData = {
@@ -89,10 +91,10 @@ if sk.state == sk.STATE_IDLE then
 
 	-- UpdateTotal() updates the totalScore
 	local function UpdateTotal()
-		plugin.totalScore = 0
+		sk.p.totalScore = 0
 		
 		for i = 1, #sk.scores do
-			plugin.totalScore = plugin.totalScore + math.min(MaxScore(i), sk.scores[i])
+			sk.p.totalScore = sk.p.totalScore + math.min(MaxScore(i), sk.scores[i])
 		end
 	end
 	
@@ -129,7 +131,7 @@ if sk.state == sk.STATE_IDLE then
 		end -- PokerCall()
 
 		sk.TargetTime = function()
-			if plugin.pokerCalled then
+			if sk.p.pokerCalled then
 				return model.getTimer(0).start
 			else
 				return sk.PokerCall()
@@ -265,9 +267,9 @@ if sk.state == sk.STATE_IDLE then
 				return
 			else
 				-- In Poker, only score the call
-				if plugin.pokerCalled then
+				if sk.p.pokerCalled then
 					score = model.getTimer(0).start
-					plugin.pokerCalled = false
+					sk.p.pokerCalled = false
 				end
 			end
 			
@@ -282,7 +284,7 @@ if sk.state == sk.STATE_IDLE then
 				playTone(880, 1000, 0)
 				sk.state = sk.STATE_FINISHED
 			elseif sk.state == sk.STATE_COMMITTED then
-				plugin.pokerCalled = true
+				sk.p.pokerCalled = true
 			end
 		end
 

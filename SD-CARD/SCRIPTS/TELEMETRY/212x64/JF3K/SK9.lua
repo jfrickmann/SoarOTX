@@ -1,8 +1,8 @@
 -- 212x64/JF3K/SK9.lua
--- Timestamp: 2019-09-14
+-- Timestamp: 2019-09-20
 -- Created by Jesper Frickmann
 
-local ui = ...
+local sk, ui = ...
 
 local function Draw()
 	local x = 0

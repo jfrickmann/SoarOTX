@@ -1,10 +1,9 @@
 -- 212x64/JF3Kalti/SK.lua
--- Timestamp: 2019-09-14
+-- Timestamp: 2019-09-20
 -- Created by Jesper Frickmann
 
-plugin.heightInt = 4 -- Interval for recording heights
-
-local DrawGraph = ...
+local sk, DrawGraph = ...  -- List of variables shared between fixed and loadable parts
+sk.p.heightInt = 4 -- Interval for recording heights
 
 -- Convert time to minutes and seconds
 local function MinSec(t)
@@ -48,8 +47,8 @@ local function Draw()
 		lcd.drawText(LCD_W - 33, 48, "QR", SMLSIZE + INVERS)
 	end
 
-	if plugin.launchHeight > 0 then
-		lcd.drawText(126, 56, string.format("Launch %i m", plugin.launchHeight))
+	if sk.p.launchHeight > 0 then
+		lcd.drawText(126, 56, string.format("Launch %i m", sk.p.launchHeight))
 	end
 	
 	-- Scores
@@ -58,10 +57,10 @@ local function Draw()
 		
 		if i > #sk.scores then
 			lcd.drawText(126, dy * i, string.format("%i. - - -", i))
-		elseif plugin.unit == "s" then
+		elseif sk.p.unit == "s" then
 			lcd.drawText(126, dy * i, string.format("%i. %02i:%02i", i, MinSec(sk.scores[i].time)))
 		else
-			lcd.drawText(126, dy * i, string.format("%i. %4i%s", i, sk.scores[i].gain, plugin.unit))
+			lcd.drawText(126, dy * i, string.format("%i. %4i%s", i, sk.scores[i].gain, sk.p.unit))
 		end
 	end
 end  --  Draw()

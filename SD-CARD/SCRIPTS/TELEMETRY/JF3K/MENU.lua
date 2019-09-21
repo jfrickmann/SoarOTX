@@ -1,7 +1,8 @@
 -- Timing and score keeping, loadable menu for selecting task
--- Timestamp: 2019-08-04
+-- Timestamp: 2019-09-20
 -- Created by Jesper Frickmann
 
+local sk = ...  -- List of variables shared between fixed and loadable parts
 local pluginFile = "/SCRIPTS/TELEMETRY/JF3K/SK%i.lua"
 local plugins = { } -- List of plugins
 local scanPlugin = 1 -- Index of plugin to scan
@@ -12,7 +13,7 @@ sk.counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45} -- Flight timer c
 sk.state = sk.STATE_IDLE
 
 -- Set up a task that does not record scores
-plugin = nil
+sk.p = nil -- Plugin specific variable list
 sk.task = 0
 sk.taskWindow = 0
 sk.launches = -1
@@ -32,7 +33,7 @@ local function run(event)
 		local chunk = loadScript(file)
 
 		if chunk then
-			local name, tasks = chunk()
+			local name, tasks = chunk(sk)
 			plugins[#plugins + 1] = { file, name, tasks }
 		end
 		

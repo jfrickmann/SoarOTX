@@ -1,8 +1,8 @@
 -- 128x64/JF3K/SK9.lua
--- Timestamp: 2019-09-14
+-- Timestamp: 2019-09-20
 -- Created by Jesper Frickmann
 
-local ui = ...
+local sk, ui = ...  -- List of variables shared between fixed and loadable parts
 
 local function Draw()
 	local y = 8
@@ -28,7 +28,7 @@ local function Draw()
 	lcd.drawText(50, 42, string.format("Total %i %s", ui.totalScore, ui.unitStr))
 	
 	-- Warn if the log file is growing too large
-	if #sbindices > 200 then
+	if #ui.indices > 200 then
 		lcd.drawText(5, 57, " Log getting too large ", BLINK + INVERS)
 	end
 

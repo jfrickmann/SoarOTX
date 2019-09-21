@@ -1,13 +1,13 @@
 -- JF F3K Timing and score keeping, fixed part
--- Timestamp: 2019-08-08
+-- Timestamp: 2019-09-20
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 
 wTmr = 0 -- Controls window timer with MIXES script
 fTmr = 0 -- Controls flight timer with MIXES script
-sk = { } -- List of variables shared between fixed and loadable parts
 
--- The following shared variables are redefined by loadable plugins:
+ -- List of variables shared between fixed and loadable parts
+local sk = { }
 sk.taskWindow = 0 -- Task window duration (zero counts up)
 sk.launches = -1 -- Number of launches allowed, -1 for unlimited
 sk.taskScores = 0 -- Number of scores in task
@@ -226,7 +226,7 @@ end  --  background()
 
 -- Forward run() call to the loadable part
 local function run(event)
-	return RunLoadable(sk.run, event)
+	return RunLoadable(sk.run, event, sk)
 end
 
 return {background = background, run = run}

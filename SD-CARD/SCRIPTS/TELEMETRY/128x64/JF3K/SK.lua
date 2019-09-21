@@ -1,6 +1,8 @@
 -- 128x64/JF3K/SK.lua
--- Timestamp: 2019-09-11
+-- Timestamp: 2019-09-20
 -- Created by Jesper Frickmann
+
+local sk = ...  -- List of variables shared between fixed and loadable parts
 
 -- The smaller screens can only fit 7 flights
 sk.launches = math.min(7, sk.launches)
@@ -47,7 +49,7 @@ local function Draw()
 	else
 		lcd.drawText(62, 15, "Tgt")
 
-		if plugin.pokerCalled then
+		if sk.p.pokerCalled then
 			att = INVERS + BLINK
 		end
 	end
@@ -60,10 +62,10 @@ local function Draw()
 	att = 0
 	
 	if sk.state == sk.STATE_PAUSE then
-		lcd.drawText(LCD_W, 53, string.format("Total score %i s", plugin.totalScore), RIGHT)
+		lcd.drawText(LCD_W, 53, string.format("Total score %i s", sk.p.totalScore), RIGHT)
 	elseif sk.state == sk.STATE_FINISHED then
 		lcd.drawText(45, 53, "Done!", BLINK)
-		lcd.drawText(LCD_W, 53, string.format("Total %i s", plugin.totalScore), RIGHT)
+		lcd.drawText(LCD_W, 53, string.format("Total %i s", sk.p.totalScore), RIGHT)
 	else
 		if sk.winTimer < 0 then
 			att = INVERS + BLINK
@@ -75,7 +77,7 @@ local function Draw()
 			lcd.drawText(45, 53, string.format("%i launch%s left", sk.launches, s))
 		end
 
-		if sk.state >= sk.STATE_COMMITTED and sk.taskScores - #sk.scores > 1 and plugin.pokerCalled then
+		if sk.state >= sk.STATE_COMMITTED and sk.taskScores - #sk.scores > 1 and sk.p.pokerCalled then
 			lcd.drawText(45, 53, "Next call")
 			lcd.drawTimer(LCD_W, 50, sk.PokerCall(), RIGHT + MIDSIZE)
 		end

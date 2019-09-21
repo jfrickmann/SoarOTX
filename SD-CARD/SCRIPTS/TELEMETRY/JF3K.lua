@@ -1,6 +1,6 @@
 -- JF F3K Timing and score keeping, fixed part
 -- Standalone version for third party model definitions.
--- Timestamp: 2019-09-12
+-- Timestamp: 2019-09-20
 -- Created by Jesper Frickmann
 
 -- Load JFutil (this is done with a Special Function in my model file
@@ -11,7 +11,8 @@ end
 
 wTmr = 0 -- Controls window timer with MIXES script
 fTmr = 0 -- Controls flight timer with MIXES script
-sk = { } -- List of variables shared between fixed and loadable parts
+
+local sk = { } -- List of variables shared between fixed and loadable parts
 
 -- The following shared variables are redefined by loadable plugins:
 sk.taskWindow = 0 -- Task window duration (zero counts up)
@@ -280,7 +281,7 @@ end  --  background()
 
 -- Forward run() call to the loadable part
 local function run(event)
-	return RunLoadable(sk.run, event)
+	return RunLoadable(sk.run, event, sk)
 end
 
 return {background = background, run = run}

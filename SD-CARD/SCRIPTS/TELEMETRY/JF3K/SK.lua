@@ -1,12 +1,13 @@
 -- User interface for several score keeper plugins
--- Timestamp: 2019-09-13
+-- Timestamp: 2019-09-20
 -- Created by Jesper Frickmann
 
+local sk = ...  -- List of variables shared between fixed and loadable parts
 local 	exitTask = 0 -- Prompt to save task before EXIT
 local stopWindow = 0 -- Prompt to stop flight timer first
 
 -- Screen size specific graphics functions
-local Draw, PromptScores, NotifyStopWindow, NotifyStopFlight = LoadWxH("JF3K/SK.lua")
+local Draw, PromptScores, NotifyStopWindow, NotifyStopFlight = LoadWxH("JF3K/SK.lua", sk)
 
 local function run(event)
 	if exitTask == -1 then -- Save scores?
@@ -22,7 +23,7 @@ local function run(event)
 				io.write(logFile, string.format(",%04i-%02i-%02i", now.year, now.mon, now.day))
 				io.write(logFile, string.format(",%02i:%02i", now.hour, now.min))				
 				io.write(logFile, string.format(",s,%i", sk.taskScores))
-				io.write(logFile, string.format(",%i", plugin.totalScore))
+				io.write(logFile, string.format(",%i", sk.p.totalScore))
 				
 				for i = 1, #sk.scores do
 					io.write(logFile, string.format(",%i", sk.scores[i]))

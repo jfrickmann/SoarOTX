@@ -1,6 +1,8 @@
 -- Timing and score keeping, loadable plugin for browsing saved scores
--- Timestamp: 2019-09-14
+-- Timestamp: 2019-09-20
 -- Created by Jesper Frickmann
+
+local sk = ...  -- List of variables shared between fixed and loadable parts
 
 -- If no task is selected, then return name and task list to the menu
 if sk.task == 0 then
@@ -18,7 +20,7 @@ local logFile -- Log file handle
 local lastTime = 0 -- Last time that run() was called, used for refreshing
 local index = 1 -- Index to currently selected line in log file
 local ui = {} -- List of  variables shared with loadable user interface
-local Draw = LoadWxH("JF3K/SK9.lua", ui) -- Screen size specific function
+local Draw = LoadWxH("JF3K/SK9.lua", sk, ui) -- Screen size specific function
 
 ui.indices = {0} -- Vector of indices pointing to start of lines in the log file +
 
