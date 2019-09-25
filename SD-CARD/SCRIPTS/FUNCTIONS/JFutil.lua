@@ -1,5 +1,5 @@
 -- JF Library
--- Timestamp: 2019-09-13
+-- Timestamp: 2019-09-22
 -- Created by Jesper Frickmann
 -- Has a few shared functions and variables for telemetry and functions scripts
 -- Works together with a small shell script to load and unload program and telemetry scripts.
@@ -18,7 +18,7 @@ local ST_MARKED = 4 -- Programs are marked inactive and swept if not running
 -- Load a file chunk for Tx specific screen size
 function LoadWxH(file, ...)
 	-- Add the path to the files for radio's screen resolution
-	file = string.format("/SCRIPTS/TELEMETRY/%ix%i/%s/", LCD_W, LCD_H, file)
+	local file = string.format("/SCRIPTS/TELEMETRY/%ix%i/%s/", LCD_W, LCD_H, file)
 	
 	local chunk = loadScript(file)
 	return chunk(...)
@@ -45,7 +45,7 @@ function RunLoadable(file, event, ...)
 		end
 		
 		-- Wait and sweep inactive programs before loading
-		DrawMenu(" Loading . . .", 0, 0)
+		InfoBar(" Loading . . .", 0, 0)
 
 		-- Mark all programs as inactive
 		for f in pairs(states) do

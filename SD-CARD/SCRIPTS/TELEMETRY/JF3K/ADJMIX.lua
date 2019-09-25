@@ -2,7 +2,7 @@
 -- Timestamp: 2019-09-14
 -- Created by Jesper Frickmann
 
-local ui = {} -- List of  variables shared with loadable user interface
+local ui = LoadWxH("JF3K/ADJMIX.lua", ui) -- Screen size specific function
 
 -- For updating aileron throws with negative differential
 ui.gvAil = 0 -- Index of global variable used for aileron travel
@@ -16,6 +16,4 @@ ui.gv4 = getFieldInfo("gvar4").id
 ui.gv5 = getFieldInfo("gvar5").id
 ui.gv6 = getFieldInfo("gvar6").id
 
-local run = LoadWxH("JF3K/ADJMIX.lua", ui) -- Screen size specific function
-
-return{run = run}
+return{run = ui.run}

@@ -1,15 +1,20 @@
 -- 212x64/JF3K/SK9.lua
--- Timestamp: 2019-09-20
+-- Timestamp: 2019-09-24
 -- Created by Jesper Frickmann
 
-local sk, ui = ...
+local sk = ...  -- List of variables shared between fixed and loadable parts
+local ui = { } -- User interface variables
 
-local function Draw()
+function ui.Draw()
 	local x = 0
 	local y = 9
 	local split
 
-	DrawMenu(ui.taskName)
+	if not ui.planeName then
+		return InfoBar(" No scores recorded ")
+	end
+	
+	InfoBar(ui.taskName)
 
 	if ui.taskScores == 5 or taskScores == 6 then
 		split = 4
@@ -47,4 +52,4 @@ local function Draw()
 	
 end -- Draw()
 	
-return Draw
+return ui

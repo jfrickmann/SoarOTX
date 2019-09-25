@@ -1,10 +1,16 @@
 -- 212x64/JF3R/SB.lua
--- Timestamp: 2019-09-16
+-- Timestamp: 2019-09-24
 -- Created by Jesper Frickmann
 
-local ui = ... -- List of shared variables
+local ui = { } -- List of shared variables
 
-local	function Draw()
+function ui.Draw()
+	if #ui.lineData < 7 then
+		return InfoBar(" No scores recorded ")
+	end
+
+	InfoBar(ui.lineData[2] .. " " .. ui.lineData[3])
+
 	lcd.drawText(0, 20, "Landing", MIDSIZE)
 	lcd.drawNumber(95, 16, ui.lineData[4], DBLSIZE + RIGHT)
 
@@ -23,4 +29,4 @@ local	function Draw()
 	end
 end -- Draw()
 
-return Draw
+return ui

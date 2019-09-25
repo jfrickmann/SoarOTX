@@ -1,12 +1,13 @@
 -- 212x64/JF3J/SK.lua
--- Timestamp: 2019-09-20
+-- Timestamp: 2019-09-24
 -- Created by Jesper Frickmann
 
-local sk, ui = ... -- List of shared variables
+local sk = ... -- List of shared variables
+local ui = { } -- List of  variables shared with loadable user interface
 
-local 	function Draw()
+function ui.Draw()
 	local fmNbr, fmName = getFlightMode()
-	DrawMenu(" " .. fmName .. " ")	
+	InfoBar(" " .. fmName .. " ")	
 
 	lcd.drawText(0, 20, "Landing", MIDSIZE)
 	lcd.drawText(0, 42, "Start", MIDSIZE)
@@ -55,4 +56,4 @@ local 	function Draw()
 	end
 end  --  Draw()
 
-return Draw
+return ui

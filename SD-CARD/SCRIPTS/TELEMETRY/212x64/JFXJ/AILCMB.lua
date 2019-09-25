@@ -1,11 +1,11 @@
 -- 212x64/JF/AILCMB.lua
--- Timestamp: 2019-09-16
+-- Timestamp: 2019-09-22
 -- Created by Jesper Frickmann
 
 local gv1, gv2, gv5 = ... -- List of shared variables
 
 local	function Draw()
-	DrawMenu(" Aileron and camber ")
+	InfoBar(" Aileron and camber ")
 	
 	lcd.drawText(10, 18, "Aileron trim = aileron", 0)
 	lcd.drawText(10, 30, "Rudder trim = flaperon", 0)

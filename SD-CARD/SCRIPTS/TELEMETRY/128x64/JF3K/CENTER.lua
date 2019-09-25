@@ -1,9 +1,9 @@
 -- 128x64/JF3K/CENTER.lua
--- Timestamp: 2019-09-14
+-- Timestamp: 2019-09-22
 -- Created by Jesper Frickmann
 
 local function Draw(ail, brk)
-	DrawMenu("Flaperons")
+	InfoBar("Flaperons")
 
 	lcd.drawText(2, 12, "Use throttle")
 	lcd.drawText(2, 24, "trim to center")

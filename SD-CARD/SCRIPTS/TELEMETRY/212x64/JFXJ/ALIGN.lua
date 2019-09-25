@@ -1,11 +1,11 @@
 -- 212x64/JF/ALIGN.lua
--- Timestamp: 2019-09-16
+-- Timestamp: 2019-09-24
 -- Created by Jesper Frickmann
 
-local ui = ... -- List of shared variables
+local ui = { } -- List of shared variables
 
-local	function Draw()
-	DrawMenu(" Flaps/aileron alignment ")
+function ui.Draw()
+	InfoBar(" Flaps/aileron alignment ")
 
 	lcd.drawText(5, 13, "LA", SMLSIZE)
 	ui.DrawCurve(4, 12, 48, 36, ui.crvLft[2], ui.nPoints - ui.lasti + 1)
@@ -22,4 +22,4 @@ local	function Draw()
 	lcd.drawText(8, 54, "Thr. to move. Rud. and aile. trims to align.", SMLSIZE)
 end -- Draw()
 
-return Draw
+return ui

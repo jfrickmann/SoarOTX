@@ -1,11 +1,11 @@
 -- 128x64/JF/ADJMIX.lua
--- Timestamp: 2019-09-16
+-- Timestamp: 2019-09-22
 -- Created by Jesper Frickmann
 
 local gv3, gv4, gv6, gv7 = ... -- List of shared variables
 
 local	function Draw()
-	DrawMenu("Adjust mixes")
+	InfoBar("Adjust mixes")
 
 	lcd.drawText(5, 14, "Rudder trim =", SMLSIZE)
 	lcd.drawText(5, 26, "Aileron trim =", SMLSIZE)

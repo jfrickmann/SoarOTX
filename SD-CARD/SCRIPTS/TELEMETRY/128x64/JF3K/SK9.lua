@@ -1,13 +1,18 @@
 -- 128x64/JF3K/SK9.lua
--- Timestamp: 2019-09-20
+-- Timestamp: 2019-09-24
 -- Created by Jesper Frickmann
 
-local sk, ui = ...  -- List of variables shared between fixed and loadable parts
+local sk = ...  -- List of variables shared between fixed and loadable parts
+local ui = { } -- User interface variables
 
-local function Draw()
+function ui.Draw()
 	local y = 8
 	
-	DrawMenu(ui.taskName)
+	if not ui.planeName then
+		return InfoBar("No scores recorded")
+	end
+	
+	InfoBar(ui.taskName)
 	
 	for i = 1, ui.taskScores do
 		if ui.scores[i] then
@@ -34,4 +39,4 @@ local function Draw()
 
 end -- Draw()
 	
-return Draw
+return ui

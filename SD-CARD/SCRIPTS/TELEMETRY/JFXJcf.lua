@@ -7,12 +7,11 @@
 local active = false
 local lastRun = 0
 local ui = {} -- List of  variables shared with loadable user interface
-ui.selection = 1
-
-local Draw = LoadWxH("JFXJcf.lua", ui) -- Screen size specific function
+local selection = 1
+local menu -- Screen size specific menu
 
 -- Menu texts
-ui.texts = {
+local texts = {
 	"1. Channel configuration",
 	"2. Align flaps & ailerons",
 	"3. Adjust airbrake curves",
@@ -27,11 +26,17 @@ local files = {
 	"/SCRIPTS/TELEMETRY/JFXJ/AILCMB.lua",
 	"/SCRIPTS/TELEMETRY/JFXJ/ADJMIX.lua" }
 
+local function init()
+	menu = LoadWxH("MENU.lua")
+	menu.items = texts
+	menu.title = "Configuration"
+end -- init
+
 local function background()
 	if active then
 		-- Do not leave loaded configuration scripts in the background
 		if getTime() - lastRun > 100 then
-			Unload(files[ui.selection])
+			Unload(files[selection])
 			active = false
 		end
 	else
@@ -51,28 +56,28 @@ local function run(event)
 	if active then
 		-- Run the active function
 		lastRun = getTime()
-		if RunLoadable(files[ui.selection], event) then
-			Unload(files[ui.selection])
+		if RunLoadable(files[selection], event) then
+			Unload(files[selection])
 			active = false
 		end
 	else
 		-- Handle menu key events
 		if event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_DOWN_BREAK then
-			ui.selection = ui.selection + 1
-			if ui.selection > #ui.texts then 
-				ui.selection = 1
+			selection = selection + 1
+			if selection > #texts then 
+				selection = 1
 			end
 		end
 		
 		if event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_UP_BREAK then
-			ui.selection = ui.selection - 1
-			if ui.selection <= 0 then 
-				ui.selection = #ui.texts
+			selection = selection - 1
+			if selection <= 0 then 
+				selection = #texts
 			end
 		end
 		
-		Draw()
+		menu.Draw(selection)
 	end
 end
 
-return {background = background, run = run}
+return {init = init, background = background, run = run}

@@ -1,5 +1,5 @@
 -- JF Channel configuration
--- Timestamp: 2019-09-14
+-- Timestamp: 2019-09-22
 -- Created by Jesper Frickmann
 
 local N = 32 -- Highest channel number to swap
@@ -130,7 +130,7 @@ local function MoveSelected(direction)
 end -- SwapChannels()
 
 local function Draw()
-	DrawMenu(MENUTXT)
+	InfoBar(MENUTXT)
 	
 	-- Draw vertical reference lines
 	for i = -6, 6 do
@@ -387,7 +387,7 @@ local function run(event)
 
 	-- Update the screen
 	if stage == 1 then
-		DrawMenu(" Warning! ")
+		InfoBar(" Warning! ")
 
 		lcd.drawText(XTXT, 12, "Disconnect the motor!", ATT1)
 		lcd.drawText(XTXT, 28, "Sudden spikes may occur", ATT2)

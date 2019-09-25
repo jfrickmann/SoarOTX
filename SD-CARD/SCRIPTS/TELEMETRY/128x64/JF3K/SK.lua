@@ -1,8 +1,9 @@
 -- 128x64/JF3K/SK.lua
--- Timestamp: 2019-09-20
+-- Timestamp: 2019-09-24
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
+local ui = { } -- User interface functions
 
 -- The smaller screens can only fit 7 flights
 sk.launches = math.min(7, sk.launches)
@@ -14,11 +15,11 @@ local function MinSec(t)
 	return m, t - 60 * m
 end -- MinSec()
 
-local function Draw()
+function ui.Draw()
 	local y = 8
 	local att -- Screen drawing attribues
 	
-	DrawMenu(sk.taskName)
+	InfoBar(sk.taskName)
 	
 	-- Draw scores
 	for i = 1, sk.taskScores do
@@ -86,25 +87,25 @@ local function Draw()
 	lcd.drawTimer(LCD_W, 28, model.getTimer(1).value, DBLSIZE + RIGHT + att)
 end -- Draw()
 
-local function PromptScores()
-	DrawMenu(sk.taskName)
+function ui.PromptScores()
+	InfoBar(sk.taskName)
 	lcd.drawText(8, 15, "Save scores?", MIDSIZE)
 	lcd.drawText(8, 35, "ENTER = SAVE")
 	lcd.drawText(8, 45, "EXIT = DON'T")
 end -- PromptScores()
 
-local function NotifyStopWindow()
-	DrawMenu(sk.taskName)
+function ui.NotifyStopWindow()
+	InfoBar(sk.taskName)
 	lcd.drawText(8, 15, "Stop window", MIDSIZE)
 	lcd.drawText(8, 30, "timer before", MIDSIZE)
 	lcd.drawText(8, 45, "leaving task.", MIDSIZE)
 end -- NotifyStopWindow()
 
-local function NotifyStopFlight()
-	DrawMenu(sk.taskName)
+function ui.NotifyStopFlight()
+	InfoBar(sk.taskName)
 	lcd.drawText(8, 15, "Stop the flight", MIDSIZE)
 	lcd.drawText(8, 30, "timer before", MIDSIZE)
 	lcd.drawText(8, 45, "pausing window.", MIDSIZE)
 end -- NotifyStopFlight()
 
-return Draw, PromptScores, NotifyStopWindow, NotifyStopFlight
+return ui

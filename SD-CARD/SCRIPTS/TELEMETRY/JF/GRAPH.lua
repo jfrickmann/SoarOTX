@@ -1,5 +1,5 @@
 -- JF Log Data Graph, loadable part for interactive plot 
--- Timestamp: 2019-09-12
+-- Timestamp: 2019-09-22
 -- Created by Jesper Frickmann
 -- Telemetry script for plotting telemetry parameters recorded in the log file.
 -- The graph design was inspired by Nigel Sheffield's script
@@ -148,7 +148,7 @@ local function run(event)
 	if LCD_W == 128 then spacer = " " end
 	
 	local title = " " .. string.sub(gr.flightTable[gr.flightIndex][2], 1, 8) .. spacer .. gr.logFileHeaders[gr.plotIndex]
-	DrawMenu(title)
+	InfoBar(title)
 		
 	if gr.viewMode == 1 then -- Normal graph view
 		-- Change view mode

@@ -1,11 +1,11 @@
 -- 212x64/JF/BRKCRV.lua
--- Timestamp: 2019-09-16
+-- Timestamp: 2019-09-24
 -- Created by Jesper Frickmann
 
-local ui = ... -- List of shared variables
+local ui = { } -- List of shared variables
 
-local	function Draw()
-	DrawMenu(" Airbrake curves ")
+function ui.Draw()
+	InfoBar(" Airbrake curves ")
 	lcd.drawText(10, 14, "Use throttle to ")
 	lcd.drawText(10, 26, "move airbrakes.")
 	lcd.drawText(10, 38, "Thr. and elev.")
@@ -19,4 +19,4 @@ local	function Draw()
 	ui.DrawCurve(157, 12, 48, 48, ui.crv[2], ui.lasti)
 end -- Draw()
 
-return Draw
+return ui

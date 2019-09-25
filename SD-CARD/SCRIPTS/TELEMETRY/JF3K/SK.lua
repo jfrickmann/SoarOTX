@@ -7,11 +7,11 @@ local 	exitTask = 0 -- Prompt to save task before EXIT
 local stopWindow = 0 -- Prompt to stop flight timer first
 
 -- Screen size specific graphics functions
-local Draw, PromptScores, NotifyStopWindow, NotifyStopFlight = LoadWxH("JF3K/SK.lua", sk)
+local ui = LoadWxH("JF3K/SK.lua", sk)
 
 local function run(event)
 	if exitTask == -1 then -- Save scores?
-		PromptScores()
+		ui.PromptScores()
 
 		-- Record scores if user pressed ENTER
 		if event == EVT_ENTER_BREAK then
@@ -41,18 +41,18 @@ local function run(event)
 		if getTime() > exitTask then
 			exitTask = 0
 		else
-			NotifyStopWindow()
+			ui.NotifyStopWindow()
 		end
 	
 	elseif stopWindow > 0 then
 		if getTime() > stopWindow then
 			stopWindow = 0
 		else
-			NotifyStopFlight()
+			ui.NotifyStopFlight()
 		end
 	
 	else
-		Draw()
+		ui.Draw()
 
 		-- Toggle quick relaunch QR
 		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_UP_BREAK then

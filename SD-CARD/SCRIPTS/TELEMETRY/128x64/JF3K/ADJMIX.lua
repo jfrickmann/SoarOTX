@@ -1,10 +1,10 @@
 -- 128x64/JF3K/ADJMIX.lua
--- Timestamp: 2019-09-14
+-- Timestamp: 2019-09-24
 -- Created by Jesper Frickmann
 
-local ui = ... -- List of shared variables
+local ui = { } -- List of shared variables
 
-local 	function run(event)
+function ui.run(event)
 	-- Press EXIT to quit
 	if event == EVT_EXIT_BREAK then
 		return true
@@ -14,7 +14,7 @@ local 	function run(event)
 	adj = 3
 	
 	-- Draw instructions on the screem
-	DrawMenu("Adjust mixes")
+	InfoBar("Adjust mixes")
 
 	lcd.drawText(2, 12, "Rudder trim =", SMLSIZE)
 	lcd.drawText(2, 24, "Aileron trim =", SMLSIZE)
@@ -41,4 +41,4 @@ local 	function run(event)
 	model.setGlobalVariable(ui.gvAil, 0, ail)
 end -- run()
 
-return run
+return ui

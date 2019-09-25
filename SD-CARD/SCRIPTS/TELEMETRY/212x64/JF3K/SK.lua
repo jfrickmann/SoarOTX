@@ -1,8 +1,9 @@
 -- 212x64/JF3K/SK.lua
--- Timestamp: 2019-09-20
+-- Timestamp: 2019-09-24
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
+local ui = { } -- User interface functions
 
 -- Convert time to minutes and seconds
 local function MinSec(t)
@@ -10,13 +11,13 @@ local function MinSec(t)
 	return m, t - 60 * m
 end -- MinSec()
 
-local function Draw()
+function ui.Draw()
 	local x = 0
 	local y = 9
 	local split
 	local att -- Screen drawing attribues
 	
-	DrawMenu(" " .. sk.taskName .. " ")
+	InfoBar(" " .. sk.taskName .. " ")
 
 	-- Draw scores
 	if sk.taskScores == 5 or sk.taskScores == 6 then
@@ -91,23 +92,23 @@ local function Draw()
 	lcd.drawTimer(LCD_W, 28, model.getTimer(1).value, DBLSIZE + RIGHT + att)
 end  --  Draw()
 
-local function PromptScores()
-	DrawMenu(" " .. sk.taskName .. " ")
+function ui.PromptScores()
+	InfoBar(" " .. sk.taskName .. " ")
 	lcd.drawText(38, 15, "Save scores?", DBLSIZE)
 	lcd.drawText(4, LCD_H - 16, "EXIT", MIDSIZE + BLINK)
 	lcd.drawText(LCD_W - 3, LCD_H - 16, "SAVE", MIDSIZE + BLINK + RIGHT)
 end -- PromptScores()
 
-local function NotifyStopWindow()
-	DrawMenu(" " .. sk.taskName .. " ")
+function ui.NotifyStopWindow()
+	InfoBar(" " .. sk.taskName .. " ")
 	lcd.drawText(38, 18, "Stop window timer", MIDSIZE)
 	lcd.drawText(38, 40, "before leaving task.", MIDSIZE)
 end -- NotifyStopWindow()
 
-local function NotifyStopFlight()
-	DrawMenu(" " .. sk.taskName .. " ")
+function ui.NotifyStopFlight()
+	InfoBar(" " .. sk.taskName .. " ")
 	lcd.drawText(30, 18, "Stop the flight timer", MIDSIZE)
 	lcd.drawText(30, 40, "before pausing window.", MIDSIZE)
 end -- NotifyStopFlight()
 
-return Draw, PromptScores, NotifyStopWindow, NotifyStopFlight
+return ui

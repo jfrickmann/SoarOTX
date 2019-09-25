@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable user interface for altimeter based tasks
--- Timestamp: 2019-09-20
+-- Timestamp: 2019-09-23
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -145,9 +145,7 @@ local Draw, PromptScores, NotifyStopWindow, NotifyStopFlight = LoadWxH("JF3K/SKa
 local function run(event)
 	-- Do we have an altimeter?
 	if not sk.p.altId then
-		lcd.clear()
-		lcd.drawText(10,10,"Altimeter", DBLSIZE)
-		lcd.drawText(10,30,"not found", DBLSIZE)
+		InfoBar("No altimeter")
 		
 		if event ~= 0 then
 			sk.run = sk.menu

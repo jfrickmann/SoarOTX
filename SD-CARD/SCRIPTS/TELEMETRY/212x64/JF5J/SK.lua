@@ -1,12 +1,17 @@
 -- 212x64/JF5J/SK.lua
--- Timestamp: 2019-09-20
+-- Timestamp: 2019-09-23
 -- Created by Jesper Frickmann
 
 local sk = ... -- List of shared variables
 
 local 	function Draw()
 	local fmNbr, fmName = getFlightMode()
-	DrawMenu(" " .. fmName .. " ")	
+	InfoBar(" " .. fmName .. " ")	
+
+	if getValue(sk.armId) >0 then
+		lcd.drawText(50, 28, "MOTOR  ARMED", DBLSIZE + BLINK + INVERS)
+		return
+	end
 
 	lcd.drawText(0, 20, "Landing", MIDSIZE)
 	lcd.drawText(0, 42, "Start", MIDSIZE)
@@ -43,11 +48,6 @@ local 	function Draw()
 		lcd.drawNumber(95, 38, sk.startHeight * 10, PREC1 + DBLSIZE + RIGHT)
 	end
 	
-	if getValue(sk.armId) >0 then
-		lcd.clear()
-		lcd.drawText(50, 16, "MOTOR  ARMED", DBLSIZE + BLINK + INVERS)
-	end
-
 	if sk.state == sk.STATE_SAVE then
 		lcd.drawText(4, LCD_H - 10, "EXIT", SMLSIZE + BLINK)
 		lcd.drawText(LCD_W - 3, LCD_H - 10, "SAVE", SMLSIZE + BLINK + RIGHT)

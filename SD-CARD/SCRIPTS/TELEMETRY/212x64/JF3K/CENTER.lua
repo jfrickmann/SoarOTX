@@ -1,9 +1,9 @@
 -- 212x64/JF3K/CENTER.lua
--- Timestamp: 2019-09-14
+-- Timestamp: 2019-09-22
 -- Created by Jesper Frickmann
 
 local function Draw(ail, brk)
-	DrawMenu(" Flaperon centering ")
+	InfoBar(" Flaperon centering ")
 
 	lcd.drawText(5, 12, "Use the throttle trim to ", 0)
 	lcd.drawText(5, 24, "center the flaperons to", 0)

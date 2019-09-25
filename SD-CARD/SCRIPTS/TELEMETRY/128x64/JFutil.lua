@@ -1,5 +1,5 @@
 -- 128x64/JFutil.lua
--- Timestamp: 2019-09-12
+-- Timestamp: 2019-09-22
 -- Created by Jesper Frickmann
 
 LITE_COLOR = 0
@@ -23,11 +23,11 @@ do
 end
 
 -- Draw the basic menu with border and title
-function DrawMenu(title)
+function InfoBar(title)
 	local now = getDateTime()
 	local infoStr = string.format("%1.2fV %02i:%02i", RBat(), now.hour, now.min)
 
 	lcd.clear()
 	lcd.drawScreenTitle(title, 0, 0)
 	lcd.drawText(LCD_W, 0, infoStr, RIGHT)
-end -- DrawMenu()
+end -- InfoBar()

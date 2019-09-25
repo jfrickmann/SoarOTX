@@ -1,11 +1,11 @@
 -- 212x64/JF3K/ALIGN.lua
--- Timestamp: 2019-09-14
+-- Timestamp: 2019-09-24
 -- Created by Jesper Frickmann
 
-local ui = ... -- List of shared variables
+local ui = { } -- List of shared variables
 
-local function Draw(i)
-	DrawMenu(" JF F3K Flaperon alignment ")
+function ui.Draw(i)
+	InfoBar(" JF F3K Flaperon alignment ")
 	lcd.drawText(2, 12, "Use the throttle")
 	lcd.drawText(2, 25, "to move flaps.")
 	lcd.drawText(2, 38, "Use the aileron")
@@ -17,4 +17,4 @@ local function Draw(i)
 	ui.DrawCurve(154, 8, 56, 56, ui.crvRgt, i)
 end -- Draw()
 
-return Draw
+return ui

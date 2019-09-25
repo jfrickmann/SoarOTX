@@ -1,5 +1,5 @@
 -- JF F3K Flaperon Adjustment
--- Timestamp: 2019-09-14
+-- Timestamp: 2019-09-24
 -- Created by Jesper Frickmann
 -- Script for adjusting the flaperon output curves for the JF F3K program.
 
@@ -10,8 +10,7 @@ local indexLft = 0 -- Index of the left flaperon curve
 local avgs -- Average values of left and right
 local difs -- Differences between left and right
 local lasti -- Index of point on the curve last time
-local ui = {} -- List of  variables shared with loadable user interface
-local Draw = LoadWxH("JF3K/ALIGN.lua", ui) -- Screen size specific function
+local ui = LoadWxH("JF3K/ALIGN.lua") -- Screen size specific function
 
 ui.nPoints = 5 -- Number of points on the curves
 
@@ -133,7 +132,7 @@ local function run(event)
 		model.setCurve(indexLft, ui.crvLft)
 	end
 	
-	Draw(i)
+	ui.Draw(i)
 end -- run()
 
 return{init = init, run = run}

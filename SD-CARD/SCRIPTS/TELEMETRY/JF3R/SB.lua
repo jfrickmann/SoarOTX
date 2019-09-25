@@ -1,5 +1,5 @@
--- JF F3J Score Browser
--- Timestamp: 2019-09-16
+-- JF F3R Score Browser
+-- Timestamp: 2019-09-24
 -- Created by Jesper Frickmann
 -- Telemetry script for browsing scores recorded in the log file.
 
@@ -8,11 +8,9 @@ local LOG_FILE = "/LOGS/JF F3RES Scores.csv"
 local logFile -- Log file handle
 local lastTime -- Last time that run() was called, used for refreshing
 local index -- Index to currently selected line in log file
-
-ui = {} -- List of  variables shared with loadable user interface
+local ui = LoadWxH("JF3R/SB.lua") -- Screen size specific function
 ui.indices = {0} -- Vector of indices pointing to start of lines in the log file
 ui.lineData = {} -- Array of data fields from a line
-local Draw = LoadWxH("JF3R/SB.lua", ui) -- Screen size specific function
 
 -- Read a line of a log file
 local function ReadLine(logFile, pos, bts)
@@ -117,12 +115,7 @@ local function run(event)
 	end
 
 	-- Time to draw the screen
-	if #ui.lineData < 7 then
-		DrawMenu(" No scores recorded ")
-	else
-		DrawMenu(ui.lineData[2] .. " " .. ui.lineData[3])
-		Draw()
-	end
+	ui.Draw()
 end
 
 return {init = init, run = run}

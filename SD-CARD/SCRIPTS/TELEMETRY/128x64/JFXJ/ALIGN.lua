@@ -1,11 +1,11 @@
 -- 128x64/JF/ALIGN.lua
--- Timestamp: 2019-09-16
+-- Timestamp: 2019-09-24
 -- Created by Jesper Frickmann
 
-local ui = ... -- List of shared variables
+local ui = { } -- List of shared variables
 
-local	function Draw()
-	DrawMenu("Alignment")
+function ui.Draw()
+	InfoBar("Alignment")
 
 	lcd.drawLine(64, 10, 64, 61, SOLID, FORCE)
 	lcd.drawLine(2, 36, 126, 36, SOLID, FORCE)
@@ -23,4 +23,4 @@ local	function Draw()
 	ui.DrawCurve(69, 38, 48, 22, ui.crvRgt[1], ui.lasti)
 end -- Draw()
 
-return Draw
+return ui

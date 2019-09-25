@@ -1,6 +1,6 @@
 -- JF F3K Timing and score keeping, fixed part
 -- Standalone version for third party model definitions.
--- Timestamp: 2019-09-20
+-- Timestamp: 2019-09-23
 -- Created by Jesper Frickmann
 
 -- Load JFutil (this is done with a Special Function in my model file
@@ -30,7 +30,6 @@ sk.menu = "/SCRIPTS/TELEMETRY/JF3K/MENU.lua" -- Menu file
 sk.run = sk.menu -- Initially, run the menu file
 sk.firstPlugin = 1 -- Plugin on first line of menu
 sk.selectedPlugin = 1 -- Selected plugin in menu
-sk.firstTask = 1 -- Task on first line of menu
 sk.selectedTask = 0 -- Selected task in menu
 
 -- Program states
