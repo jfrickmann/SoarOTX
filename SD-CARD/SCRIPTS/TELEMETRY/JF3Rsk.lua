@@ -1,5 +1,5 @@
 -- JF F3RES Timing and score keeping, fixed part
--- Timestamp: 2019-09-20
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F3RES.
 -- Depends on library functions in FUNCTIONS/JFLib.lua
@@ -65,7 +65,7 @@ end  --  background()
 
 -- Forward run() call to the loadable part
 local function run(event)
-	return RunLoadable(myFile, event, sk)
+	return soarUtil.RunLoadable(myFile, event, sk)
 end
 
 return {background = background, run = run}

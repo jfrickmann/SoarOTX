@@ -1,12 +1,12 @@
 -- JF F3K air brake and aileron travel adjustment
--- Timestamp: 2019-09-24
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 
 local gvAil = 0 -- Index of global variable used for aileron travel
 local gvBrk = 1 -- Index of global variable used for air brake travel
 local gvDif = 3 -- Index of global variable used for aileron differential
 
-local Draw = LoadWxH("JF3K/CENTER.lua") -- Screen size specific function
+local Draw = soarUtil.LoadWxH("JF3K/CENTER.lua") -- Screen size specific function
 
 local function run(event)
 	-- Press EXIT to quit

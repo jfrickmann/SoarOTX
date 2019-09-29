@@ -1,9 +1,9 @@
 -- 212x64/JF3K/CENTER.lua
--- Timestamp: 2019-09-22
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 
 local function Draw(ail, brk)
-	InfoBar(" Flaperon centering ")
+	soarUtil.InfoBar(" Flaperon centering ")
 
 	lcd.drawText(5, 12, "Use the throttle trim to ", 0)
 	lcd.drawText(5, 24, "center the flaperons to", 0)

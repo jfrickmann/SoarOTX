@@ -1,5 +1,5 @@
 -- JF F3R Score Browser
--- Timestamp: 2019-09-24
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 -- Telemetry script for browsing scores recorded in the log file.
 
@@ -8,7 +8,7 @@ local LOG_FILE = "/LOGS/JF F3RES Scores.csv"
 local logFile -- Log file handle
 local lastTime -- Last time that run() was called, used for refreshing
 local index -- Index to currently selected line in log file
-local ui = LoadWxH("JF3R/SB.lua") -- Screen size specific function
+local ui = soarUtil.LoadWxH("JF3R/SB.lua") -- Screen size specific function
 ui.indices = {0} -- Vector of indices pointing to start of lines in the log file
 ui.lineData = {} -- Array of data fields from a line
 

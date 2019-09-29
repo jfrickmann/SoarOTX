@@ -1,5 +1,5 @@
 -- 212x64/JF3J/SK.lua
--- Timestamp: 2019-09-24
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 
 local sk = ... -- List of shared variables
@@ -7,7 +7,7 @@ local ui = { } -- List of  variables shared with loadable user interface
 
 function ui.Draw()
 	local fmNbr, fmName = getFlightMode()
-	InfoBar(" " .. fmName .. " ")	
+	soarUtil.InfoBar(" " .. fmName .. " ")	
 
 	lcd.drawText(0, 20, "Landing", MIDSIZE)
 	lcd.drawText(0, 42, "Start", MIDSIZE)

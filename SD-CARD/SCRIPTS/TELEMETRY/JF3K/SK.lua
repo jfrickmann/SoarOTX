@@ -1,5 +1,5 @@
 -- User interface for several score keeper plugins
--- Timestamp: 2019-09-20
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -7,7 +7,7 @@ local 	exitTask = 0 -- Prompt to save task before EXIT
 local stopWindow = 0 -- Prompt to stop flight timer first
 
 -- Screen size specific graphics functions
-local ui = LoadWxH("JF3K/SK.lua", sk)
+local ui = soarUtil.LoadWxH("JF3K/SK.lua", sk)
 
 local function run(event)
 	if exitTask == -1 then -- Save scores?

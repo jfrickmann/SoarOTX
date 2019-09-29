@@ -1,5 +1,5 @@
 -- 128x64/JF3K/SKalti.lua
--- Timestamp: 2019-09-22
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 
 local sk, DrawGraph = ...  -- List of variables shared between fixed and loadable parts
@@ -14,7 +14,7 @@ end -- MinSec()
 local function Draw()
 	local att
 	
-	InfoBar(sk.taskName)
+	soarUtil.InfoBar(sk.taskName)
 	DrawGraph(SOLID)
 	
 	-- Timers
@@ -62,21 +62,21 @@ local function Draw()
 end  --  Draw()
 
 local function PromptScores()
-	InfoBar(sk.taskName)
+	soarUtil.InfoBar(sk.taskName)
 	lcd.drawText(8, 15, "Save scores?", MIDSIZE)
 	lcd.drawText(8, 35, "ENTER = SAVE")
 	lcd.drawText(8, 45, "EXIT = DON'T")
 end -- PromptScores()
 
 local function NotifyStopWindow()
-	InfoBar(sk.taskName)
+	soarUtil.InfoBar(sk.taskName)
 	lcd.drawText(8, 15, "Stop window", MIDSIZE)
 	lcd.drawText(8, 30, "timer before", MIDSIZE)
 	lcd.drawText(8, 45, "leaving task.", MIDSIZE)
 end -- NotifyStopWindow()
 
 local function NotifyStopFlight()
-	InfoBar(sk.taskName)
+	soarUtil.InfoBar(sk.taskName)
 	lcd.drawText(8, 15, "Stop the flight", MIDSIZE)
 	lcd.drawText(8, 30, "timer before", MIDSIZE)
 	lcd.drawText(8, 45, "pausing window.", MIDSIZE)

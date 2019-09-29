@@ -1,5 +1,5 @@
 -- 212x64/MENU.lua
--- Timestamp: 2019-09-24
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 
 local menu = { }
@@ -8,7 +8,7 @@ menu.title = "EMPTY" -- Menu menu.title
 menu.firstItem = 1 -- Item on first line of menu
 
 function menu.Draw(selected)
-	InfoBar(menu.title)
+	soarUtil.InfoBar(menu.title)
 	lcd.drawPixmap(156, 8, "/IMAGES/Lua-girl.bmp")
 
 	-- Scroll if necessary

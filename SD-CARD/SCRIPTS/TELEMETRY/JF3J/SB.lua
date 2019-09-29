@@ -1,5 +1,5 @@
 -- JF F3J Score Browser
--- Timestamp: 2019-09-23
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 -- Telemetry script for browsing scores recorded in the log file.
 
@@ -9,7 +9,7 @@ local sk = ...  -- List of variables shared between fixed and loadable parts
 local logFile -- Log file handle
 local lastTime = 0 -- Last time that run() was called, used for refreshing
 local index = 1 -- Index to currently selected line in log file
-local ui = LoadWxH("JF3J/SB.lua") -- List of  variables shared with loadable user interface
+local ui = soarUtil.LoadWxH("JF3J/SB.lua") -- List of  variables shared with loadable user interface
 ui.indices = {0} -- Vector of indices pointing to start of lines in the log file
 ui.lineData = {} -- Array of data fields from a line
 

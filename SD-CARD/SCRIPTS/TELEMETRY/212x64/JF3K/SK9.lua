@@ -1,5 +1,5 @@
 -- 212x64/JF3K/SK9.lua
--- Timestamp: 2019-09-24
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -11,10 +11,10 @@ function ui.Draw()
 	local split
 
 	if not ui.planeName then
-		return InfoBar(" No scores recorded ")
+		return soarUtil.InfoBar(" No scores recorded ")
 	end
 	
-	InfoBar(ui.taskName)
+	soarUtil.InfoBar(ui.taskName)
 
 	if ui.taskScores == 5 or taskScores == 6 then
 		split = 4

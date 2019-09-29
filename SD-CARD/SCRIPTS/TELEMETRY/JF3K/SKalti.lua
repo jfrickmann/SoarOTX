@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable user interface for altimeter based tasks
--- Timestamp: 2019-09-23
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -140,12 +140,12 @@ local function DrawGraph(dot)
 end -- DrawGraph()
 
 -- Screen size specific graphics functions
-local Draw, PromptScores, NotifyStopWindow, NotifyStopFlight = LoadWxH("JF3K/SKalti.lua", sk, DrawGraph)
+local Draw, PromptScores, NotifyStopWindow, NotifyStopFlight = soarUtil.LoadWxH("JF3K/SKalti.lua", sk, DrawGraph)
 
 local function run(event)
 	-- Do we have an altimeter?
 	if not sk.p.altId then
-		InfoBar("No altimeter")
+		soarUtil.InfoBar("No altimeter")
 		
 		if event ~= 0 then
 			sk.run = sk.menu

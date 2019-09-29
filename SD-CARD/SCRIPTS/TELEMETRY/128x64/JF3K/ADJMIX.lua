@@ -1,5 +1,5 @@
 -- 128x64/JF3K/ADJMIX.lua
--- Timestamp: 2019-09-24
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 
 local ui = { } -- List of shared variables
@@ -14,7 +14,7 @@ function ui.run(event)
 	adj = 3
 	
 	-- Draw instructions on the screem
-	InfoBar("Adjust mixes")
+	soarUtil.InfoBar("Adjust mixes")
 
 	lcd.drawText(2, 12, "Rudder trim =", SMLSIZE)
 	lcd.drawText(2, 24, "Aileron trim =", SMLSIZE)

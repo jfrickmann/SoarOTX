@@ -1,8 +1,6 @@
 -- 128x64/JFutil.lua
--- Timestamp: 2019-09-22
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
-
-LITE_COLOR = 0
 
 -- Input value for the receiver battery
 local RBat
@@ -23,7 +21,7 @@ do
 end
 
 -- Draw the basic menu with border and title
-function InfoBar(title)
+function soarUtil.InfoBar(title)
 	local now = getDateTime()
 	local infoStr = string.format("%1.2fV %02i:%02i", RBat(), now.hour, now.min)
 

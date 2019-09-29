@@ -1,5 +1,5 @@
 -- 128x64/MENU.lua
--- Timestamp: 2019-09-24
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 
 local menu = { }
@@ -7,8 +7,8 @@ menu.items = { "EMPTY" } -- Menu menu.items
 menu.title = "EMPTY" -- Menu menu.title
 menu.firstItem = 1 -- Item on first line of menu
 
-lfunction menu.Draw(selected)
-	InfoBar(menu.title)
+function menu.Draw(selected)
+	soarUtil.InfoBar(menu.title)
 
 	-- Scroll if necessary
 	if selected < menu.firstItem then

@@ -1,6 +1,6 @@
 -- JF F3K Timing and score keeping, fixed part
 -- Standalone version for third party model definitions.
--- Timestamp: 2019-09-23
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 
 -- Load JFutil (this is done with a Special Function in my model file
@@ -280,7 +280,7 @@ end  --  background()
 
 -- Forward run() call to the loadable part
 local function run(event)
-	return RunLoadable(sk.run, event, sk)
+	return soarUtil.RunLoadable(sk.run, event, sk)
 end
 
 return {background = background, run = run}

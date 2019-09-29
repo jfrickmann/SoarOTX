@@ -1,5 +1,5 @@
 -- JF FXJ flap curve adjustment
--- Timestamp: 2019-09-24
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 -- Script for adjusting the flaps curves for the JF FXJ program.
 
@@ -8,7 +8,7 @@ local xValue = getFieldInfo("input8").id -- Step input before applying the outpu
 local gvIndex = {7, 8} -- Index of global variables used for communicating with the model program
 local index = {4, 5} -- Indices of the curves
 
-local ui = LoadWxH("JFXJ/BRKCRV.lua") -- Screen size specific function
+local ui = soarUtil.LoadWxH("JFXJ/BRKCRV.lua") -- Screen size specific function
 ui.crv ={} -- Data structures defining the curves
 ui.lasti = 0 -- Index of point on the curves last time
 

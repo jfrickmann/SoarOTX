@@ -1,15 +1,15 @@
 -- 212x64/JF5J/SB.lua
--- Timestamp: 2019-09-24
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 
 local ui = { } -- List of shared variables
 
 function ui.Draw()
 	if #ui.lineData < 7 then
-		return InfoBar(" No scores recorded ")
+		return soarUtil.InfoBar(" No scores recorded ")
 	end
 	
-	InfoBar(ui.lineData[2] .. " " .. ui.lineData[3])
+	soarUtil.InfoBar(ui.lineData[2] .. " " .. ui.lineData[3])
 
 	lcd.drawText(0, 20, "Landing", MIDSIZE)
 	lcd.drawNumber(95, 16, ui.lineData[4], DBLSIZE + RIGHT)

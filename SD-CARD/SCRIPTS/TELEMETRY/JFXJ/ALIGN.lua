@@ -1,5 +1,5 @@
 -- JF FXJ Flaps and aileron Adjustment
--- Timestamp: 2019-09-24
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 -- Script for adjusting the flaps and aileron output curves for the JF FXJ program.
 
@@ -11,7 +11,7 @@ local indexRgt = {3, 1} -- Index of the right curve
 local avgs ={} -- Average values of left and right
 local difs ={} -- Differences between left and right
 
-local ui = LoadWxH("JFXJ/ALIGN.lua") -- Screen size specific function
+local ui = soarUtil.LoadWxH("JFXJ/ALIGN.lua") -- Screen size specific function
 ui.nPoints = 5 -- Number of points on the curves
 ui.lasti = 0 -- Index of point on the curves last time
 ui.crvLft ={} -- Data structure defining the left flaperon curve

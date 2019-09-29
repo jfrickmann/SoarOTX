@@ -1,5 +1,5 @@
 -- JF FXJ Configuration Menu
--- Timestamp: 2019-09-15
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 -- "adj" is a global var that is output to OpenTX with a custom script
@@ -8,7 +8,6 @@ local active = false
 local lastRun = 0
 local ui = {} -- List of  variables shared with loadable user interface
 local selection = 1
-local menu -- Screen size specific menu
 
 -- Menu texts
 local texts = {
@@ -18,6 +17,10 @@ local texts = {
 	"4. Aileron and camber",
 	"5. Adjust other mixes" }
 
+local menu = soarUtil.LoadWxH("MENU.lua") -- Screen size specific menu
+menu.items = texts
+menu.title = "Configuration"
+	
 -- Lua files to be loaded and unloaded
 local files = {
 	"/SCRIPTS/TELEMETRY/JF/CHANNELS.lua",
@@ -26,17 +29,11 @@ local files = {
 	"/SCRIPTS/TELEMETRY/JFXJ/AILCMB.lua",
 	"/SCRIPTS/TELEMETRY/JFXJ/ADJMIX.lua" }
 
-local function init()
-	menu = LoadWxH("MENU.lua")
-	menu.items = texts
-	menu.title = "Configuration"
-end -- init
-
 local function background()
 	if active then
 		-- Do not leave loaded configuration scripts in the background
 		if getTime() - lastRun > 100 then
-			Unload(files[selection])
+			soarUtil.Unload(files[selection])
 			active = false
 		end
 	else
@@ -56,8 +53,8 @@ local function run(event)
 	if active then
 		-- Run the active function
 		lastRun = getTime()
-		if RunLoadable(files[selection], event) then
-			Unload(files[selection])
+		if soarUtil.RunLoadable(files[selection], event) then
+			soarUtil.Unload(files[selection])
 			active = false
 		end
 	else
@@ -80,4 +77,4 @@ local function run(event)
 	end
 end
 
-return {init = init, background = background, run = run}
+return {background = background, run = run}

@@ -1,5 +1,5 @@
 -- JF F3J Timing and score keeping, fixed part
--- Timestamp: 2019-09-20
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F3J.
 -- Depends on library functions in FUNCTIONS/JFLib.lua
@@ -76,7 +76,7 @@ end  --  background()
 
 -- Forward run() call to the loadable part
 local function run(event)
-	return RunLoadable(sk.myFile, event, sk)
+	return soarUtil.RunLoadable(sk.myFile, event, sk)
 end
 
 return {background = background, run = run}

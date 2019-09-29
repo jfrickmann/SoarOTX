@@ -1,5 +1,5 @@
 -- JF Channel configuration
--- Timestamp: 2019-09-22
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 
 local N = 32 -- Highest channel number to swap
@@ -13,7 +13,7 @@ local srcBase = 	getFieldInfo("ch1").id - 1 -- ASSUMING that channel sources are
 local stage = 1 -- 1:Show warning 2:Run
 
  -- Screen size specific variables
-local 	MENUTXT, XDOT, XREV, CENTER, SCALE, XTXT, ATT1, ATT2 = LoadWxH("JF/CHANNELS.lua")
+local 	MENUTXT, XDOT, XREV, CENTER, SCALE, XTXT, ATT1, ATT2 = soarUtil.LoadWxH("JF/CHANNELS.lua")
 
 local editing = 0 
 --[[ Selected channel is being edited
@@ -130,7 +130,7 @@ local function MoveSelected(direction)
 end -- SwapChannels()
 
 local function Draw()
-	InfoBar(MENUTXT)
+	soarUtil.InfoBar(MENUTXT)
 	
 	-- Draw vertical reference lines
 	for i = -6, 6 do
@@ -387,7 +387,7 @@ local function run(event)
 
 	-- Update the screen
 	if stage == 1 then
-		InfoBar(" Warning! ")
+		soarUtil.InfoBar(" Warning! ")
 
 		lcd.drawText(XTXT, 12, "Disconnect the motor!", ATT1)
 		lcd.drawText(XTXT, 28, "Sudden spikes may occur", ATT2)

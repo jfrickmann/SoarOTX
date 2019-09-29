@@ -1,9 +1,8 @@
--- JF Library
--- Timestamp: 2019-09-22
+-- JF Utility Library
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
--- Has a few shared functions and variables for telemetry and functions scripts
--- Works together with a small shell script to load and unload program and telemetry scripts.
--- Method for loading and unloading telemetry scripts was provided by Guido ter Horst "l shems"
+
+soarUtil = { } -- Global "namespace"
 
 -- For loading and unloading of programs with the small shell script
 local programs = {} -- List of loaded programs
@@ -15,8 +14,10 @@ local ST_LOADED = 2 -- Program loaded but not yet initialized
 local ST_RUNNING = 3 -- Program is loaded, initialized, and running
 local ST_MARKED = 4 -- Programs are marked inactive and swept if not running
 
+local helpIds = {} -- List of IDs for help texts used by ShowHelp
+
 -- Load a file chunk for Tx specific screen size
-function LoadWxH(file, ...)
+function soarUtil.LoadWxH(file, ...)
 	-- Add the path to the files for radio's screen resolution
 	local file = string.format("/SCRIPTS/TELEMETRY/%ix%i/%s/", LCD_W, LCD_H, file)
 	
@@ -25,17 +26,17 @@ function LoadWxH(file, ...)
 end  --  LoadWxH()
 
 -- And now use it to load ransmitter specific global graphics functions
-LoadWxH("JFutil.lua")
+soarUtil.LoadWxH("JFutil.lua")
 
 -- Unload a program
-function Unload(file)
+function soarUtil.Unload(file)
 	programs[file] = nil
 	states[file] = nil
 	return collectgarbage()
 end -- Unload()
 
 -- Load program or forward run() call to the program
-function RunLoadable(file, event, ...)
+function soarUtil.RunLoadable(file, event, ...)
 	if states[file] == nil then
 		-- First, acquire the lock
 		if locked then
@@ -45,7 +46,7 @@ function RunLoadable(file, event, ...)
 		end
 		
 		-- Wait and sweep inactive programs before loading
-		InfoBar(" Loading . . .", 0, 0)
+		soarUtil.InfoBar(" Loading . . .", 0, 0)
 
 		-- Mark all programs as inactive
 		for f in pairs(states) do
@@ -58,7 +59,7 @@ function RunLoadable(file, event, ...)
 		-- Sweep inactive programs
 		for f, st in pairs(states) do
 			if st == ST_MARKED then
-				Unload(f)
+				soarUtil.Unload(f)
 			end
 		end
 		states[file] = ST_STANDBY
@@ -94,6 +95,17 @@ function RunLoadable(file, event, ...)
 		return programs[file].run(event)
 	end
 end -- RunLoadable()
+
+-- Every help text will be assigned and ID, and only shown for up to 15 sec.
+function soarUtil.ShowHelp(id, event)
+	if not helpIds[id] then
+		helpIds[id] = getTime() + 1500 -- Show help for 15 sec
+	elseif event ~= 0 then
+		helpIds[id] = 0 -- Stop showing help, if a key was pressed
+	end
+	
+	return getTime() <= helpIds[id]	
+end -- ShowHelp
 
 -- Write the current flight mode to a telemetry sensor.
 -- Create a sensor named "FM" with id 0x5050 in telemetry.

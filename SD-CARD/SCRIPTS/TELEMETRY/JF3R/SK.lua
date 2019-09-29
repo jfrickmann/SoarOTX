@@ -1,10 +1,10 @@
 -- JF F3RES Timing and score keeping, loadable part
--- Timestamp: 2019-09-20
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F3RES.
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
-local Draw = LoadWxH("JF3R/SK.lua", sk) -- Screen size specific function
+local Draw = soarUtil.LoadWxH("JF3R/SK.lua", sk) -- Screen size specific function
 
 local function run(event)
 	sk.winTmr = model.getTimer(0)

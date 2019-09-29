@@ -1,11 +1,11 @@
 -- 128x64/JF/ALIGN.lua
--- Timestamp: 2019-09-24
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 
 local ui = { } -- List of shared variables
 
 function ui.Draw()
-	InfoBar("Alignment")
+	soarUtil.InfoBar("Alignment")
 
 	lcd.drawLine(64, 10, 64, 61, SOLID, FORCE)
 	lcd.drawLine(2, 36, 126, 36, SOLID, FORCE)
