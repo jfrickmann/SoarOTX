@@ -1,5 +1,5 @@
 -- 128x64/PLOT.lua
--- Timestamp: 2019-09-28
+-- Timestamp: 2019-09-29
 -- Created by Jesper Frickmann
 -- Shared script for plotting data
 -- Design inspired by Nigel Sheffield's script
@@ -69,7 +69,7 @@ local function Plot()
 		yy1 = gr.m * i + gr.b
 		if math.abs(i) > 1E-8 then
 			lcd.drawLine(gr.left, yy1, gr.right, yy1, DOTTED, FORCE)
-			lcd.drawNumber(gr.right + 15, yy1 - 3, math.floor(precFac * i + 0.5), SMLSIZE + RIGHT + flags)
+			lcd.drawNumber(gr.right + 10, yy1 - 3, math.floor(precFac * i + 0.5), SMLSIZE + RIGHT + flags)
 		end
 	end
 	
@@ -94,7 +94,7 @@ local function Plot()
 	end
 
 	-- Plot the graph
-	for i = 1, width do
+	for i = 1, math.min(width, #gr.yValues) do
 		yy1 = gr.m * gr.yValues[i - 1] + gr.b
 		yy2 = gr.m * gr.yValues[i] + gr.b
 		lcd.drawLine(gr.left + i - 1, yy1, gr.left + i, yy2, SOLID, FORCE)
@@ -103,7 +103,7 @@ local function Plot()
 	-- Draw line through zero
 	lcd.drawLine(gr.left, gr.b, gr.right, gr.b, SOLID, FORCE)
 	if gr.yMin < 0 then
-		lcd.drawText(gr.right + 15, gr.b - 3, " 0", SMLSIZE + RIGHT)
+		lcd.drawText(gr.right + 10, gr.b - 3, " 0", SMLSIZE + RIGHT)
 	end
 end  --  Plot()
 

@@ -8,7 +8,7 @@ local gr = ... -- List of shared variables
 -- First time, set some shared variables and hand over to read
 if not gr.yValues then
 	gr.left = 0
-	gr.right = LCD_W - 15 -- Right side of the plot area
+	gr.right = LCD_W - 10 -- Right side of the plot area
 	gr.run = gr.read
 	return true
 end

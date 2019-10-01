@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin part for altimeter based tasks
--- Timestamp: 2019-09-20
+-- Timestamp: 2019-09-30
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -33,13 +33,18 @@ if sk.state == sk.STATE_IDLE then
 	
 	--  Variables shared between task def. and UI must be added to own list
 	sk.p = { }
-	sk.p.heights = { } -- Time series of recorded heights for graph
+	sk.p.yValues = { [0] = 0 } -- Time series of recorded heights for graph
+	sk.p.maxHeight = 0 -- Maximum recorded altitude during current flight
+	sk.p.plotMax = 0 -- Maximum recorded altitude during window for plot
 	sk.p.ceiling = 0 -- Ceiling where timer is stopped
 	sk.p.launchHeight = 0 -- Launch height is recorded after 10 sec.
 	sk.p.maxHeight = 0 -- Max. recorded height
 	sk.p.maxTime = 0 -- Time of max. height
 	sk.p.flightStart = 0 -- Time of flight start
 	sk.p.targetGain = 0 -- Target for height gain
+	sk.p.tMin = 0 -- For plotting
+	sk.p.tMax = sk.taskWindow -- For plotting
+	sk.p.yMin = 0 -- For plotting
 
 	-- Task index constants, shared between task definition and UI
 	sk.p.TASK_HEIGHT_GAIN = 1
@@ -225,7 +230,11 @@ if sk.state == sk.STATE_IDLE then
 			-- Save height timeseries
 			if sk.winTimer >=0 and sk.winTimer <= model.getTimer(1).start and 
 			math.floor(sk.winTimer / sk.p.heightInt) ~= math.floor(winTimerOld / sk.p.heightInt) then
-				sk.p.heights[#sk.p.heights + 1] = getValue(sk.p.altId)			
+				local h = getValue(sk.p.altId)
+				sk.p.yValues[#sk.p.yValues + 1] = h
+				if h > sk.p.plotMax then
+					sk.p.plotMax = h
+				end
 			end
 
 			if sk.state <= sk.STATE_READY and sk.task == sk.p.TASK_THROW_LOW and sk.winTimer < sk.TargetTime() then

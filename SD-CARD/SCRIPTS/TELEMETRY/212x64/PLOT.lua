@@ -94,8 +94,7 @@ local function Plot()
 	end
 
 	-- Plot the graph
-	lcd.drawLine(gr.left, gr.m * gr.yValues[0] + gr.b, gr.left, gr.b2, SOLID, GREY(12))
-	for i = 1, width do
+	for i = 1, math.min(width, #gr.yValues) do
 		yy1 = gr.m * gr.yValues[i - 1] + gr.b
 		yy2 = gr.m * gr.yValues[i] + gr.b
 		
