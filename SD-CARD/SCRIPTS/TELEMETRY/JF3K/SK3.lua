@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin part for altimeter based tasks
--- Timestamp: 2019-09-30
+-- Timestamp: 2019-10-01
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -33,7 +33,7 @@ if sk.state == sk.STATE_IDLE then
 	
 	--  Variables shared between task def. and UI must be added to own list
 	sk.p = { }
-	sk.p.yValues = { [0] = 0 } -- Time series of recorded heights for graph
+	sk.p.yValues = { } -- Time series of recorded heights for graph
 	sk.p.maxHeight = 0 -- Maximum recorded altitude during current flight
 	sk.p.plotMax = 0 -- Maximum recorded altitude during window for plot
 	sk.p.ceiling = 0 -- Ceiling where timer is stopped
@@ -42,9 +42,6 @@ if sk.state == sk.STATE_IDLE then
 	sk.p.maxTime = 0 -- Time of max. height
 	sk.p.flightStart = 0 -- Time of flight start
 	sk.p.targetGain = 0 -- Target for height gain
-	sk.p.tMin = 0 -- For plotting
-	sk.p.tMax = sk.taskWindow -- For plotting
-	sk.p.yMin = 0 -- For plotting
 
 	-- Task index constants, shared between task definition and UI
 	sk.p.TASK_HEIGHT_GAIN = 1
@@ -212,7 +209,7 @@ if sk.state == sk.STATE_IDLE then
 			launch = sk.p.launchHeight,
 			maxHeight = sk.p.maxHeight,
 			maxTime = sk.p.maxTime,
-			gain = sk.p.maxHeight - sk.p.launchHeight
+			gain = math.min(sk.p.targetGain, sk.p.maxHeight - sk.p.launchHeight)
 		}
 		
 		if zero or sk.p.launchHeight == 0 then

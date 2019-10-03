@@ -1,29 +1,46 @@
 -- 212x64/PLOT.lua
--- Timestamp: 2019-09-28
+-- Timestamp: 2019-10-02
 -- Created by Jesper Frickmann
 -- Shared script for plotting data
 -- Design inspired by Nigel Sheffield's script
 
-local gr = ... 
---[[ List of shared variables --
-	gr.tMin, gr.tMax
-	gr.yMin, gr.yMax
-	gr.left, gr.right
-	gr.yValues
-]]--
+local plot = ...
+--	plot.tMin, plot.tMax
+--	plot.yMin, plot.yMax
+--	plot.left, plot.right
+--	plot.yValues
+
+local m, b, dx
+
+local function X(t)
+	return math.ceil(plot.left + dx * t - 0.5)
+end -- X()
+
+local function Y(y)
+	if not y then y = 0 end -- Handle Nil value
+	return math.floor(b + m * y + 0.5)
+end -- Y()
+
+function plot.DrawLine(t1, y1, t2, y2, ...)
+	local dot, force = ...
+	if not dot then dot = SOLID end
+	if not force then force = FORCE end
+	lcd.drawLine(X(t1), Y(y1), X(t2), Y(y2), dot, force)
+end -- plot.drawLine()
 
 local function Plot()
 	local mag
 	local flags
 	local precFac
-	local xx1
-	local yy1
-	local yy2
-	local xTick
+	local x1
+	local y1
+	local y2
+	local tTick
 	local yTick
-	local tSpan = gr.tMax - gr.tMin
-	local yRange = gr.yMax - gr.yMin
-	local width = gr.right - gr.left
+	local tSpan = plot.tMax - plot.tMin
+	local yRange = plot.yMax - plot.yMin
+
+	dx = (plot.right - plot.left) / tSpan
 
 	-- Find horizontal tick line distance
 	mag = math.floor(math.log(yRange, 10))
@@ -54,58 +71,55 @@ local function Plot()
 	end
 
 	-- Find linear transformation from Y to screen pixel
-	if gr.yMin == 0 then
-		gr.m = (14 - LCD_H) / yRange
-		gr.b = LCD_H - 1 - gr.m * gr.yMin
+	if plot.yMin == 0 then
+		m = (14 - LCD_H) / yRange
+		b = LCD_H - 1 - m * plot.yMin
 	else
-		gr.m = (18 - LCD_H) / yRange
-		gr.b = LCD_H - 4 - gr.m * gr.yMin
+		m = (18 - LCD_H) / yRange
+		b = LCD_H - 4 - m * plot.yMin
 	end
 
-	gr.b2 = math.max(8, math.min(LCD_H - 1, gr.b))
+	plot.b2 = math.max(8, math.min(LCD_H - 1, b))
 	
 	-- Draw horizontal grid lines
-	for i = math.ceil(gr.yMin / yTick) * yTick, math.floor(gr.yMax / yTick) * yTick, yTick do
-		yy1 = gr.m * i + gr.b
-		if math.abs(i) > 1E-8 then
-			lcd.drawLine(gr.left, yy1, gr.right, yy1, DOTTED, GREY(6))
-			lcd.drawNumber(gr.right + 15, yy1 - 3, math.floor(precFac * i + 0.5), SMLSIZE + RIGHT + flags)
+	for y = math.ceil(plot.yMin / yTick) * yTick, math.floor(plot.yMax / yTick) * yTick, yTick do
+		y1 = Y(y)
+		if math.abs(y) > 1E-8 then
+			lcd.drawLine(plot.left, y1, plot.right, y1, DOTTED, GREY(6))
+			lcd.drawNumber(plot.right + 15, y1 - 3, math.floor(precFac * y + 0.5), SMLSIZE + RIGHT + flags)
 		end
 	end
 	
 	-- Find vertical grid line distance
 	if tSpan > 6000 then
-		xTick = 600
+		tTick = 600
 	elseif tSpan > 3000 then
-		xTick = 300
+		tTick = 300
 	elseif tSpan > 1200 then
-		xTick = 120
+		tTick = 120
 	else
-		xTick = 60
+		tTick = 60
 	end
 	
-	for i = 0, math.floor(gr.tMax / xTick) * xTick, xTick do
-		xx1 = math.floor((i - gr.tMin) / tSpan * width + 0.5)
-		
-		if xx1 >= 0 and xx1 <= width then
-			xx1 = xx1 + gr.left
-			lcd.drawLine(xx1, LCD_H, xx1, 8, DOTTED, GREY(6))
-		end
+	for t = math.ceil(plot.tMin / tTick) * tTick, math.floor(plot.tMax / tTick) * tTick, tTick do
+		x1 = X(t)
+		lcd.drawLine(x1, LCD_H, x1, 8, DOTTED, GREY(6))
 	end
 
 	-- Plot the graph
-	for i = 1, math.min(width, #gr.yValues) do
-		yy1 = gr.m * gr.yValues[i - 1] + gr.b
-		yy2 = gr.m * gr.yValues[i] + gr.b
-		
-		lcd.drawLine(gr.left + i, yy2, gr.left + i, gr.b2, SOLID, GREY(12))
-		lcd.drawLine(gr.left + i - 1, yy1, gr.left + i, yy2, SOLID, FORCE)
+	y2 = Y(plot.yValues[0])
+	lcd.drawLine(plot.left, y2, plot.left, plot.b2, SOLID, GREY(12))
+	for i = 1, math.min(plot.right - plot.left, #plot.yValues) do
+		y1 = y2
+		y2 = Y(plot.yValues[i])
+		lcd.drawLine(plot.left + i, y2, plot.left + i, plot.b2, SOLID, GREY(12))
+		lcd.drawLine(plot.left + i - 1, y1, plot.left + i, y2, SOLID, FORCE)
 	end
 
 	-- Draw line through zero
-	lcd.drawLine(gr.left, gr.b, gr.right, gr.b, SOLID, FORCE)
-	if gr.yMin < 0 then
-		lcd.drawText(gr.right + 15, gr.b - 3, " 0", SMLSIZE + RIGHT)
+	lcd.drawLine(plot.left, b, plot.right, b, SOLID, FORCE)
+	if plot.yMin < 0 then
+		lcd.drawText(plot.right + 15, b - 3, " 0", SMLSIZE + RIGHT)
 	end
 end  --  Plot()
 

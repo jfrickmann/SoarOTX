@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable user interface for altimeter based tasks
--- Timestamp: 2019-09-29
+-- Timestamp: 2019-10-02
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -7,7 +7,83 @@ local exitTask = 0 -- Prompt to save task before EXIT
 local stopWindow = 0 -- Prompt to stop flight timer first
 
 -- Screen size specific graphics functions
-local Draw, PromptScores, NotifyStopWindow, NotifyStopFlight = soarUtil.LoadWxH("JF3K/SKalti.lua", sk)
+local ui = soarUtil.LoadWxH("JF3K/SKalti.lua", sk)
+
+-- Draw lines to illustrate scores for recorded flights
+function ui.DrawLines()
+	local yCeil
+	local tStart
+	local tLaunch
+	local yLaunch
+	local tEnd
+	
+	for i = 1, #sk.scores do
+		local tTop = sk.scores[i].maxTime
+		local yTop = sk.scores[i].maxHeight
+
+		tStart = sk.scores[i].start
+		tLaunch = tStart + 10
+		yLaunch = sk.scores[i].launch
+		tEnd = tStart + sk.scores[i].time
+
+		if sk.task == sk.p.TASK_HEIGHT_GAIN or sk.task == sk.p.TASK_HEIGHT_POKER then
+			-- Launch and max height
+			ui.DrawLine(tLaunch, yLaunch, tEnd, yLaunch)
+			ui.DrawLine(tTop, yLaunch, tTop, yTop)
+		end
+		
+		if sk.task == sk.p.TASK_THROW_LOW then
+			-- Launch height
+			ui.DrawLine(tLaunch, yLaunch, tLaunch, 100)
+			ui.DrawLine(tLaunch - 2, yLaunch, tLaunch + 2, yLaunch)
+			ui.DrawLine(tLaunch - 2, 100, tLaunch + 2, 100)
+		end
+		
+		if sk.task == sk.p.TASK_CEILING then
+			-- Flight time
+			ui.DrawLine(tStart, 0, tStart, yTop)
+			ui.DrawLine(tEnd, 0, tEnd, yTop)
+		end
+	end
+
+	yCeil = sk.p.ceiling
+	tStart = sk.p.flightStart
+	tLaunch = tStart + 10
+	yLaunch = sk.p.launchHeight
+	
+	if model.getTimer(0).start == 0 then
+		tEnd = sk.taskWindow
+	else
+		tEnd = tStart + model.getTimer(0).start
+	end
+
+	-- Ceiling
+	if sk.task == sk.p.TASK_CEILING then
+		ui.DrawLine(0, yCeil, tEnd, yCeil)
+	end
+		
+	-- Draw lines to illustrate scores for current flight
+	if sk.state >=sk.STATE_FLYING and yLaunch > 0 then
+		if sk.task == sk.p.TASK_CEILING or task == sk.p.TASK_THROW_LOW then
+			-- Flight time
+			ui.DrawLine(tStart, 0, tStart, yCeil)
+			ui.DrawLine(tEnd, 0, tEnd, yCeil)
+		end
+		
+		if sk.task == sk.p.TASK_HEIGHT_GAIN or sk.task == sk.p.TASK_HEIGHT_POKER then
+			-- Ceiling and launch height
+			ui.DrawLine(tLaunch, yLaunch, tEnd, yLaunch)
+			ui.DrawLine(tLaunch, yCeil, tEnd, yCeil)
+		end
+		
+		if sk.task == sk.p.TASK_THROW_LOW then
+			-- Launch height
+			ui.DrawLine(tLaunch, yLaunch, tLaunch, 100)
+			ui.DrawLine(tLaunch - 2, yLaunch, tLaunch + 2, yLaunch)
+			ui.DrawLine(tLaunch - 2, 100, tLaunch + 2, 100)
+		end
+	end
+end -- DrawLines()
 
 local function run(event)
 	-- Do we have an altimeter?
@@ -19,7 +95,7 @@ local function run(event)
 		end
 
 	elseif exitTask == -1 then -- Save scores?
-		PromptScores()
+		ui.PromptScores()
 		
 		-- Record scores if user pressed ENTER
 		if event == EVT_ENTER_BREAK then
@@ -60,18 +136,18 @@ local function run(event)
 		if getTime() > exitTask then
 			exitTask = 0
 		else
-			NotifyStopWindow()
+			ui.NotifyStopWindow()
 		end
 	
 	elseif stopWindow > 0 then
 		if getTime() > stopWindow then
 			stopWindow = 0
 		else
-			NotifyStopFlight()
+			ui.NotifyStopFlight()
 		end
 	
 	else
-		Draw()
+		ui.Draw()
 
 		-- Toggle quick relaunch QR
 		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_UP_BREAK then

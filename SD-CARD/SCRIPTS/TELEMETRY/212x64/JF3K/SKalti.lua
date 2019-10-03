@@ -1,12 +1,19 @@
 -- 212x64/JF3Kalti/SK.lua
--- Timestamp: 2019-09-30
+-- Timestamp: 2019-10-02
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
-local Plot = soarUtil.LoadWxH("PLOT.lua", sk.p) -- Screen size specific function
+local ui = { } -- Graphics functions
+local Plot = soarUtil.LoadWxH("PLOT.lua", ui) -- Screen size specific function
 sk.p.heightInt = 4 -- Interval for recording heights
-sk.p.left = 0
-sk.p.right = sk.taskWindow / sk.p.heightInt + 1
+
+-- Initialize plot variables
+ui.left = 0
+ui.right = sk.taskWindow / sk.p.heightInt + 1
+ui.tMin = 0
+ui.tMax = sk.taskWindow
+ui.yMin = 0
+ui.yValues = sk.p.yValues
 
 -- Convert time to minutes and seconds
 local function MinSec(t)
@@ -14,89 +21,17 @@ local function MinSec(t)
 	return m, t - 60 * m
 end -- MinSec()
 
-local function Draw()
+function ui.Draw()
 	local att
-	local xx1
-	local xx2
-	local yy1
-	local yy2
 
 	soarUtil.InfoBar(sk.taskName)
 	
 	-- Rescale if necessary
-	sk.p.yMax = math.ceil(math.max(25, sk.p.plotMax, sk.p.ceiling) / 25) * 25
+	ui.yMax = math.ceil(math.max(25, sk.p.plotMax, sk.p.ceiling) / 25) * 25
 
 	Plot()
-
-	-- Draw lines to illustrate scores for recorded flights
-	for i = 1, #sk.scores do
-		xx1 = (sk.scores[i].start + 10) / sk.p.heightInt
-		xx2 = (sk.scores[i].start + sk.scores[i].time) / sk.p.heightInt
-		yy1 = sk.p.m * sk.scores[i].launch + sk.p.b
-
-		if sk.task == sk.p.TASK_HEIGHT_GAIN or sk.task == sk.p.TASK_HEIGHT_POKER then
-			-- Launch height
-			lcd.drawLine(xx1, yy1, xx2, yy1, DOTTED, FORCE)
-
-			-- Max height
-			xx1 = sk.scores[i].maxTime / sk.p.heightInt
-			yy2 = sk.p.m * sk.scores[i].maxHeight + sk.p.b
-			lcd.drawLine(xx1, yy1, xx1, yy2, DOTTED, FORCE)			
-		elseif sk.task == sk.p.TASK_THROW_LOW then
-			-- Launch height
-			yy2 = sk.p.m * 100 + sk.p.b
-			lcd.drawLine(xx1, yy1, xx1, yy2, DOTTED, FORCE)
-			lcd.drawLine(xx1 - 2, yy1, xx1 + 2, yy1, DOTTED, FORCE)
-			lcd.drawLine(xx1 - 2, yy2, xx1 + 2, yy2, DOTTED, FORCE)
-		end
-		
-		-- Flight time
-		if sk.task == sk.p.TASK_CEILING then
-			xx1 = sk.scores[i].start / sk.p.heightInt
-			yy2 = sk.p.m * sk.p.ceiling + sk.p.b
-			lcd.drawLine(xx1, sk.p.b, xx1, yy2, DOTTED, FORCE)
-			lcd.drawLine(xx2, sk.p.b, xx2, yy2, DOTTED, FORCE)
-		end
-	end
-
-	-- Ceiling
-	yy1 = sk.p.m * sk.p.ceiling + sk.p.b
-	if sk.task == sk.p.TASK_CEILING then
-		lcd.drawLine(sk.p.left, yy1, sk.p.right, yy1, SOLID, FORCE)
-	end
-		
-	-- Draw lines to illustrate scores for current flight
-	if sk.state >=sk.STATE_FLYING and sk.p.launchHeight > 0 then
-		xx1 = sk.p.flightStart / sk.p.heightInt
-		if model.getTimer(0).start == 0 then
-			xx2 = sk.taskWindow / sk.p.heightInt
-		else
-			xx2 = (sk.p.flightStart + model.getTimer(0).start) / sk.p.heightInt
-		end
-		
-		if sk.task == sk.p.TASK_CEILING then
-			-- Flight time
-			lcd.drawLine(xx1, sk.p.b, xx1, yy1, DOTTED, FORCE)
-			lcd.drawLine(xx2, sk.p.b, xx2, yy1, DOTTED, FORCE)
-		elseif sk.task == sk.p.TASK_HEIGHT_GAIN or sk.task == sk.p.TASK_HEIGHT_POKER then
-			-- Ceiling
-			lcd.drawLine(xx1, yy1, xx2, yy1, DOTTED, FORCE)
-			
-			-- Launch height
-			xx1 = (sk.p.flightStart + 10) / sk.p.heightInt
-			yy1 = sk.p.m * sk.p.launchHeight + sk.p.b
-			lcd.drawLine(xx1, yy1, xx2, yy1, DOTTED, FORCE)
-		else
-			-- Launch height
-			xx1 = (sk.p.flightStart + 10) / sk.p.heightInt
-			yy1 = sk.p.m * sk.p.launchHeight + sk.p.b
-			yy2 = sk.p.m * 100 + sk.p.b
-			lcd.drawLine(xx1, yy1, xx1, yy2, DOTTED, FORCE)
-			lcd.drawLine(xx1 - 2, yy1, xx1 + 2, yy1, DOTTED, FORCE)
-			lcd.drawLine(xx1 - 2, yy2, xx1 + 2, yy2, DOTTED, FORCE)
-		end
-	end
-
+	ui.DrawLines()
+	
 	-- In height poker, show call
 	if sk.task == sk.p.TASK_HEIGHT_POKER and sk.state <= sk.STATE_WINDOW then
 		local att = 0
@@ -158,23 +93,23 @@ local function Draw()
 	end
 end  --  Draw()
 	
-local function PromptScores()
+function ui.PromptScores()
 	soarUtil.InfoBar(" " .. sk.taskName .. " ")
 	lcd.drawText(38, 15, "Save scores?", DBLSIZE)
 	lcd.drawText(4, LCD_H - 16, "EXIT", MIDSIZE + BLINK)
 	lcd.drawText(LCD_W - 3, LCD_H - 16, "SAVE", MIDSIZE + BLINK + RIGHT)
 end -- PromptScores()
 
-local function NotifyStopWindow()
+function ui.NotifyStopWindow()
 	soarUtil.InfoBar(" " .. sk.taskName .. " ")
 	lcd.drawText(38, 18, "Stop window timer", MIDSIZE)
 	lcd.drawText(38, 40, "before leaving task.", MIDSIZE)
 end -- NotifyStopWindow()
 
-local function NotifyStopFlight()
+function ui.NotifyStopFlight()
 	soarUtil.InfoBar(" " .. sk.taskName .. " ")
 	lcd.drawText(30, 18, "Stop the flight timer", MIDSIZE)
 	lcd.drawText(30, 40, "before pausing window.", MIDSIZE)
 end -- NotifyStopFlight()
 
-return Draw, PromptScores, NotifyStopWindow, NotifyStopFlight
+return ui
