@@ -15,6 +15,7 @@ local function run(event)
 	local width = gr.right - gr.left
 	gr.yMin2 = gr.yMin -- For reporting actual min and max values
 	gr.yMax2=gr.yMax
+	gr.tSpan = gr.tMax - gr.tMin
 
 	-- Sometimes, a min. scale of zero looks better...
 	if gr.yMin < 0 then
@@ -30,6 +31,12 @@ local function run(event)
 	-- Make sure that we have some range to work with...
 	if gr.yMax - gr.yMin <= 1E-8 then
 		gr.yMax = gr.yMax + 0.1
+	end
+	
+	-- Share some variables with the screen size specific parts
+	if gr.viewMode == 3 then
+		gr.lftTime = gr.tMin + gr.lftMark * gr.tSpan / width
+		gr.rgtTime = gr.tMin + gr.rgtMark * gr.tSpan / width
 	end
 	
 	Draw(event)
@@ -50,14 +57,9 @@ local function run(event)
 		end
 
 	elseif gr.viewMode == 3 then -- Select details and view slope
-		local tSpan = gr.tMax - gr.tMin
-		local lftTime = gr.tMin + gr.lftMark * tSpan / width
-		local rgtTime = gr.tMin + gr.rgtMark * tSpan / width
-		local rate = (gr.yValues[gr.rgtMark] - gr.yValues[gr.lftMark]) / (rgtTime - lftTime)
-
 		-- Draw markers
-		gr.DrawLine(lftTime, gr.yMin, lftTime , gr.yMax)
-		gr.DrawLine(rgtTime, gr.yMin, rgtTime , gr.yMax)
+		gr.DrawLine(gr.lftTime, gr.yMin, gr.lftTime , gr.yMax)
+		gr.DrawLine(gr.rgtTime, gr.yMin, gr.rgtTime , gr.yMax)
 		
 		-- Move markers
 		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK then
@@ -98,8 +100,8 @@ local function run(event)
 				gr.selectedMark = 1
 			else
 				gr.viewMode = 4
-				gr.tMin = lftTime
-				gr.tMax = rgtTime
+				gr.tMin = gr.lftTime
+				gr.tMax = gr.rgtTime
 				gr.selectedMark = 0
 				gr.run = gr.read
 			end
