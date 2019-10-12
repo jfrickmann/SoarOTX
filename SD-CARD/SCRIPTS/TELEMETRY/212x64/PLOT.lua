@@ -1,5 +1,5 @@
 -- 212x64/PLOT.lua
--- Timestamp: 2019-10-02
+-- Timestamp: 2019-10-09
 -- Created by Jesper Frickmann
 -- Shared script for plotting data
 -- Design inspired by Nigel Sheffield's script
@@ -13,12 +13,12 @@ local plot = ...
 local m, b, dx
 
 local function X(t)
-	return math.ceil(plot.left + dx * t - 0.5)
+	return math.floor(plot.left + dx * t + 0.5)
 end -- X()
 
 local function Y(y)
 	if not y then y = 0 end -- Handle Nil value
-	return math.floor(b + m * y + 0.5)
+	return math.ceil(b + m * y - 0.5)
 end -- Y()
 
 function plot.DrawLine(t1, y1, t2, y2, ...)

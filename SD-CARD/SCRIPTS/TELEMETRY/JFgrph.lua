@@ -1,5 +1,5 @@
 -- JF Autoloader
--- Timestamp: 2019-09-29
+-- Timestamp: 2019-10-10
 -- Created by Jesper Frickmann
 -- Telemetry script for automatically loading and unloading telemetry scripts
 -- Depends on library functions in FUNCTIONS/JFLib.lua
@@ -10,7 +10,7 @@ local gr -- List of shared variables for graphing
 local function init()
 	gr = { }
 	gr.read = "/SCRIPTS/TELEMETRY/JF/GRREAD.lua"
-	gr.graph = string.format("/SCRIPTS/TELEMETRY/%ix%i/JF/GRAPH.lua", LCD_W, LCD_H)
+	gr.graph = "/SCRIPTS/TELEMETRY/JF/GRAPH.lua"
 	gr.run = gr.graph
 end
 

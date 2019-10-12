@@ -1,0 +1,150 @@
+-- Timestamp: 2019-10-11
+-- Created by Jesper Frickmann
+-- Telemetry script for plotting telemetry parameters recorded in the log file.
+
+local gr = ... -- List of shared variables
+local Draw = soarUtil.LoadWxH("JF/GRAPH.lua", gr) -- Screen size specific function
+
+-- First time, set some shared variables and hand over to read
+if not gr.yValues then
+	gr.run = gr.read
+	return true
+end
+
+local function run(event)
+	local width = gr.right - gr.left
+	gr.yMin2 = gr.yMin -- For reporting actual min and max values
+	gr.yMax2=gr.yMax
+
+	-- Sometimes, a min. scale of zero looks better...
+	if gr.yMin < 0 then
+		if -gr.yMin < 0.08 * gr.yMax then
+			gr.yMin = 0
+		end
+	else
+		if gr.yMin < 0.5 *  gr.yMax then
+			gr.yMin = 0
+		end
+	end
+	
+	-- Make sure that we have some range to work with...
+	if gr.yMax - gr.yMin <= 1E-8 then
+		gr.yMax = gr.yMax + 0.1
+	end
+	
+	Draw(event)
+	
+	if gr.viewMode == 1 then -- Normal graph view
+		-- Change view mode
+		if event == EVT_MENU_BREAK or event == EVT_SHIFT_BREAK then
+			gr.viewMode = 2
+			gr.run = gr.read
+		end
+	elseif gr.viewMode == 2 then -- View stats
+		-- Change view mode
+		if event == EVT_MENU_BREAK or event == EVT_SHIFT_BREAK then
+			gr.viewMode = 3
+			gr.lftMark = math.floor(0.1 * width)
+			gr.rgtMark = math.ceil(0.9 * width)
+			gr.selectedMark = 0
+		end
+
+	elseif gr.viewMode == 3 then -- Select details and view slope
+		local tSpan = gr.tMax - gr.tMin
+		local lftTime = gr.tMin + gr.lftMark * tSpan / width
+		local rgtTime = gr.tMin + gr.rgtMark * tSpan / width
+		local rate = (gr.yValues[gr.rgtMark] - gr.yValues[gr.lftMark]) / (rgtTime - lftTime)
+
+		-- Draw markers
+		gr.DrawLine(lftTime, gr.yMin, lftTime , gr.yMax)
+		gr.DrawLine(rgtTime, gr.yMin, rgtTime , gr.yMax)
+		
+		-- Move markers
+		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK then
+			if gr.selectedMark == 0 then
+				gr.lftMark = math.min(gr.rgtMark - 1, gr.lftMark + 1)
+			else
+				gr.rgtMark = math.min(width, gr.rgtMark + 1)
+			end
+		end
+		
+		if event == EVT_PLUS_REPT then
+			if gr.selectedMark == 0 then
+				gr.lftMark = math.min(gr.rgtMark - 1, gr.lftMark + 3)
+			else
+				gr.rgtMark = math.min(width, gr.rgtMark + 3)
+			end
+		end
+		
+		if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK then
+			if gr.selectedMark == 0 then
+				gr.lftMark = math.max(0, gr.lftMark - 1)
+			else
+				gr.rgtMark = math.max(gr.lftMark + 1, gr.rgtMark - 1)
+			end
+		end
+		
+		if event == EVT_MINUS_REPT then
+			if gr.selectedMark == 0 then
+				gr.lftMark = math.max(0, gr.lftMark - 3)
+			else
+				gr.rgtMark = math.max(gr.lftMark + 1, gr.rgtMark - 3)
+			end
+		end
+		
+		-- Toggle selected marker or zoom in
+		if event == EVT_ENTER_BREAK then
+			if gr.selectedMark == 0 then
+				gr.selectedMark = 1
+			else
+				gr.viewMode = 4
+				gr.tMin = lftTime
+				gr.tMax = rgtTime
+				gr.selectedMark = 0
+				gr.run = gr.read
+			end
+		end
+		
+		-- Back to full graph view
+		if event == EVT_MENU_BREAK or event == EVT_SHIFT_BREAK then
+			gr.viewMode = 1
+			gr.run = gr.read
+		end
+	else -- Zoomed in
+		if event == EVT_ENTER_BREAK then
+			gr.viewMode = 3
+			gr.run = gr.read
+		end
+	end
+	
+	if gr.viewMode < 3 then
+		-- Read next flight
+		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK then
+			gr.flightIndex = gr.flightIndex + 1
+			if gr.flightIndex > #gr.flightTable then
+				gr.flightIndex = 1
+			end
+			gr.run = gr.read
+		end
+
+		-- Minus button was pressed; read previous flight
+		if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK then
+			gr.flightIndex = gr.flightIndex - 1
+			if gr.flightIndex < 1 then
+				gr.flightIndex = #gr.flightTable
+			end
+			gr.run = gr.read
+		end
+
+		-- Enter button was pressed; change plot variable
+		if event == EVT_ENTER_BREAK then
+			gr.plotIndex = gr.plotIndex + 1
+			if gr.plotIndex > gr.plotIndexLast then
+				gr.plotIndex = 3
+			end
+			gr.run = gr.read
+		end
+	end
+end -- run()
+
+return { run = run }
