@@ -1,12 +1,12 @@
 -- 128x64/JF3K/ADJMIX.lua
--- Timestamp: 2019-09-29
+-- Timestamp: 2019-10-18
 -- Created by Jesper Frickmann
 
 local ui = { } -- List of shared variables
 
 function ui.run(event)
 	-- Press EXIT to quit
-	if event == EVT_EXIT_BREAK then
+	if soarUtil.EvtExit(event) then
 		return true
 	end
 	

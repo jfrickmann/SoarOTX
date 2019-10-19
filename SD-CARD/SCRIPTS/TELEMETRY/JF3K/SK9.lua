@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for browsing saved scores
--- Timestamp: 2019-09-29
+-- Timestamp: 2019-10-18
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -120,7 +120,7 @@ local function run(event)
 	lastTime = thisTime
 	
 	-- Go to previous record
-	if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK then
+	if soarUtil.EvtUp(event) then
 		index = index - 1
 		if index <= 0 then
 			index = #ui.indices - 1
@@ -134,7 +134,7 @@ local function run(event)
 	end
 
 	 -- Go to next record
-	if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK then
+	if soarUtil.EvtDown(event) then
 		index = index + 1
 		if index >= #ui.indices then
 			index = 1
@@ -147,7 +147,7 @@ local function run(event)
 		killEvents(event)
 	end
 
-	if event == EVT_EXIT_BREAK then
+	if soarUtil.EvtExit(event) then
 		sk.run = sk.menu
 	end
 	

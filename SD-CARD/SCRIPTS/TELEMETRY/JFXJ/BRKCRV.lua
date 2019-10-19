@@ -1,5 +1,5 @@
 -- JF FXJ flap curve adjustment
--- Timestamp: 2019-09-29
+-- Timestamp: 2019-10-18
 -- Created by Jesper Frickmann
 -- Script for adjusting the flaps curves for the JF FXJ program.
 
@@ -76,7 +76,7 @@ end -- init()
 
 local function run(event)
 	-- Press EXIT to quit
-	if event == EVT_EXIT_BREAK then
+	if soarUtil.EvtExit(event) then
 		return true
 	end
 	
