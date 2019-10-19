@@ -1,5 +1,5 @@
 -- JF Channel configuration
--- Timestamp: 2019-09-29
+-- Timestamp: 2019-10-18
 -- Created by Jesper Frickmann
 
 local N = 32 -- Highest channel number to swap
@@ -245,7 +245,7 @@ end
 
 local function run(event)
 	if stage == 1 then
-		if event == EVT_ENTER_BREAK then
+		if soarUtil.EvtEnter(event) then
 			stage = 2
 		end
 	elseif stage == 2 then
@@ -260,17 +260,17 @@ local function run(event)
 		-- Handle key events
 		if editing == 0 then
 			-- No editing; move channel selection
-			if event == EVT_EXIT_BREAK then
+			if soarUtil.EvtExit(event) then
 				return true -- Quit
-			elseif event == EVT_ENTER_BREAK then
+			elseif soarUtil.EvtEnter(event) then
 				editing = 1
-			elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_PLUS_REPT or event == EVT_UP_BREAK then
+			elseif soarUtil.EvtUp(event) then
 				if selection == 1 then
 					playTone(3000, 100, 0, PLAY_NOW)
 				else
 					selection = selection - 1
 				end
-			elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_MINUS_REPT or event == EVT_DOWN_BREAK then
+			elseif soarUtil.EvtDown(event) then
 				if selection == #namedChs then
 					playTone(3000, 100, 0, PLAY_NOW)
 				else
@@ -279,52 +279,52 @@ local function run(event)
 			end
 		elseif editing == 2 then
 			-- Editing direction
-			if event == EVT_ENTER_BREAK then
+			if soarUtil.EvtEnter(event) then
 				out.revert = 1 - out.revert
 				model.setOutput(iCh - 1, out)
-			elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK then
+			elseif soarUtil.EvtLeft(event) then
 				editing = 1
-			elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK then
+			elseif soarUtil.EvtRight(event) then
 				editing = 3
-			elseif event == EVT_EXIT_BREAK then
+			elseif soarUtil.EvtExit(event) then
 				editing = 0
 			end
 		elseif editing <= 7 then
 			-- Item(s) selected, but not edited
-			if event == EVT_ENTER_BREAK then
+			if soarUtil.EvtEnter(event) then
 				-- Start editing
 				editing = editing + 10
-			elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK then
+			elseif soarUtil.EvtLeft(event) then
 				editing = editing - 1
 				if editing < 1 then editing = 7 end
-			elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK then
+			elseif soarUtil.EvtRight(event) then
 				editing = editing + 1
 				if editing > 7 then editing = 1 end
-			elseif event == EVT_EXIT_BREAK then
+			elseif soarUtil.EvtExit(event) then
 				editing = 0
 			end
 		elseif editing == 11 then
 			-- Channel number edited
-			if event == EVT_ENTER_BREAK or event == EVT_EXIT_BREAK then
+			if soarUtil.EvtEnter(event) or soarUtil.EvtExit(event) then
 				editing = 1
-			elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_PLUS_REPT or event == EVT_UP_BREAK then
+			elseif soarUtil.EvtUp(event) then
 				return MoveSelected(-1)
-			elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_MINUS_REPT or event == EVT_DOWN_BREAK then
+			elseif soarUtil.EvtDown(event) then
 				return MoveSelected(1)
 			end
 		elseif editing >= 13 then
 			local delta = 0
 			
-			if event == EVT_ENTER_BREAK or event == EVT_EXIT_BREAK then
+			if soarUtil.EvtEnter(event) or soarUtil.EvtExit(event) then
 				editing = editing - 10
-			elseif event == EVT_PLUS_BREAK or event == EVT_RIGHT_BREAK then
-				delta = 1
-			elseif event == EVT_PLUS_REPT or event == EVT_ROT_RIGHT or event == EVT_RIGHT_REPT then
+			elseif soarUtil.EvtIncBig(event) then
 				delta = 10
-			elseif event == EVT_MINUS_BREAK or event == EVT_LEFT_BREAK then
-				delta = -1
-			elseif event == EVT_MINUS_REPT or event == EVT_ROT_LEFT or event == EVT_LEFT_REPT then
+			elseif soarUtil.EvtInc(event) then
+				delta = 1
+			elseif soarUtil.EvtDecBig(event) then
 				delta = -10
+			elseif soarUtil.EvtDec(event) then
+				delta = -1
 			end
 			
 			if editing == 13 then

@@ -1,11 +1,17 @@
 -- 212x64/MENU.lua
--- Timestamp: 2019-09-29
+-- Timestamp: 2019-10-12
 -- Created by Jesper Frickmann
 
 local menu = { }
 menu.items = { "EMPTY" } -- Menu menu.items
 menu.title = "EMPTY" -- Menu menu.title
 menu.firstItem = 1 -- Item on first line of menu
+
+local helpTexts = {
+	plus = "\192", 
+	minus = "\193",
+	enter = "SELECT"
+}
 
 function menu.Draw(selected)
 	soarUtil.InfoBar(menu.title)
@@ -26,6 +32,14 @@ function menu.Draw(selected)
 		if item == selected then att = INVERS end
 		lcd.drawText(0, y0, menu.items[item], att)
 	end
+
+	if menu.sub then 
+		helpTexts.exit = "GO BACK"
+	else
+		helpTexts.exit = nil
+	end
+
+	soarUtil.ShowHelp(helpTexts)
 end -- Draw
 
 return menu

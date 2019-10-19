@@ -1,5 +1,5 @@
 -- JF F3RES Timing and score keeping, loadable part
--- Timestamp: 2019-09-29
+-- Timestamp: 2019-10-18
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F3RES.
 
@@ -10,12 +10,12 @@ local function run(event)
 	sk.winTmr = model.getTimer(0)
 	sk.fltTmr = model.getTimer(1)
 
-	if sk.state == sk.STATE_SETWINTMR and event == EVT_ENTER_BREAK then
+	if sk.state == sk.STATE_SETWINTMR and soarUtil.EvtEnter(event) then
 		sk.state = sk.STATE_SETFLTTMR
 	end
 	
 	if (sk.state > sk.STATE_LANDINGPTS and sk.winTmr.value > 0) or sk.state == sk.STATE_SETFLTTMR then
-		if event == EVT_MENU_BREAK or event == EVT_UP_BREAK then
+		if soarUtil.EvtExit(event) then
 			-- Go back one step
 			sk.state  = sk.state  - 1
 		end
@@ -25,11 +25,11 @@ local function run(event)
 		local dt = 0
 		local tgt
 		
-		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_PLUS_REPT or event == EVT_RIGHT_BREAK then
+		if soarUtil.EvtInc(event) then
 			dt = 60
 		end
 		
-		if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_MINUS_REPT or event == EVT_LEFT_BREAK then
+		if soarUtil.EvtDec(event) then
 			dt = -60
 		end
 		
@@ -53,7 +53,7 @@ local function run(event)
 	elseif sk.state == sk.STATE_LANDINGPTS then -- Landed, input landing points 
 		local dpts = 0
 		
-		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_PLUS_REPT or event == EVT_RIGHT_BREAK then
+		if soarUtil.EvtInc(event) then
 			if sk.landingPts >= 90 then
 				dpts = 1
 			elseif sk.landingPts >= 30 then
@@ -63,7 +63,7 @@ local function run(event)
 			end
 		end
 		
-		if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_MINUS_REPT or event == EVT_LEFT_BREAK then
+		if soarUtil.EvtDec(event) then
 			if sk.landingPts > 90 then
 				dpts = -1
 			elseif sk.landingPts > 30 then
@@ -80,11 +80,11 @@ local function run(event)
 			sk.landingPts = 0
 		end
 		
-		if event == EVT_ENTER_BREAK then
+		if soarUtil.EvtEnter(event) then
 			sk.state = sk.STATE_SAVE
 		end
 	elseif sk.state == sk.STATE_SAVE then
-		if event == EVT_ENTER_BREAK then -- Record scores if user pressed ENTER
+		if soarUtil.EvtEnter(event) then -- Record scores if user pressed ENTER
 			local logFile = io.open("/LOGS/JF F3RES Scores.csv", "a")
 			if logFile then
 				local nameStr = model.getInfo().name
@@ -102,7 +102,8 @@ local function run(event)
 			sk.state = sk.STATE_SETWINTMR
 		end
 
-		if event == EVT_EXIT_BREAK then -- Do not record scores if user pressed EXIT
+		-- Do not record scores
+		if soarUtil.EvtExit(event) then 
 			sk.state = sk.STATE_SETWINTMR
 		end
 	end

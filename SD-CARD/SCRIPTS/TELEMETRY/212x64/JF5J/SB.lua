@@ -1,5 +1,5 @@
 -- 212x64/JF5J/SB.lua
--- Timestamp: 2019-09-29
+-- Timestamp: 2019-10-18
 -- Created by Jesper Frickmann
 
 local ui = { } -- List of shared variables
@@ -15,7 +15,7 @@ function ui.Draw()
 	lcd.drawNumber(95, 16, ui.lineData[4], DBLSIZE + RIGHT)
 
 	lcd.drawText(0, 42, "Start", MIDSIZE)
-	lcd.drawNumber(95, 38, ui.lineData[5] * 10, PREC1 + DBLSIZE + RIGHT)
+	lcd.drawNumber(95, 38, ui.lineData[5], DBLSIZE + RIGHT)
 
 	lcd.drawText(110, 20, "Target", MIDSIZE)
 	lcd.drawTimer(212, 16, ui.lineData[6], DBLSIZE + RIGHT)

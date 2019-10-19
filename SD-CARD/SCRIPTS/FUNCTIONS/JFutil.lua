@@ -1,8 +1,9 @@
 -- JF Utility Library
--- Timestamp: 2019-09-29
+-- Timestamp: 2019-10-18
 -- Created by Jesper Frickmann
 
 soarUtil = { } -- Global "namespace"
+soarUtil.showHelp = true -- Show help text in screens
 
 -- For loading and unloading of programs with the small shell script
 local programs = {} -- List of loaded programs
@@ -13,8 +14,6 @@ local ST_STANDBY = 1 -- Marked programs are swept; standing by for loading
 local ST_LOADED = 2 -- Program loaded but not yet initialized
 local ST_RUNNING = 3 -- Program is loaded, initialized, and running
 local ST_MARKED = 4 -- Programs are marked inactive and swept if not running
-
-local helpIds = {} -- List of IDs for help texts used by ShowHelp
 
 -- Load a file chunk for Tx specific screen size
 function soarUtil.LoadWxH(file, ...)
@@ -96,16 +95,56 @@ function soarUtil.RunLoadable(file, event, ...)
 	end
 end -- RunLoadable()
 
--- Every help text will be assigned and ID, and only shown for up to 15 sec.
-function soarUtil.ShowHelp(id, event)
-	if not helpIds[id] then
-		helpIds[id] = getTime() + 1500 -- Show help for 15 sec
-	elseif event ~= 0 then
-		helpIds[id] = 0 -- Stop showing help, if a key was pressed
+-- Key event handlers
+function soarUtil.EvtEnter(event)
+	return event == EVT_ENTER_BREAK
+end -- EvtEnter()
+
+function soarUtil.EvtInc(event)
+	return event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_PLUS_REPT or event == EVT_RIGHT_BREAK
+end -- EvtInc()
+
+function soarUtil.EvtDec(event)
+	return event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_MINUS_REPT or event == EVT_LEFT_BREAK
+end -- EvtDec()
+
+function soarUtil.EvtUp(event)
+	return event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_PLUS_REPT or event == EVT_UP_BREAK
+end -- EvtUp()
+
+function soarUtil.EvtLeft(event)
+	return event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK
+end -- EvtLeft()
+
+function soarUtil.EvtRight(event)
+	return event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK
+end -- EvtRight()
+
+function soarUtil.EvtIncBig(event)
+	return event == EVT_PLUS_REPT or event == EVT_ROT_RIGHT or event == EVT_RIGHT_REPT
+end -- EvtIncBig()
+
+function soarUtil.EvtDecBig(event)
+	return event == EVT_MINUS_REPT or event == EVT_ROT_LEFT or event == EVT_LEFT_REPT
+end -- EvtDecBig()
+
+function soarUtil.EvtDown(event)
+	return event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_MINUS_REPT or event == EVT_DOWN_BREAK
+end -- EvtDown()
+
+function soarUtil.EvtExit(event)
+	return event == EVT_EXIT_BREAK
+end -- EvtExit()
+
+-- Show or hide help text
+function soarUtil.ToggleHelp(event)
+	if soarUtil.showHelp then
+		soarUtil.showHelp = (event == 0)
+		killEvents(event)
+	else
+		soarUtil.showHelp = (event == EVT_MENU_BREAK)
 	end
-	
-	return getTime() <= helpIds[id]	
-end -- ShowHelp
+end -- ToggleHelp()
 
 -- Write the current flight mode to a telemetry sensor.
 -- Create a sensor named "FM" with id 0x5050 in telemetry.

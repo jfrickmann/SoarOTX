@@ -1,5 +1,5 @@
 -- JF Log Data Graph, loadable part for reading data
--- Timestamp: 2019-09-29
+-- Timestamp: 2019-10-16
 -- Created by Jesper Frickmann
 
 local gr = ... -- List of shared variables
@@ -16,7 +16,7 @@ local FM_LAUNCH = 1 -- Launch flight mode
 local ALTI_PLOT ="Alti(m)" -- Default plot variable
 local TIME_GAP = 20 -- Time gap that triggers a new flight
 local MIN_TIME = 20 -- Minimum time of flight that will be plotted
-local READ_MAX = 8 -- Max. no. of record to read in one go
+local READ_MAX = 4 -- Max. no. of record to read in one go
 
 -- Construct the file name for today's log file for the current model
 local logFileName = string.gsub (model.getInfo().name, " ", "_") -- Log file name
@@ -246,7 +246,6 @@ else -- yValues
 		
 		logFile = io.open(logFileName, "r")
 		logFilePos = gr.flightTable[gr.flightIndex][1]
-		
 		if gr.viewMode == 4 then
 			timeStart = TimeSerial(gr.flightTable[gr.flightIndex][2]) + gr.tMin
 			timeEnd = TimeSerial(gr.flightTable[gr.flightIndex][2]) + gr.tMax		

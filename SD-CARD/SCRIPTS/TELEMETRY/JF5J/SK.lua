@@ -1,5 +1,5 @@
 -- JF F5J Timing and score keeping, loadable part
--- Timestamp: 2019-09-29
+-- Timestamp: 2019-10-18
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F5J.
 
@@ -15,15 +15,11 @@ local function run(event)
 		local dt = 0
 		
 		-- Show score browser
-		if event == EVT_MENU_BREAK then
+		if soarUtil.EvtExit(event) then
 			sk.myFile = sbFile
-		end
-	
-		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_PLUS_REPT or event == EVT_RIGHT_BREAK then
+		elseif soarUtil.EvtInc(event) then
 			dt = 60
-		end
-		
-		if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_MINUS_REPT or event == EVT_LEFT_BREAK then
+		elseif soarUtil.EvtDec(event) then
 			dt = -60
 		end
 		
@@ -37,11 +33,9 @@ local function run(event)
 	elseif sk.state == sk.STATE_LANDINGPTS then -- Landed, input landing points 
 		local dpts = 0
 		
-		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_PLUS_REPT or event == EVT_RIGHT_BREAK then
+		if soarUtil.EvtInc(event) then
 			dpts = 5
-		end
-		
-		if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_MINUS_REPT or event == EVT_LEFT_BREAK then
+		elseif soarUtil.EvtDec(event) then
 			dpts = -5
 		end
 		
@@ -52,25 +46,15 @@ local function run(event)
 			sk.landingPts = 0
 		end
 		
-		if event == EVT_ENTER_BREAK then
+		if soarUtil.EvtEnter(event) then
 			sk.state = sk.STATE_STARTHEIGHT
 		end
 	elseif sk.state == sk.STATE_STARTHEIGHT then -- Input start height
 		local dm = 0
 		
-		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK then
-			dm = 0.1
-		end
-		
-		if event == EVT_PLUS_REPT or event == EVT_RIGHT_REPT then
+		if soarUtil.EvtInc(event) then
 			dm = 1
-		end
-		
-		if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK then
-			dm = -0.1
-		end
-		
-		if event == EVT_MINUS_REPT or event == EVT_LEFT_REPT then
+		elseif soarUtil.EvtDec(event) then
 			dm = -1
 		end
 		
@@ -81,19 +65,17 @@ local function run(event)
 			sk.startHeight = 300
 		end
 		
-		if event == EVT_ENTER_BREAK then
+		if soarUtil.EvtEnter(event) then
 			sk.state = sk.STATE_TIME
-		elseif event == EVT_MENU_BREAK or event == EVT_UP_BREAK then
+		elseif soarUtil.EvtExit(event) then
 			sk.state = sk.STATE_LANDINGPTS
 		end
 	elseif sk.state == sk.STATE_TIME then -- Input flight time
 		local dt = 0
 		
-		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_PLUS_REPT or event == EVT_RIGHT_BREAK then
+		if soarUtil.EvtInc(event) then
 			dt = 1
-		end
-		
-		if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_MINUS_REPT or event == EVT_LEFT_BREAK then
+		elseif soarUtil.EvtDec(event) then
 			dt = -1
 		end
 		
@@ -102,13 +84,14 @@ local function run(event)
 			model.setTimer(0, sk.fltTmr)
 		end
 		
-		if event == EVT_ENTER_BREAK then
+		if soarUtil.EvtEnter(event) then
 			sk.state = sk.STATE_SAVE
-		elseif event == EVT_MENU_BREAK or event == EVT_UP_BREAK then
+		elseif soarUtil.EvtExit(event) then
 			sk.state = sk.STATE_STARTHEIGHT
 		end
 	elseif sk.state == sk.STATE_SAVE then
-		if event == EVT_ENTER_BREAK then -- Record scores if user pressed ENTER
+		-- Record scores if user pressed ENTER
+		if soarUtil.EvtEnter(event) then
 			local logFile = io.open("/LOGS/JF F5J Scores.csv", "a")
 			if logFile then
 				local nameStr = model.getInfo().name
@@ -125,10 +108,9 @@ local function run(event)
 			end
 			
 			sk.state = sk.STATE_INITIAL
-		elseif event == EVT_EXIT_BREAK then -- Do not record scores if user pressed EXIT
+		elseif soarUtil.EvtExit(event) then
+			 -- Do not record scores if user pressed EXIT
 			sk.state = sk.STATE_INITIAL
-		elseif event == EVT_MENU_BREAK or event == EVT_UP_BREAK then
-			sk.state = sk.STATE_TIME
 		end
 	end
 	

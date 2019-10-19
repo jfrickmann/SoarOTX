@@ -1,5 +1,5 @@
 -- 128x64/JF5J/SK.lua
--- Timestamp: 2019-09-29
+-- Timestamp: 2019-10-18
 -- Created by Jesper Frickmann
 
 local sk = ... -- List of shared variables
@@ -43,9 +43,9 @@ local 	function Draw()
 	if sk.state < sk.STATE_LANDINGPTS then
 		lcd.drawText(60, 38, "---", MIDSIZE + RIGHT)
 	elseif sk.state == sk.STATE_STARTHEIGHT then
-		lcd.drawNumber(60, 38, sk.startHeight * 10, PREC1 + MIDSIZE + RIGHT + BLINK + INVERS)
+		lcd.drawNumber(60, 38, sk.startHeight, MIDSIZE + RIGHT + BLINK + INVERS)
 	else
-		lcd.drawNumber(60, 38, sk.startHeight * 10, PREC1 + MIDSIZE + RIGHT)
+		lcd.drawNumber(60, 38, sk.startHeight, MIDSIZE + RIGHT)
 	end
 	
 	if sk.state == sk.STATE_SAVE then

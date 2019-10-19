@@ -1,5 +1,5 @@
 -- JF FXJ Configuration Menu
--- Timestamp: 2019-09-29
+-- Timestamp: 2019-10-18
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 -- "adj" is a global var that is output to OpenTX with a custom script
@@ -45,8 +45,10 @@ local function run(event)
 	local att
 	local x
 	
+	soarUtil.ToggleHelp(event)
+
 	-- Trap key events
-	if event == EVT_ENTER_BREAK then
+	if soarUtil.EvtEnter(event) then
 		active = true
 	end
 
@@ -59,14 +61,14 @@ local function run(event)
 		end
 	else
 		-- Handle menu key events
-		if event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_DOWN_BREAK then
+		if soarUtil.EvtDown(event) then
 			selection = selection + 1
 			if selection > #texts then 
 				selection = 1
 			end
 		end
 		
-		if event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_UP_BREAK then
+		if soarUtil.EvtUp(event) then
 			selection = selection - 1
 			if selection <= 0 then 
 				selection = #texts

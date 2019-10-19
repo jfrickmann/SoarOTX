@@ -1,5 +1,5 @@
 -- 212x64/JF/GRAPH.lua
--- Timestamp: 2019-10-12
+-- Timestamp: 2019-10-18
 -- Created by Jesper Frickmann
 -- Telemetry script for plotting telemetry parameters recorded in the log file.
 
@@ -19,15 +19,10 @@ local function Draw(event)
 	Plot()
 	
 	if gr.viewMode == 1 then -- Normal graph view
-		if soarUtil.ShowHelp(10, event) then
-			lcd.drawText(0, 4, "STATS", INVERS)
-			lcd.drawText(LCD_W, 4, "NEXT", INVERS + RIGHT)
-			lcd.drawText(LCD_W, 28, "PREV", INVERS + RIGHT)
-			lcd.drawText(LCD_W, 52, "VARIABLE", INVERS + RIGHT)
-		end
+		soarUtil.ShowHelp({ exit = "SHOW STATS", plus = "NEXT", minus = "PREVIOUS", enter = "CHANGE PAR." })
 
 		-- Change view mode
-		if event == EVT_MENU_BREAK or event == EVT_SHIFT_BREAK then
+		if soarUtil.EvtExit(event) then
 			gr.left = 45
 		end
 	elseif gr.viewMode == 2 then -- View stats
@@ -46,18 +41,21 @@ local function Draw(event)
 			lcd.drawNumber(gr.left, 40, 10 * gr.launchAlt, PREC1 + RIGHT)
 		end
 
-		if soarUtil.ShowHelp(11, event) then
-			lcd.drawText(0, 4, "MARK", INVERS)
-			lcd.drawText(LCD_W, 4, "NEXT", INVERS + RIGHT)
-			lcd.drawText(LCD_W, 28, "PREV", INVERS + RIGHT)
-			lcd.drawText(LCD_W, 52, "VARIABLE", INVERS + RIGHT)
-		end
+		soarUtil.ShowHelp({ exit = "MARK TIME", plus = "NEXT", minus = "PREVIOUS", enter = "CHANGE PAR." })
 
 	elseif gr.viewMode == 3 then -- Select details and view slope
 		local rate = (gr.yValues[gr.rgtMark] - gr.yValues[gr.lftMark]) / (gr.rgtTime - gr.lftTime)
-		local att = 0
+		local att
+		local helpText = { exit = "FULL VIEW", plus = "NEXT", minus = "PREVIOUS" }
 
-		if gr.selectedMark == 0 then att = INVERS end
+		if gr.selectedMark == 0 then
+			att = INVERS
+			helpText.enter = "RIGHT MARKER"
+		else
+			att = 0
+			helpText.enter = "ZOOM IN"
+		end
+
 		lcd.drawText(0, 11, "Lft", SMLSIZE + att)
 		lcd.drawTimer(gr.left + 3, 10, gr.lftTime, RIGHT)
 		lcd.drawNumber(gr.left, 20, 10 * gr.yValues[gr.lftMark], PREC1 + RIGHT)
@@ -70,19 +68,10 @@ local function Draw(event)
 		lcd.drawText(0, 51, "Rate", SMLSIZE)
 		lcd.drawNumber(gr.left, 50, 100 * rate, PREC2 + RIGHT)
 
-		if soarUtil.ShowHelp(12, event) then
-			lcd.drawText(0, 4, "FULL SIZE", INVERS)
-			lcd.drawText(LCD_W, 4, "\126", INVERS + RIGHT)
-			lcd.drawText(LCD_W, 28, "\127", INVERS + RIGHT)
-			if gr.selectedMark == 0 then
-				lcd.drawText(LCD_W, 52, "MARKER", INVERS + RIGHT)
-			else
-				lcd.drawText(LCD_W, 52, "ZOOM IN", INVERS + RIGHT)
-			end
-		end
+		soarUtil.ShowHelp(helpText)
 
 		-- Back to full graph view
-		if event == EVT_MENU_BREAK or event == EVT_SHIFT_BREAK then
+		if soarUtil.EvtExit(event) then
 			gr.left = 0
 		end
 	else -- Zoomed in
@@ -99,9 +88,7 @@ local function Draw(event)
 		lcd.drawText(0, 41, "Rate", SMLSIZE)
 		lcd.drawNumber(gr.left, 40, 100 * (gr.yMax2 - gr.yMin2) / gr.tSpan, PREC2 + RIGHT)
 
-		if soarUtil.ShowHelp(13, event) then
-			lcd.drawText(LCD_W, 52, "ZOOM OUT", INVERS + RIGHT)
-		end
+		soarUtil.ShowHelp({ enter = "ZOOM OUT" })
 	end
 end  --  run()
 

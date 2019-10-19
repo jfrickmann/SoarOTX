@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable menu for selecting task
--- Timestamp: 2019-09-29
+-- Timestamp: 2019-10-18
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -51,17 +51,18 @@ local function run(event)
 	if sk.selectedTask == 0 then -- Show plugin menu
 		menu.title = "Plugins"
 		menu.items = plugins[2]
+		menu.sub = false
 		menu.Draw(sk.selectedPlugin)
 
-		if event == EVT_ENTER_BREAK then
+		if soarUtil.EvtEnter(event) then
 			sk.selectedTask = 1
-		elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_PLUS_REPT or event == EVT_UP_BREAK then
+		elseif soarUtil.EvtUp(event) then
 			if sk.selectedPlugin == 1 then
 				sk.selectedPlugin = #plugins[1]
 			else
 				sk.selectedPlugin = sk.selectedPlugin - 1
 			end
-		elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_MINUS_REPT or event == EVT_DOWN_BREAK then
+		elseif soarUtil.EvtDown(event) then
 			if sk.selectedPlugin == #plugins[1] then
 				sk.selectedPlugin = 1
 			else
@@ -71,12 +72,13 @@ local function run(event)
 	else -- Show task menu
 		menu.title = plugins[2][sk.selectedPlugin]
 		menu.items = plugins[3][sk.selectedPlugin]
+		menu.sub = true
 		menu.Draw(sk.selectedTask)
 			
 		-- If there is only one task, then start it!
 		if #menu.items == 1 then event = EVT_ENTER_BREAK end
 
-		if event == EVT_ENTER_BREAK then
+		if soarUtil.EvtEnter(event) then
 			sk.task = sk.selectedTask
 			sk.state = sk.STATE_IDLE
 			sk.run = plugins[1][sk.selectedPlugin]
@@ -84,16 +86,16 @@ local function run(event)
 
 			-- If there is only one task, go back to the Plugin menu after returning!
 			if #menu.items == 1 then sk.selectedTask = 0 end
-		elseif event == EVT_EXIT_BREAK then
+		elseif soarUtil.EvtExit(event) then
 			sk.selectedTask = 0
 			menu.firstItem = 1
-		elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_PLUS_REPT or event == EVT_UP_BREAK then
+		elseif soarUtil.EvtUp(event) then
 			if sk.selectedTask == 1 then
 				sk.selectedTask = #menu.items
 			else
 				sk.selectedTask = sk.selectedTask - 1
 			end
-		elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_MINUS_REPT or event == EVT_DOWN_BREAK then
+		elseif soarUtil.EvtDown(event) then
 			if sk.selectedTask == #menu.items then
 				sk.selectedTask = 1
 			else

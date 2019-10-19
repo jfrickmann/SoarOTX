@@ -1,5 +1,5 @@
 -- User interface for several score keeper plugins
--- Timestamp: 2019-09-29
+-- Timestamp: 2019-10-18
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -14,7 +14,7 @@ local function run(event)
 		ui.PromptScores()
 
 		-- Record scores if user pressed ENTER
-		if event == EVT_ENTER_BREAK then
+		if soarUtil.EvtEnter(event) then
 			local logFile = io.open("/LOGS/JF F3K Scores.csv", "a")
 			if logFile then
 				io.write(logFile, string.format("%s,%s", model.getInfo().name, sk.taskName))
@@ -33,7 +33,7 @@ local function run(event)
 				io.close(logFile)
 			end
 			sk.run = sk.menu
-		elseif event == EVT_EXIT_BREAK then
+		elseif soarUtil.EvtExit(event) then
 			sk.run = sk.menu
 		end
 
@@ -55,18 +55,18 @@ local function run(event)
 		ui.Draw()
 
 		-- Toggle quick relaunch QR
-		if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_UP_BREAK then
+		if soarUtil.EvtUp(event) then
 			sk.quickRelaunch = not sk.quickRelaunch
 			playTone(1760, 100, PLAY_NOW)
 		end
 		
 		-- Toggle end of window timer stop EoW
-		if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_DOWN_BREAK then
+		if soarUtil.EvtDown(event) then
 			sk.eowTimerStop = not sk.eowTimerStop
 			playTone(1760, 100, PLAY_NOW)
 		end
 
-		if event == EVT_ENTER_BREAK then
+		if soarUtil.EvtEnter(event) then
 			if sk.state <= sk.STATE_PAUSE then
 				-- Start task window
 				sk.state = sk.STATE_WINDOW
@@ -79,26 +79,23 @@ local function run(event)
 			
 			playTone(1760, 100, PLAY_NOW)
 		end
-		
-		if (event == EVT_MENU_LONG or event == EVT_SHIFT_LONG) 
-		and (sk.state == sk.STATE_COMMITTED or sk.state == sk.STATE_FREEZE) then
-			-- Record a zero score!
-			sk.flightTime = 0
-			sk.Score()
-			
-			-- Change state
-			if sk.winTimer <= 0 or (sk.finalScores and #sk.scores == sk.taskScores) or sk.launches == 0 then
-				sk.state = sk.STATE_FINISHED
-			else
-				sk.state = sk.STATE_WINDOW
-			end
 
-			playTone(440, 333, PLAY_NOW)
-		end
+		if soarUtil.EvtExit(event) then
+			if sk.state == sk.STATE_COMMITTED or sk.state == sk.STATE_FREEZE then
+				-- Record a zero score!
+				sk.flightTime = 0
+				sk.Score()
+				
+				-- Change state
+				if sk.winTimer <= 0 or (sk.finalScores and #sk.scores == sk.taskScores) or sk.launches == 0 then
+					sk.state = sk.STATE_FINISHED
+				else
+					sk.state = sk.STATE_WINDOW
+				end
 
-		if event == EVT_EXIT_BREAK then
-			-- Quit task
-			if sk.state == sk.STATE_IDLE then
+				playTone(440, 333, PLAY_NOW)
+			elseif sk.state == sk.STATE_IDLE then
+				-- Quit task
 				sk.run = sk.menu
 			elseif sk.state == sk.STATE_PAUSE or sk.state == sk.STATE_FINISHED then
 				exitTask = -1

@@ -1,5 +1,5 @@
 -- JF Autoloader
--- Timestamp: 2019-10-10
+-- Timestamp: 2019-10-17
 -- Created by Jesper Frickmann
 -- Telemetry script for automatically loading and unloading telemetry scripts
 -- Depends on library functions in FUNCTIONS/JFLib.lua
@@ -27,6 +27,7 @@ end
 
 local function run(event)
 	status = 1
+	soarUtil.ToggleHelp(event)
 
 	if soarUtil.RunLoadable(gr.run, event, gr) then
 		-- Unload to reload GRREAD if scanning is done and we start reading the first flight

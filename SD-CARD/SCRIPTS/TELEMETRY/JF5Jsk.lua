@@ -1,5 +1,5 @@
 -- JF F5J Timing and score keeping, fixed part
--- Timestamp: 2019-09-29
+-- Timestamp: 2019-10-17
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F5J.
 -- Depends on library functions in FUNCTIONS/JFLib.lua
@@ -114,6 +114,7 @@ end  --  background()
 
 -- Forward run() call to the loadable part
 local function run(event)
+	soarUtil.ToggleHelp(event)
 	return soarUtil.RunLoadable(sk.myFile, event, sk)
 end
 
