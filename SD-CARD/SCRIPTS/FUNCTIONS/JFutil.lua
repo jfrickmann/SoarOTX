@@ -1,5 +1,5 @@
 -- JF Utility Library
--- Timestamp: 2019-10-18
+-- Timestamp: 2019-10-19
 -- Created by Jesper Frickmann
 
 soarUtil = { } -- Global "namespace"
@@ -100,41 +100,33 @@ function soarUtil.EvtEnter(event)
 	return event == EVT_ENTER_BREAK
 end -- EvtEnter()
 
-function soarUtil.EvtInc(event)
-	return event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_PLUS_REPT or event == EVT_RIGHT_BREAK
-end -- EvtInc()
-
-function soarUtil.EvtDec(event)
-	return event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_MINUS_REPT or event == EVT_LEFT_BREAK
-end -- EvtDec()
-
-function soarUtil.EvtUp(event)
-	return event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_PLUS_REPT or event == EVT_UP_BREAK
-end -- EvtUp()
-
-function soarUtil.EvtLeft(event)
-	return event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK
-end -- EvtLeft()
-
-function soarUtil.EvtRight(event)
-	return event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK
-end -- EvtRight()
-
-function soarUtil.EvtIncBig(event)
-	return event == EVT_PLUS_REPT or event == EVT_ROT_RIGHT or event == EVT_RIGHT_REPT
-end -- EvtIncBig()
-
-function soarUtil.EvtDecBig(event)
-	return event == EVT_MINUS_REPT or event == EVT_ROT_LEFT or event == EVT_LEFT_REPT
-end -- EvtDecBig()
-
-function soarUtil.EvtDown(event)
-	return event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_MINUS_REPT or event == EVT_DOWN_BREAK
-end -- EvtDown()
-
 function soarUtil.EvtExit(event)
 	return event == EVT_EXIT_BREAK
 end -- EvtExit()
+
+function soarUtil.EvtInc(event)
+	return event == EVT_PLUS_BREAK or event == EVT_PLUS_REPT or event == EVT_ROT_RIGHT or event == EVT_UP_BREAK
+end -- EvtInc()
+
+function soarUtil.EvtDec(event)
+	return event == EVT_MINUS_BREAK or event == EVT_MINUS_REPT or event == EVT_ROT_LEFT or event == EVT_DOWN_BREAK
+end -- EvtDec()
+
+function soarUtil.EvtRight(event)
+	return event == EVT_PLUS_BREAK or event == EVT_PLUS_REPT or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK
+end -- EvtRight()
+
+function soarUtil.EvtLeft(event)
+	return event == EVT_MINUS_BREAK or event == EVT_MINUS_REPT or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK
+end -- EvtLeft()
+
+function soarUtil.EvtUp(event)
+	return event == EVT_PLUS_BREAK or event == EVT_PLUS_REPT or event == EVT_ROT_LEFT or event == EVT_UP_BREAK
+end -- EvtUp()
+
+function soarUtil.EvtDown(event)
+	return event == EVT_MINUS_BREAK or event == EVT_MINUS_REPT or event == EVT_ROT_RIGHT or event == EVT_DOWN_BREAK
+end -- EvtDown()
 
 -- Show or hide help text
 function soarUtil.ToggleHelp(event)

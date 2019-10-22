@@ -5,7 +5,7 @@
 local ui = { } -- List of shared variables
 
 function ui.Draw()
-	InfoBar(" Airbrake curves ")
+	soarUtil.InfoBar(" Airbrake curves ")
 	lcd.drawText(10, 14, "Use throttle to ")
 	lcd.drawText(10, 26, "move airbrakes.")
 	lcd.drawText(10, 38, "Thr. and elev.")

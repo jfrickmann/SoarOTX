@@ -153,6 +153,9 @@ local function run(event)
 	
 	-- Time to draw the screen
 	ui.Draw()
+	
+	-- Show onscreen help
+	soarUtil.ShowHelp({ exit = "GO BACK", ud = "PREV/NEXT RND" })
 end
 
 return { init = init, run = run }

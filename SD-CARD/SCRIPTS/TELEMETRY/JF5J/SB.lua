@@ -1,5 +1,5 @@
 -- JF F5J Score Browser
--- Timestamp: 2019-09-29
+-- Timestamp: 2019-10-19
 -- Created by Jesper Frickmann
 -- Telemetry script for browsing scores recorded in the log file.
 
@@ -87,12 +87,12 @@ local function run(event)
 	lastTime = thisTime
 	
 	-- Show score keeper
-	if event == EVT_MENU_BREAK then
+	if soarUtil.EvtExit(event) then
 		sk.myFile = skFile
 	end
 	
 	-- Go to previous record
-	if event == EVT_MINUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK then
+	if soarUtil.EvtLeft(event) then
 		index = index - 1
 		if index <= 0 then
 			index = #ui.indices - 1
@@ -106,7 +106,7 @@ local function run(event)
 	end
 
 	 -- Go to next record
-	if event == EVT_PLUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK then
+	if soarUtil.EvtRight(event) then
 		index = index + 1
 		if index >= #ui.indices then
 			index = 1

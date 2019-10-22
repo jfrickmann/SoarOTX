@@ -5,7 +5,7 @@
 local gv1, gv2, gv5 = ... -- List of shared variables
 
 local	function Draw()
-	InfoBar(" Aileron and camber ")
+	soarUtil.InfoBar(" Aileron and camber ")
 	
 	lcd.drawText(10, 18, "Aileron trim = aileron", 0)
 	lcd.drawText(10, 30, "Rudder trim = flaperon", 0)

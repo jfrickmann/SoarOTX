@@ -1,5 +1,5 @@
 -- JF Channel configuration
--- Timestamp: 2019-10-18
+-- Timestamp: 2019-10-19
 -- Created by Jesper Frickmann
 
 local N = 32 -- Highest channel number to swap
@@ -128,6 +128,15 @@ local function MoveSelected(direction)
 		namedChs[selection] = m[2]
 	end
 end -- SwapChannels()
+
+-- Special key event handlers for this menu only
+local function EvtIncBig(event)
+	return event == EVT_PLUS_REPT or event == EVT_ROT_RIGHT or event == EVT_RIGHT_REPT
+end -- EvtIncBig()
+
+local function EvtDecBig(event)
+	return event == EVT_MINUS_REPT or event == EVT_ROT_LEFT or event == EVT_LEFT_REPT
+end -- EvtDecBig()
 
 local function Draw()
 	soarUtil.InfoBar(MENUTXT)
@@ -317,11 +326,11 @@ local function run(event)
 			
 			if soarUtil.EvtEnter(event) or soarUtil.EvtExit(event) then
 				editing = editing - 10
-			elseif soarUtil.EvtIncBig(event) then
+			elseif EvtIncBig(event) then
 				delta = 10
 			elseif soarUtil.EvtInc(event) then
 				delta = 1
-			elseif soarUtil.EvtDecBig(event) then
+			elseif EvtDecBig(event) then
 				delta = -10
 			elseif soarUtil.EvtDec(event) then
 				delta = -1

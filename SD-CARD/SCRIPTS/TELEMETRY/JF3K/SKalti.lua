@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable user interface for altimeter based tasks
--- Timestamp: 2019-10-18
+-- Timestamp: 2019-10-21
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -148,6 +148,17 @@ local function run(event)
 	
 	else
 		ui.Draw()
+
+		-- Show onscreen help
+		if sk.state <= sk.STATE_PAUSE then
+			soarUtil.ShowHelp({ enter = "START WINDOW", exit = "LEAVE TASK", up = "QUICK RELAUNCH", down = "FREEZE TIMER at EoW" })
+		elseif sk.state == sk.STATE_WINDOW then
+			soarUtil.ShowHelp({ enter = "STOP WINDOW", up = "QUICK RELAUNCH", down = "FREEZE TIMER at EoW" })
+		elseif sk.state < sk.STATE_COMMITTED then
+			soarUtil.ShowHelp({ up = "QUICK RELAUNCH", down = "FREEZE TIMER at EoW" })
+		else
+			soarUtil.ShowHelp({ exit = "SCORE ZERO", up = "QUICK RELAUNCH", down = "FREEZE TIMER at EoW" })
+		end
 
 		-- Toggle quick relaunch QR
 		if soarUtil.EvtUp(event) then

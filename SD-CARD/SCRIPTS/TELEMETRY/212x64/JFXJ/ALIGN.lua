@@ -5,7 +5,7 @@
 local ui = { } -- List of shared variables
 
 function ui.Draw()
-	InfoBar(" Flaps/aileron alignment ")
+	soarUtil.InfoBar(" Flaps/aileron alignment ")
 
 	lcd.drawText(5, 13, "LA", SMLSIZE)
 	ui.DrawCurve(4, 12, 48, 36, ui.crvLft[2], ui.nPoints - ui.lasti + 1)

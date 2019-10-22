@@ -1,4 +1,4 @@
--- Timestamp: 2019-10-18
+-- Timestamp: 2019-10-20
 -- Created by Jesper Frickmann
 -- Telemetry script for plotting telemetry parameters recorded in the log file.
 
@@ -47,6 +47,8 @@ local function run(event)
 			gr.viewMode = 2
 			gr.run = gr.read
 		end
+		
+		soarUtil.ShowHelp({enter = "CHANGE PAR.", lr = "MOVE", exit = "SHOW STATS" })
 	elseif gr.viewMode == 2 then -- View stats
 		-- Change view mode
 		if soarUtil.EvtExit(event) then
@@ -55,7 +57,8 @@ local function run(event)
 			gr.rgtMark = math.ceil(0.9 * width)
 			gr.selectedMark = 0
 		end
-
+		
+		soarUtil.ShowHelp({enter = "CHANGE PAR.", lr = "MOVE", exit = "MARK TIME" })
 	elseif gr.viewMode == 3 then -- Select details and view slope
 		-- Draw markers
 		gr.DrawLine(gr.lftTime, gr.yMin, gr.lftTime , gr.yMax)
@@ -96,11 +99,20 @@ local function run(event)
 			gr.viewMode = 1
 			gr.run = gr.read
 		end
+
+		if gr.selectedMark == 0 then
+			soarUtil.ShowHelp({enter = "RIGHT MARKER", lr = "MOVE", exit = "FULL SIZE" })
+		else
+			soarUtil.ShowHelp({enter = "ZOOM IN", lr = "MOVE", exit = "FULL SIZE" })
+		end
+		
 	else -- Zoomed in
-		if soarUtil.EvtExit(event) then
+		if soarUtil.EvtEnter(event) then
 			gr.viewMode = 3
 			gr.run = gr.read
 		end
+
+		soarUtil.ShowHelp({ enter = "ZOOM OUT" })
 	end
 	
 	if gr.viewMode < 3 then

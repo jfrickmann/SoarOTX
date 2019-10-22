@@ -1,5 +1,5 @@
 -- JF FXJ Configuration Menu
--- Timestamp: 2019-10-18
+-- Timestamp: 2019-10-20
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 -- "adj" is a global var that is output to OpenTX with a custom script
@@ -76,6 +76,7 @@ local function run(event)
 		end
 		
 		menu.Draw(selection)
+		soarUtil.ShowHelp({ enter = "SELECT", ud = "MOVE" })
 	end
 end
 

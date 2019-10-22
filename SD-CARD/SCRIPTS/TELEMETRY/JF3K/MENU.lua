@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable menu for selecting task
--- Timestamp: 2019-10-18
+-- Timestamp: 2019-10-20
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -51,8 +51,8 @@ local function run(event)
 	if sk.selectedTask == 0 then -- Show plugin menu
 		menu.title = "Plugins"
 		menu.items = plugins[2]
-		menu.sub = false
 		menu.Draw(sk.selectedPlugin)
+		soarUtil.ShowHelp({ enter = "SELECT", ud = "MOVE" })
 
 		if soarUtil.EvtEnter(event) then
 			sk.selectedTask = 1
@@ -72,8 +72,8 @@ local function run(event)
 	else -- Show task menu
 		menu.title = plugins[2][sk.selectedPlugin]
 		menu.items = plugins[3][sk.selectedPlugin]
-		menu.sub = true
 		menu.Draw(sk.selectedTask)
+		soarUtil.ShowHelp({ enter = "SELECT", ud = "MOVE", exit = "GO BACK" })
 			
 		-- If there is only one task, then start it!
 		if #menu.items == 1 then event = EVT_ENTER_BREAK end
