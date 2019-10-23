@@ -1,5 +1,5 @@
 -- JF Channel configuration
--- Timestamp: 2019-10-19
+-- Timestamp: 2019-10-22
 -- Created by Jesper Frickmann
 
 local N = 32 -- Highest channel number to swap
@@ -253,6 +253,18 @@ local function Draw()
 end
 
 local function run(event)
+	-- Update the screen
+	if stage == 1 then
+		soarUtil.InfoBar(" Warning! ")
+
+		lcd.drawText(XTXT, 12, "Disconnect the motor!", ATT1)
+		lcd.drawText(XTXT, 28, "Sudden spikes may occur", ATT2)
+		lcd.drawText(XTXT, 38, "when channels are moved.", ATT2)
+		lcd.drawText(XTXT, 48, "Press ENTER to proceed.", ATT2)
+	else
+		Draw()
+	end
+
 	if stage == 1 then
 		if soarUtil.EvtEnter(event) then
 			stage = 2
@@ -286,6 +298,9 @@ local function run(event)
 					selection = selection + 1
 				end
 			end
+			
+			soarUtil.ShowHelp({enter = "EDIT", exit = "EXIT", ud = "SELECT CH." })
+			
 		elseif editing == 2 then
 			-- Editing direction
 			if soarUtil.EvtEnter(event) then
@@ -298,6 +313,9 @@ local function run(event)
 			elseif soarUtil.EvtExit(event) then
 				editing = 0
 			end
+			
+			soarUtil.ShowHelp({enter = "REVERSE", exit = "BACK", lr = "SELECT PAR." })
+			
 		elseif editing <= 7 then
 			-- Item(s) selected, but not edited
 			if soarUtil.EvtEnter(event) then
@@ -312,6 +330,9 @@ local function run(event)
 			elseif soarUtil.EvtExit(event) then
 				editing = 0
 			end
+			
+			soarUtil.ShowHelp({enter = "EDIT", exit = "BACK", lr = "SELECT PAR." })
+			
 		elseif editing == 11 then
 			-- Channel number edited
 			if soarUtil.EvtEnter(event) or soarUtil.EvtExit(event) then
@@ -321,6 +342,9 @@ local function run(event)
 			elseif soarUtil.EvtDown(event) then
 				return MoveSelected(1)
 			end
+			
+			soarUtil.ShowHelp({enter = "BACK", exit = "BACK", ud = "MOVE" })
+			
 		elseif editing >= 13 then
 			local delta = 0
 			
@@ -335,6 +359,9 @@ local function run(event)
 			elseif soarUtil.EvtDec(event) then
 				delta = -1
 			end
+			
+			
+			soarUtil.ShowHelp({enter = "BACK", exit = "BACK", ud = "CHANGE" })
 			
 			if editing == 13 then
 				-- Lower, Center, Upper edited
@@ -392,18 +419,6 @@ local function run(event)
 		elseif selection - firstLine > 5 then
 			firstLine = selection - 5
 		end
-	end
-
-	-- Update the screen
-	if stage == 1 then
-		soarUtil.InfoBar(" Warning! ")
-
-		lcd.drawText(XTXT, 12, "Disconnect the motor!", ATT1)
-		lcd.drawText(XTXT, 28, "Sudden spikes may occur", ATT2)
-		lcd.drawText(XTXT, 38, "when channels are moved.", ATT2)
-		lcd.drawText(XTXT, 48, "Press ENTER to proceed.", ATT2)
-	else
-		Draw()
 	end
 end
 

@@ -1,5 +1,5 @@
 -- JF F3RES Timing and score keeping, loadable part
--- Timestamp: 2019-10-18
+-- Timestamp: 2019-10-22
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F3RES.
 
@@ -9,6 +9,8 @@ local Draw = soarUtil.LoadWxH("JF3R/SK.lua", sk) -- Screen size specific functio
 local function run(event)
 	sk.winTmr = model.getTimer(0)
 	sk.fltTmr = model.getTimer(1)
+	
+	Draw()
 
 	if sk.state == sk.STATE_SETWINTMR and soarUtil.EvtEnter(event) then
 		sk.state = sk.STATE_SETFLTTMR
@@ -41,6 +43,8 @@ local function run(event)
 				tgt = 60
 			end
 			model.setTimer(0, {start = tgt, value = tgt})
+		
+			soarUtil.ShowHelp({ enter = "NEXT", ud = "SET WINDOW" })
 		else
 			tgt = sk.fltTmr.start + dt
 			if tgt < 60 then
@@ -49,6 +53,8 @@ local function run(event)
 				tgt = sk.winTmr.start
 			end
 			model.setTimer(1, {start = tgt, value = tgt})
+		
+			soarUtil.ShowHelp({ exit = "BACK", ud = "SET FLIGHT" })		
 		end
 	elseif sk.state == sk.STATE_LANDINGPTS then -- Landed, input landing points 
 		local dpts = 0
@@ -83,6 +89,9 @@ local function run(event)
 		if soarUtil.EvtEnter(event) then
 			sk.state = sk.STATE_SAVE
 		end
+		
+		soarUtil.ShowHelp({ enter = "NEXT", ud = "SET POINTS" })
+		
 	elseif sk.state == sk.STATE_SAVE then
 		if soarUtil.EvtEnter(event) then -- Record scores if user pressed ENTER
 			local logFile = io.open("/LOGS/JF F3RES Scores.csv", "a")
@@ -107,8 +116,6 @@ local function run(event)
 			sk.state = sk.STATE_SETWINTMR
 		end
 	end
-	
-	Draw()
 end  --  run()
 
-return {run = run}	
+return {run = run}

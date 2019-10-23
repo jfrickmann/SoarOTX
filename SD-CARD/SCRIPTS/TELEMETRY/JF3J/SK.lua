@@ -1,5 +1,5 @@
 -- JF F3J Timing and score keeping, loadable part
--- Timestamp: 2019-10-18
+-- Timestamp: 2019-10-22
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F3J.
 
@@ -10,7 +10,9 @@ local ui = soarUtil.LoadWxH("JF3J/SK.lua", sk) -- Screen size specific function
 local function run(event)
 	ui.winTmr = model.getTimer(0)
 	ui.fltTmr = model.getTimer(1)
-	
+
+	ui.Draw()
+
 	if sk.state == sk.STATE_INITIAL then -- Set flight time before the flight
 		local dt = 0
 		
@@ -34,6 +36,9 @@ local function run(event)
 			tgt = 60
 		end
 		model.setTimer(0, {start = tgt, value = tgt})
+		
+		soarUtil.ShowHelp({ exit = "SHOW SCORES", ud = "SET TIME" })
+		
 	elseif sk.state == sk.STATE_LANDINGPTS then -- Landed, input landing points 
 		local dpts = 0
 		
@@ -67,6 +72,9 @@ local function run(event)
 		if soarUtil.EvtEnter(event) then
 			sk.state = sk.STATE_TIME
 		end
+		
+		soarUtil.ShowHelp({ enter = "NEXT", ud = "SET POINTS" })
+		
 	elseif sk.state == sk.STATE_TIME then -- Input flight time
 		local dt = 0
 		
@@ -88,6 +96,9 @@ local function run(event)
 		elseif soarUtil.EvtExit(event) then
 			sk.state = sk.STATE_LANDINGPTS
 		end
+		
+		soarUtil.ShowHelp({ enter = "FINISH", exit = "BACK", ud = "SET TIME" })
+		
 	elseif sk.state == sk.STATE_SAVE then
 		if soarUtil.EvtEnter(event) then -- Record scores if user pressed ENTER
 			local logFile = io.open("/LOGS/JF F3J Scores.csv", "a")
@@ -110,8 +121,6 @@ local function run(event)
 			sk.state = sk.STATE_INITIAL
 		end
 	end
-	
-	ui.Draw()
 end  --  run()
 
 return {run = run}

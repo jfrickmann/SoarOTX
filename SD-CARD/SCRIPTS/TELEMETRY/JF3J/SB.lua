@@ -1,5 +1,5 @@
 -- JF F3J Score Browser
--- Timestamp: 2019-10-19
+-- Timestamp: 2019-10-22
 -- Created by Jesper Frickmann
 -- Telemetry script for browsing scores recorded in the log file.
 
@@ -120,6 +120,7 @@ local function run(event)
 
 	-- Time to draw the screen
 	ui.Draw()
+	soarUtil.ShowHelp({ exit = "BACK", lr = "PREV/NEXT" })
 end
 
 return {init = init, run = run}
