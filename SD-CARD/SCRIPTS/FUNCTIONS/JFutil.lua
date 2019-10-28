@@ -1,5 +1,5 @@
 -- JF Utility Library
--- Timestamp: 2019-10-19
+-- Timestamp: 2019-10-27
 -- Created by Jesper Frickmann
 
 soarUtil = { } -- Global "namespace"
@@ -131,8 +131,7 @@ end -- EvtDown()
 -- Show or hide help text
 function soarUtil.ToggleHelp(event)
 	if soarUtil.showHelp then
-		soarUtil.showHelp = (event == 0)
-		killEvents(event)
+		soarUtil.showHelp = (event ~= EVT_MENU_BREAK)
 	else
 		soarUtil.showHelp = (event == EVT_MENU_BREAK)
 	end
