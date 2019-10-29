@@ -1,5 +1,5 @@
 -- 128x64/JFutil.lua
--- Timestamp: 2019-10-21
+-- Timestamp: 2019-10-28
 -- Created by Jesper Frickmann
 
 local helpKeys = { "enter", "up", "down", "ud", "lr", "exit" }
@@ -33,6 +33,15 @@ function soarUtil.InfoBar(title)
 	lcd.drawText(LCD_W, 0, infoStr, RIGHT)
 end -- InfoBar()
 
+-- Xlite has no MENU button, so use SHIFT instead
+local menu = "MENU"
+do
+	local ver, radio = getVersion()
+	if string.find(radio, "lite") then
+		menu ="SHIFT"
+	end
+end
+
 -- Show help text
 function soarUtil.ShowHelp(ht)
 	if not soarUtil.showHelp then return end
@@ -40,8 +49,8 @@ function soarUtil.ShowHelp(ht)
 	local y = 22
 	
 	lcd.drawFilledRectangle(0, 9, 128, 56, SOLID)
-	lcd.drawText(1, 11, "MENU", INVERS)
-	lcd.drawText(45, 11, "SHOW HELP", INVERS)
+	lcd.drawText(1, 11, menu, INVERS)
+	lcd.drawText(45, 11, "SHOW/HIDE HELP", INVERS)
 	
 	for i = 1, #helpKeys do
 		if ht[helpKeys[i]] then
