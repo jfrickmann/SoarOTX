@@ -1,5 +1,5 @@
 -- JF Log Data Graph, loadable part for reading data
--- Timestamp: 2019-10-30
+-- Timestamp: 2019-11-10
 -- Created by Jesper Frickmann
 
 -- International users - un-comment ONE of the following lines:
@@ -58,7 +58,7 @@ end  --  ReadLine()
 
 -- Read a line of comma separated fields into lineData
 local function ReadLineData()
-	local pos, lineStr = ReadLine(logFile, logFilePos, 200)
+	local pos, lineStr = ReadLine(logFile, logFilePos, 300)
 	lineData = {}
 
 	if pos > 0 then
