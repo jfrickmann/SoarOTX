@@ -1,19 +1,18 @@
 -- JF FXJ flap curve adjustment
--- Timestamp: 2019-07-07
+-- Timestamp: 2019-10-18
 -- Created by Jesper Frickmann
 -- Script for adjusting the flaps curves for the JF FXJ program.
 
 local nPoints = 5 -- Number of points on the curves
 local xValue = getFieldInfo("input8").id -- Step input before applying the output curves must be assigned to a channel
-local lasti -- Index of point on the curves last time
-
 local gvIndex = {7, 8} -- Index of global variables used for communicating with the model program
 local index = {4, 5} -- Indices of the curves
-local crv ={} -- Data structures defining the curves
 
-local Draw -- Draw() function is defined for specific transmitter
+local ui = soarUtil.LoadWxH("JFXJ/BRKCRV.lua") -- Screen size specific function
+ui.crv ={} -- Data structures defining the curves
+ui.lasti = 0 -- Index of point on the curves last time
 
-local function DrawCurve(x, y, w, h, crv, i)
+function ui.DrawCurve(x, y, w, h, crv, i)
 	local x1, x2, y1, y2, y3
 	local n = #(crv.y)
 	
@@ -47,33 +46,6 @@ local function DrawCurve(x, y, w, h, crv, i)
 	lcd.drawNumber(x + w, y + h - 6, y3, RIGHT + SMLSIZE)
 end -- DrawCurve()
 
--- Transmitter specific
-if LCD_W == 128 then
-	function Draw()
-		DrawMenu("Airbrakes")
-		lcd.drawText(12, 13, "Flap", SMLSIZE)
-		DrawCurve(11, 12, 48, 48, crv[1], lasti)
-		lcd.drawLine(64, 10, 64, 61, SOLID, FORCE)
-		lcd.drawText(70, 13, "Aile", SMLSIZE)
-		DrawCurve(69, 12, 48, 48, crv[2], lasti)
-	end -- Draw()
-else
-	function Draw()
-		DrawMenu(" Airbrake curves ")
-		lcd.drawText(10, 14, "Use throttle to ")
-		lcd.drawText(10, 26, "move airbrakes.")
-		lcd.drawText(10, 38, "Thr. and elev.")
-		lcd.drawText(10, 50, "trim to adjust.")
-
-		lcd.drawLine(103, 10, 103, 61, SOLID, FORCE)
-		lcd.drawText(106, 13, "Flap", SMLSIZE)
-		DrawCurve(105, 12, 48, 48, crv[1], lasti)
-		lcd.drawLine(155, 10, 155, 61, SOLID, FORCE)
-		lcd.drawText(158, 13, "Aile", SMLSIZE)
-		DrawCurve(157, 12, 48, 48, crv[2], lasti)
-	end -- Draw()
-end
-
 -- Find index of the curve point that corresponds to the value of the step input
 local function FindIndex()
 	local x = getValue(xValue)
@@ -97,16 +69,14 @@ local function GetCurve2(crvIndex)
 end -- GetCurve2()
 
 local function init()
-	lasti = 0
-	
 	for j = 1, 2 do
-		crv[j] = GetCurve2(index[j])
+		ui.crv[j] = GetCurve2(index[j])
 	end
 end -- init()
 
 local function run(event)
 	-- Press EXIT to quit
-	if event == EVT_EXIT_BREAK then
+	if soarUtil.EvtExit(event) then
 		return true
 	end
 	
@@ -116,12 +86,12 @@ local function run(event)
 	adj = 2
 
 	-- If index changed, then set GV to current dif. value
-	if i ~= lasti then
+	if i ~= ui.lasti then
 		for j = 1, 2 do
-			model.setGlobalVariable(gvIndex[j], 0, crv[j]["y"][i])
+			model.setGlobalVariable(gvIndex[j], 0, ui.crv[j]["y"][i])
 		end
 
-		lasti = i
+		ui.lasti = i
 	end
 	
 	for j = 1, 2 do
@@ -129,11 +99,11 @@ local function run(event)
 		y = math.max(-100, y)
 		y = math.min(100, y)
 		
-		crv[j]["y"][i] = y
-		model.setCurve(index[j], crv[j])
+		ui.crv[j]["y"][i] = y
+		model.setCurve(index[j], ui.crv[j])
 	end
 
-	Draw()
+	ui.Draw()
 end -- run()
 
 return{init = init, run = run}

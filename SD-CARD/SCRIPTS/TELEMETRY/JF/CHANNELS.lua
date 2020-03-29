@@ -1,18 +1,10 @@
 -- JF Channel configuration
--- Timestamp: 2019-07-07
+-- Timestamp: 2019-10-22
 -- Created by Jesper Frickmann
 
 local N = 32 -- Highest channel number to swap
 local MAXOUT = 1500 -- Maximum output value
 local MINDIF = 100 -- Minimum difference between lower, center and upper values
-local MENUTXT -- Text to show on menu
-local XDOT -- X position of number dot
-local XREV -- X position of channel direction indicator
-local CENTER -- X position of center line
-local SCALE -- X scale
-local XTXT -- Text position of warning message
-local ATT1 -- Text attribute of warning message
-local ATT2 -- Text attribute of warning message
 
 local namedChs = {} -- List of named channels
 local firstLine = 1 -- Named channel displayed on the first line
@@ -20,28 +12,11 @@ local selection = 1 -- Selected named channel
 local srcBase = 	getFieldInfo("ch1").id - 1 -- ASSUMING that channel sources are consecutive!
 local stage = 1 -- 1:Show warning 2:Run
 
--- Transmitter specific
-if LCD_W == 128 then
-	MENUTXT = "Channel Config"
-	XDOT = 12
-	XREV = 45
-	CENTER = 90
-	SCALE = 0.024
-	XTXT = 7
-	ATT1 = 0
-	ATT2 = SMLSIZE
-else
-	MENUTXT = "JF Channel Configurator "
-	XDOT = 15
-	XREV = 58
-	CENTER = 140
-	SCALE = 0.045
-	XTXT = 30
-	ATT1 = MIDSIZE
-	ATT2 = 0
-end
+ -- Screen size specific variables
+local 	MENUTXT, XDOT, XREV, CENTER, SCALE, XTXT, ATT1, ATT2 = soarUtil.LoadWxH("JF/CHANNELS.lua")
 
-local editing = 0 --[[ Selected channel is being edited
+local editing = 0 
+--[[ Selected channel is being edited
 	0 = Not edited
 	1 = Channel no. selected
 	2 = Direction selected
@@ -154,8 +129,17 @@ local function MoveSelected(direction)
 	end
 end -- SwapChannels()
 
+-- Special key event handlers for this menu only
+local function EvtIncBig(event)
+	return event == EVT_PLUS_REPT or event == EVT_ROT_RIGHT or event == EVT_RIGHT_REPT
+end -- EvtIncBig()
+
+local function EvtDecBig(event)
+	return event == EVT_MINUS_REPT or event == EVT_ROT_LEFT or event == EVT_LEFT_REPT
+end -- EvtDecBig()
+
 local function Draw()
-	DrawMenu(MENUTXT)
+	soarUtil.InfoBar(MENUTXT)
 	
 	-- Draw vertical reference lines
 	for i = -6, 6 do
@@ -269,8 +253,20 @@ local function Draw()
 end
 
 local function run(event)
+	-- Update the screen
 	if stage == 1 then
-		if event == EVT_ENTER_BREAK then
+		soarUtil.InfoBar(" Warning! ")
+
+		lcd.drawText(XTXT, 12, "Disconnect the motor!", ATT1)
+		lcd.drawText(XTXT, 28, "Sudden spikes may occur", ATT2)
+		lcd.drawText(XTXT, 38, "when channels are moved.", ATT2)
+		lcd.drawText(XTXT, 48, "Press ENTER to proceed.", ATT2)
+	else
+		Draw()
+	end
+
+	if stage == 1 then
+		if soarUtil.EvtEnter(event) then
 			stage = 2
 		end
 	elseif stage == 2 then
@@ -285,72 +281,87 @@ local function run(event)
 		-- Handle key events
 		if editing == 0 then
 			-- No editing; move channel selection
-			if event == EVT_EXIT_BREAK then
+			if soarUtil.EvtExit(event) then
 				return true -- Quit
-			elseif event == EVT_ENTER_BREAK then
+			elseif soarUtil.EvtEnter(event) then
 				editing = 1
-			elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_PLUS_REPT or event == EVT_UP_BREAK then
+			elseif soarUtil.EvtUp(event) then
 				if selection == 1 then
 					playTone(3000, 100, 0, PLAY_NOW)
 				else
 					selection = selection - 1
 				end
-			elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_MINUS_REPT or event == EVT_DOWN_BREAK then
+			elseif soarUtil.EvtDown(event) then
 				if selection == #namedChs then
 					playTone(3000, 100, 0, PLAY_NOW)
 				else
 					selection = selection + 1
 				end
 			end
+			
+			soarUtil.ShowHelp({enter = "EDIT", exit = "EXIT", ud = "SELECT CH." })
+			
 		elseif editing == 2 then
 			-- Editing direction
-			if event == EVT_ENTER_BREAK then
+			if soarUtil.EvtEnter(event) then
 				out.revert = 1 - out.revert
 				model.setOutput(iCh - 1, out)
-			elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK then
+			elseif soarUtil.EvtLeft(event) then
 				editing = 1
-			elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK then
+			elseif soarUtil.EvtRight(event) then
 				editing = 3
-			elseif event == EVT_EXIT_BREAK then
+			elseif soarUtil.EvtExit(event) then
 				editing = 0
 			end
+			
+			soarUtil.ShowHelp({enter = "REVERSE", exit = "BACK", lr = "SELECT PAR." })
+			
 		elseif editing <= 7 then
 			-- Item(s) selected, but not edited
-			if event == EVT_ENTER_BREAK then
+			if soarUtil.EvtEnter(event) then
 				-- Start editing
 				editing = editing + 10
-			elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK then
+			elseif soarUtil.EvtLeft(event) then
 				editing = editing - 1
 				if editing < 1 then editing = 7 end
-			elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK then
+			elseif soarUtil.EvtRight(event) then
 				editing = editing + 1
 				if editing > 7 then editing = 1 end
-			elseif event == EVT_EXIT_BREAK then
+			elseif soarUtil.EvtExit(event) then
 				editing = 0
 			end
+			
+			soarUtil.ShowHelp({enter = "EDIT", exit = "BACK", lr = "SELECT PAR." })
+			
 		elseif editing == 11 then
 			-- Channel number edited
-			if event == EVT_ENTER_BREAK or event == EVT_EXIT_BREAK then
+			if soarUtil.EvtEnter(event) or soarUtil.EvtExit(event) then
 				editing = 1
-			elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_PLUS_REPT or event == EVT_UP_BREAK then
+			elseif soarUtil.EvtUp(event) then
 				return MoveSelected(-1)
-			elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_MINUS_REPT or event == EVT_DOWN_BREAK then
+			elseif soarUtil.EvtDown(event) then
 				return MoveSelected(1)
 			end
+			
+			soarUtil.ShowHelp({enter = "BACK", exit = "BACK", ud = "MOVE" })
+			
 		elseif editing >= 13 then
 			local delta = 0
 			
-			if event == EVT_ENTER_BREAK or event == EVT_EXIT_BREAK then
+			if soarUtil.EvtEnter(event) or soarUtil.EvtExit(event) then
 				editing = editing - 10
-			elseif event == EVT_PLUS_BREAK or event == EVT_RIGHT_BREAK then
-				delta = 1
-			elseif event == EVT_PLUS_REPT or event == EVT_ROT_RIGHT or event == EVT_RIGHT_REPT then
+			elseif EvtIncBig(event) then
 				delta = 10
-			elseif event == EVT_MINUS_BREAK or event == EVT_LEFT_BREAK then
-				delta = -1
-			elseif event == EVT_MINUS_REPT or event == EVT_ROT_LEFT or event == EVT_LEFT_REPT then
+			elseif soarUtil.EvtInc(event) then
+				delta = 1
+			elseif EvtDecBig(event) then
 				delta = -10
+			elseif soarUtil.EvtDec(event) then
+				delta = -1
 			end
+			
+			
+			soarUtil.ShowHelp({enter = "BACK", exit = "BACK", ud = "CHANGE" })
 			
 			if editing == 13 then
 				-- Lower, Center, Upper edited
@@ -408,18 +419,6 @@ local function run(event)
 		elseif selection - firstLine > 5 then
 			firstLine = selection - 5
 		end
-	end
-
-	-- Update the screen
-	if stage == 1 then
-		DrawMenu(" Warning! ")
-
-		lcd.drawText(XTXT, 12, "Disconnect the motor!", ATT1)
-		lcd.drawText(XTXT, 28, "Sudden spikes may occur", ATT2)
-		lcd.drawText(XTXT, 38, "when channels are moved.", ATT2)
-		lcd.drawText(XTXT, 48, "Press ENTER to proceed.", ATT2)
-	else
-		Draw()
 	end
 end
 

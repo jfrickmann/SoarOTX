@@ -1,6 +1,8 @@
--- Timing and score keeping, loadable plugin for F3K tasks
--- Timestamp: 2019-07-07
+-- Timing and score keeping, loadable plugin for 2020 F3K tasks
+-- Timestamp: 2019-12-29
 -- Created by Jesper Frickmann
+
+local sk = ...  -- List of variables shared between fixed and loadable parts
 
 -- If no task is selected, then return name and task list to the menu
 if sk.task == 0 then
@@ -11,14 +13,17 @@ if sk.task == 0 then
 		"B. Two last flights 3:00",
 		"B. Two last flights 4:00",
 		"C. All up last down",
-		"D. Ladder",
-		"E. Poker",
+		"D. Two flights only",
+		"E. Poker 10 min.",
+		"E. Poker 15 min.",
 		"F. Three best out of six",
 		"G. Five best flights",
 		"H. 1-2-3-4 in any order",
 		"I. Three best flights",
 		"J. Three last flights",
-		"K. Big Ladder"
+		"K. Big Ladder",
+		"L. One flight only",
+		"M. Huge Ladder"
 	}
 
 	return name, tasks
@@ -32,8 +37,8 @@ if sk.state == sk.STATE_IDLE then
 	local MaxScore
 	
 	--  Variables shared between task def. and UI must be added to own list
-	plugin = { }
-	plugin.totalScore = 0
+	sk.p = { }
+	sk.p.totalScore = 0
 	
 	do -- Discard from memory after use
 		local taskData = {
@@ -41,29 +46,32 @@ if sk.state == sk.STATE_IDLE then
 			{ 420, -1, 2, false, 180, 2, false }, -- B. Two last 3:00
 			{ 600, -1, 2, false, 240, 2, false }, -- B. Two last 4:00
 			{ 0, 8, 8, true, 180, 2, false }, -- C. AULD
-			{ 600, -1, 7, true, 1, 3, false }, -- D. Ladder
-			{ 600, -1, 5, true, 2, 3, true }, -- E. Poker
+			{ 600, 2, 2, true, 300, 2, true }, -- D. Two flights only
+			{ 600, -1, 3, true, 2, 3, true }, -- E. Poker 10 min.
+			{ 900, -1, 3, true, 2, 3, true }, -- E. Poker 15 min.
 			{ 600, 6, 3, false, 180, 1, false }, -- F. 3 best of 6
 			{ 600, -1, 5, false, 120, 1, true }, -- G. 5 x 2:00
 			{ 600, -1, 4, false, 3, 1, true }, -- H. 1234
 			{ 600, -1, 3, false, 200, 1, true }, -- I. 3 Best
 			{ 600, -1, 3, false, 180, 2, false }, -- J. 3 last
-			{ 600, 5, 5, true, 4, 2, true }  -- K. Big ladder
+			{ 600, 5, 5, true, 4, 2, true },  -- K. Big ladder
+			{ 600, 1, 1, true, 599, 2, false },  -- L. One flight only
+			{ 900, 3, 3, true, 1, 2, true }  -- M. Huge Ladder
 		}
 		
 		sk.taskWindow = taskData[sk.task][1]
-		sk.launches = taskData[sk.task][2]
+		sk.launches = taskData[sk.task][2] --  -1 for unlimited
 		sk.taskScores = taskData[sk.task][3]
 		sk.finalScores = taskData[sk.task][4]
-		targetType = taskData[sk.task][5]
-		scoreType = taskData[sk.task][6]
+		targetType = taskData[sk.task][5] -- 1.Huge ladder, 2.Poker, 3.1234, 4.Big ladder, Else const. time
+		scoreType = taskData[sk.task][6] -- 1.Best, 2.Last, 3.Make time
 		sk.quickRelaunch = taskData[sk.task][7]
 	end
 
 	-- MaxScore() is used for calculating the total score
-	if targetType == 1 then -- Ladder
+	if targetType == 1 then -- Huge ladder
 		MaxScore = function(iFlight) 
-			return 15 + 15 * iFlight
+			return 60 + 120 * iFlight
 		end
 		
 	elseif targetType == 2 then -- Poker
@@ -89,10 +97,10 @@ if sk.state == sk.STATE_IDLE then
 
 	-- UpdateTotal() updates the totalScore
 	local function UpdateTotal()
-		plugin.totalScore = 0
+		sk.p.totalScore = 0
 		
 		for i = 1, #sk.scores do
-			plugin.totalScore = plugin.totalScore + math.min(MaxScore(i), sk.scores[i])
+			sk.p.totalScore = sk.p.totalScore + math.min(MaxScore(i), sk.scores[i])
 		end
 	end
 	
@@ -129,7 +137,7 @@ if sk.state == sk.STATE_IDLE then
 		end -- PokerCall()
 
 		sk.TargetTime = function()
-			if plugin.pokerCalled then
+			if sk.p.pokerCalled then
 				return model.getTimer(0).start
 			else
 				return sk.PokerCall()
@@ -265,9 +273,9 @@ if sk.state == sk.STATE_IDLE then
 				return
 			else
 				-- In Poker, only score the call
-				if plugin.pokerCalled then
+				if sk.p.pokerCalled then
 					score = model.getTimer(0).start
-					plugin.pokerCalled = false
+					sk.p.pokerCalled = false
 				end
 			end
 			
@@ -282,7 +290,7 @@ if sk.state == sk.STATE_IDLE then
 				playTone(880, 1000, 0)
 				sk.state = sk.STATE_FINISHED
 			elseif sk.state == sk.STATE_COMMITTED then
-				plugin.pokerCalled = true
+				sk.p.pokerCalled = true
 			end
 		end
 

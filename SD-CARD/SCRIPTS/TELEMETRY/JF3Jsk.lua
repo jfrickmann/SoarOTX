@@ -1,10 +1,11 @@
 -- JF F3J Timing and score keeping, fixed part
--- Timestamp: 2019-05-11
+-- Timestamp: 2019-10-17
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F3J.
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 -- Depends on custom script exporting the value of global "tmr" to OpenTX
 
+local sk = {} -- Variables shared with the loadable part
 local winId = getFieldInfo("ls22").id -- Input ID for window timer
 local flightId = getFieldInfo("ls24").id -- Input ID for flight timer
 local altiId = getFieldInfo("Alti+").id -- Input ID for the Alti sensor
@@ -13,8 +14,6 @@ local prevWt -- Previous window timer value
 local startHeightRec -- Start height has been recorded
 
 -- Program states, shared with loadable part
-sk = {} -- Variables shared with the loadable part
-local sk = sk -- Local reference is faster than a global
 sk.STATE_INITIAL = 0 -- Set flight time before the flight
 sk.STATE_WINDOW = 1 -- Task window is active
 sk.STATE_LANDINGPTS = 2 -- Landed, input landing points
@@ -77,7 +76,8 @@ end  --  background()
 
 -- Forward run() call to the loadable part
 local function run(event)
-	return RunLoadable(sk.myFile, event)
+	soarUtil.ToggleHelp(event)
+	return soarUtil.RunLoadable(sk.myFile, event, sk)
 end
 
 return {background = background, run = run}

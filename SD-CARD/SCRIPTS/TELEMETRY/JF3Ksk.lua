@@ -1,13 +1,13 @@
 -- JF F3K Timing and score keeping, fixed part
--- Timestamp: 2019-08-08
+-- Timestamp: 2019-10-17
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 
 wTmr = 0 -- Controls window timer with MIXES script
 fTmr = 0 -- Controls flight timer with MIXES script
-sk = { } -- List of variables shared between fixed and loadable parts
 
--- The following shared variables are redefined by loadable plugins:
+ -- List of variables shared between fixed and loadable parts
+local sk = { }
 sk.taskWindow = 0 -- Task window duration (zero counts up)
 sk.launches = -1 -- Number of launches allowed, -1 for unlimited
 sk.taskScores = 0 -- Number of scores in task
@@ -21,9 +21,7 @@ sk.Background = nil -- Optional function called by background() to do plugin bus
 -- Lua file to be loaded and unloaded with run() function
 sk.menu = "/SCRIPTS/TELEMETRY/JF3K/MENU.lua" -- Menu file
 sk.run = sk.menu -- Initially, run the menu file
-sk.firstPlugin = 1 -- Plugin on first line of menu
 sk.selectedPlugin = 1 -- Selected plugin in menu
-sk.firstTask = 1 -- Task on first line of menu
 sk.selectedTask = 0 -- Selected task in menu
 
 -- Program states
@@ -226,7 +224,8 @@ end  --  background()
 
 -- Forward run() call to the loadable part
 local function run(event)
-	return RunLoadable(sk.run, event)
+	soarUtil.ToggleHelp(event)
+	return soarUtil.RunLoadable(sk.run, event, sk)
 end
 
 return {background = background, run = run}

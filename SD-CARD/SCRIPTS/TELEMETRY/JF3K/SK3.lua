@@ -1,6 +1,8 @@
 -- Timing and score keeping, loadable plugin part for altimeter based tasks
--- Timestamp: 2019-07-07
+-- Timestamp: 2019-10-01
 -- Created by Jesper Frickmann
+
+local sk = ...  -- List of variables shared between fixed and loadable parts
 
 -- If no task is selected, then return name and task list to the menu
 if sk.task == 0 then
@@ -30,46 +32,42 @@ if sk.state == sk.STATE_IDLE then
 	local lastWarning = 0 -- Last time a warning that height is close to the ceiling was played
 	
 	--  Variables shared between task def. and UI must be added to own list
-	plugin = { }
-	plugin.heights = { } -- Time series of recorded heights for graph
-	plugin.ceiling = 0 -- Ceiling where timer is stopped
-	plugin.launchHeight = 0 -- Launch height is recorded after 10 sec.
-	plugin.maxHeight = 0 -- Max. recorded height
-	plugin.maxTime = 0 -- Time of max. height
-	plugin.flightStart = 0 -- Time of flight start
-	plugin.targetGain = 0 -- Target for height gain
+	sk.p = { }
+	sk.p.yValues = { } -- Time series of recorded heights for graph
+	sk.p.maxHeight = 0 -- Maximum recorded altitude during current flight
+	sk.p.plotMax = 0 -- Maximum recorded altitude during window for plot
+	sk.p.ceiling = 0 -- Ceiling where timer is stopped
+	sk.p.launchHeight = 0 -- Launch height is recorded after 10 sec.
+	sk.p.maxHeight = 0 -- Max. recorded height
+	sk.p.maxTime = 0 -- Time of max. height
+	sk.p.flightStart = 0 -- Time of flight start
+	sk.p.targetGain = 0 -- Target for height gain
 
 	-- Task index constants, shared between task definition and UI
-	plugin.TASK_HEIGHT_GAIN = 1
-	plugin.TASK_CEILING = 2
-	plugin.TASK_THROW_LOW = 3
-	plugin.TASK_HEIGHT_POKER = 4
+	sk.p.TASK_HEIGHT_GAIN = 1
+	sk.p.TASK_CEILING = 2
+	sk.p.TASK_THROW_LOW = 3
+	sk.p.TASK_HEIGHT_POKER = 4
 
 	-- Unit of scores
-	if sk.task == plugin.TASK_CEILING then
-		plugin.unit = "s"
-	elseif sk.task == plugin.TASK_THROW_LOW then
-		plugin.unit = "p"
+	if sk.task == sk.p.TASK_CEILING then
+		sk.p.unit = "s"
+	elseif sk.task == sk.p.TASK_THROW_LOW then
+		sk.p.unit = "p"
 	else
-		plugin.unit = "m"
-	end
-	
-	if LCD_W == 128 then
-		plugin.heightInt = 7 -- Interval for recording heights
-	else 
-		plugin.heightInt = 4
+		sk.p.unit = "m"
 	end
 	
 	do
 		-- Find input IDs if Alt sensor is configured
 		local alt = getFieldInfo("Alti")
 		if alt then
-			plugin.altId = alt.id
+			sk.p.altId = alt.id
 			altMaxId = getFieldInfo("Alti+").id
 		else	
 			alt = getFieldInfo("Alt")
 			if alt then
-				plugin.altId = alt.id
+				sk.p.altId = alt.id
 				altMaxId = getFieldInfo("Alt+").id
 			end
 		end
@@ -94,12 +92,12 @@ if sk.state == sk.STATE_IDLE then
 	-- Ceiling function
 	if ceilingType == 1 then -- Set ceiling to launch + 50
 		Ceiling = function()
-			plugin.targetGain = 50
+			sk.p.targetGain = 50
 			
-			if plugin.launchHeight == 0 then
+			if sk.p.launchHeight == 0 then
 				return 0
 			else
-				return plugin.launchHeight + plugin.targetGain
+				return sk.p.launchHeight + sk.p.targetGain
 			end
 		end
 	elseif ceilingType == 2 then -- Set ceiling with knob
@@ -107,7 +105,7 @@ if sk.state == sk.STATE_IDLE then
 			if sk.state == sk.STATE_IDLE then
 				return 50 + 5 * math.floor(0.99 + getValue(sk.dial) / 204.8)
 			else
-				return plugin.ceiling
+				return sk.p.ceiling
 			end
 
 		end
@@ -117,14 +115,14 @@ if sk.state == sk.STATE_IDLE then
 		end
 	else -- Set ceiling to launch + adjustable
 		Ceiling = function()
-			if not plugin.pokerCalled then
-				plugin.targetGain = 25 + math.floor(0.99 + getValue(sk.dial) / 41)
+			if not sk.p.pokerCalled then
+				sk.p.targetGain = 25 + math.floor(0.99 + getValue(sk.dial) / 41)
 			end
 			 
-			if plugin.launchHeight == 0 then
+			if sk.p.launchHeight == 0 then
 				return 0
 			else
-				return plugin.launchHeight + plugin.targetGain
+				return sk.p.launchHeight + sk.p.targetGain
 			end
 		end
 	end
@@ -171,7 +169,7 @@ if sk.state == sk.STATE_IDLE then
 			end
 			
 			-- If we made it to the target, then the task is finished
-			if flightData.maxHeight >= plugin.ceiling and plugin.ceiling > 0 then
+			if flightData.maxHeight >= sk.p.ceiling and sk.p.ceiling > 0 then
 				sk.finalScores = true
 			end
 		end -- RecordScore()
@@ -194,10 +192,10 @@ if sk.state == sk.STATE_IDLE then
 	else -- Height Poker
 		RecordScore = function(flightData)
 			-- Did make the call?
-			if flightData.gain >= plugin.targetGain then
-				flightData.gain = plugin.targetGain
+			if flightData.gain >= sk.p.targetGain then
+				flightData.gain = sk.p.targetGain
 				sk.scores[#sk.scores + 1] = flightData
-				plugin.pokerCalled = false
+				sk.p.pokerCalled = false
 			end
 		end -- RecordScore()
 		
@@ -207,14 +205,14 @@ if sk.state == sk.STATE_IDLE then
 		-- Record scores
 		local flightData = {
 			time = sk.flightTime,
-			start = plugin.flightStart,
-			launch = plugin.launchHeight,
-			maxHeight = plugin.maxHeight,
-			maxTime = plugin.maxTime,
-			gain = plugin.maxHeight - plugin.launchHeight
+			start = sk.p.flightStart,
+			launch = sk.p.launchHeight,
+			maxHeight = sk.p.maxHeight,
+			maxTime = sk.p.maxTime,
+			gain = math.min(sk.p.targetGain, sk.p.maxHeight - sk.p.launchHeight)
 		}
 		
-		if zero or plugin.launchHeight == 0 then
+		if zero or sk.p.launchHeight == 0 then
 			flightData.time = 0
 			flightData.gain = 0
 		end
@@ -223,30 +221,34 @@ if sk.state == sk.STATE_IDLE then
 	end -- sk.Score()
 	
 	sk.Background = function()
-		plugin.ceiling = Ceiling()
+		sk.p.ceiling = Ceiling()
 	
 		if sk.state >= sk.STATE_WINDOW then
 			-- Save height timeseries
 			if sk.winTimer >=0 and sk.winTimer <= model.getTimer(1).start and 
-			math.floor(sk.winTimer / plugin.heightInt) ~= math.floor(winTimerOld / plugin.heightInt) then
-				plugin.heights[#plugin.heights + 1] = getValue(plugin.altId)			
+			math.floor(sk.winTimer / sk.p.heightInt) ~= math.floor(winTimerOld / sk.p.heightInt) then
+				local h = getValue(sk.p.altId)
+				sk.p.yValues[#sk.p.yValues + 1] = h
+				if h > sk.p.plotMax then
+					sk.p.plotMax = h
+				end
 			end
 
-			if sk.state <= sk.STATE_READY and sk.task == plugin.TASK_THROW_LOW and sk.winTimer < sk.TargetTime() then
+			if sk.state <= sk.STATE_READY and sk.task == sk.p.TASK_THROW_LOW and sk.winTimer < sk.TargetTime() then
 				playTone(880, 1000, 0)
 				sk.state = sk.STATE_FINISHED
 			end
 			
 			if sk.state == sk.STATE_READY then
-				plugin.launchHeight = 0
-				plugin.maxHeight = 0
-				plugin.maxTime = 0
-				plugin.flightStart = 0
+				sk.p.launchHeight = 0
+				sk.p.maxHeight = 0
+				sk.p.maxTime = 0
+				sk.p.flightStart = 0
 			end
 			
 			if sk.state >= sk.STATE_FLYING then
-				if plugin.flightStart == 0 then
-					plugin.flightStart = math.abs(model.getTimer(1).start - sk.winTimer)
+				if sk.p.flightStart == 0 then
+					sk.p.flightStart = math.abs(model.getTimer(1).start - sk.winTimer)
 				end
 				
 				if sk.state < sk.STATE_FREEZE then
@@ -254,23 +256,23 @@ if sk.state == sk.STATE_IDLE then
 					local mh = math.floor(getValue(altMaxId))
 					local now = getTime()
 					
-					if plugin.launchHeight == 0 and sk.flightTime > 10 then
-						plugin.launchHeight = mh
+					if sk.p.launchHeight == 0 and sk.flightTime > 10 then
+						sk.p.launchHeight = mh
 					end
 					
-					if mh > plugin.maxHeight then
-						plugin.maxHeight = mh
-						plugin.maxTime = sk.flightTime + plugin.flightStart
+					if mh > sk.p.maxHeight then
+						sk.p.maxHeight = mh
+						sk.p.maxTime = sk.flightTime + sk.p.flightStart
 					end
 					
-					mh = getValue(plugin.altId)
-					if plugin.ceiling > 0 and mh >= plugin.ceiling - 3 and lastWarning < now then
+					mh = getValue(sk.p.altId)
+					if sk.p.ceiling > 0 and mh >= sk.p.ceiling - 3 and lastWarning < now then
 						playNumber(mh, 9)
 						lastWarning = now + 300
 					end
 
 					-- If height ceiling is broken, then freeze the flight timer
-					if plugin.ceiling > 0 and plugin.maxHeight > plugin.ceiling then
+					if sk.p.ceiling > 0 and sk.p.maxHeight > sk.p.ceiling then
 						sk.state = sk.STATE_FREEZE
 						playTone(1760, 750, PLAY_NOW)
 					end
@@ -278,8 +280,8 @@ if sk.state == sk.STATE_IDLE then
 				
 				if sk.state == sk.STATE_COMMITTED then
 					-- Call Poker
-					if sk.task == plugin.TASK_HEIGHT_POKER then 
-						plugin.pokerCalled = true
+					if sk.task == sk.p.TASK_HEIGHT_POKER then 
+						sk.p.pokerCalled = true
 					end				
 				end
 			end

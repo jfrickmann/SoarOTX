@@ -2,6 +2,8 @@
 -- Timestamp: 2019-11-10
 -- Created by Jesper Frickmann
 
+local gr = ... -- List of shared variables
+
 -- International users - un-comment ONE of the following lines:
 local FIRST_EXCLUDED = "Rud" -- ENGLISH or DUTCH log files
 --local FIRST_EXCLUDED = "Sei" -- GERMAN log files
@@ -81,7 +83,6 @@ if not gr.yValues then
 	gr.flightIndex = 0 -- Index of current flight in the above table
 	gr.logFileHeaders = { } -- Header line fields in log file
 	gr.viewMode = 1 -- View mode; 1=normal, 2=stats, 3=details/slope
-	gr.x0 = 0 -- Left side of the plot; determines the plot width
 
 	local scanPos = 0 -- Last position in log file that was scanned
 	local fmLaunchCount = 0 -- Count consecutive records with flight mode Launch, and set start of flight to second record
@@ -199,7 +200,7 @@ if not gr.yValues then
 	end  --  Scan()
 
 	local function run()
-		DrawMenu(" Scanning... ")
+		soarUtil.InfoBar(" Scanning... ")
 
 		if not logFile then 
 			lcd.drawText(2, 12, "No data", DBLSIZE)
@@ -211,12 +212,12 @@ if not gr.yValues then
 	
 	return { run = run }
 
-else -- No yValues
+else -- yValues
 
 	local findLaunchAlt -- Do we want to find launch altitude?
 	local timerStart -- Time of starting flight timer
 	local indexRead -- Index of X, Y point currently being read
-	local timeSerialStart, timeSerialEnd -- Start and end of current flight
+	local timeStart, timeEnd -- Start and end of current flight
 	
 	-- X and Y values used for interpolation of flight graph
 	local x1
@@ -245,20 +246,17 @@ else -- No yValues
 		
 		logFile = io.open(logFileName, "r")
 		logFilePos = gr.flightTable[gr.flightIndex][1]
-		
-		timeSerialStart = TimeSerial(gr.flightTable[gr.flightIndex][2])
-		timeSerialEnd = TimeSerial(gr.flightTable[gr.flightIndex][3])
-		
-		if gr.tMin then
-			timeSerialStart = timeSerialStart + gr.tMin
-			timeSerialEnd = timeSerialStart + gr.tSpan		
+		if gr.viewMode == 4 then
+			timeStart = TimeSerial(gr.flightTable[gr.flightIndex][2]) + gr.tMin
+			timeEnd = TimeSerial(gr.flightTable[gr.flightIndex][2]) + gr.tMax		
 		else
-			gr.tSpan = timeSerialEnd - timeSerialStart
+			timeStart = TimeSerial(gr.flightTable[gr.flightIndex][2])
+			timeEnd = TimeSerial(gr.flightTable[gr.flightIndex][3])
+			gr.tMin = 0
+			gr.tMax = timeEnd - timeStart
 		end
 		
-		gr.xWidth = LCD_W - 20 - gr.x0
-
-		for i = 0, gr.xWidth do
+		for i = 0, gr.right - gr.left do
 			gr.yValues[i] = 0
 		end
 
@@ -286,9 +284,9 @@ else -- No yValues
 
 		repeat
 			-- X value that we are looking for
-			local x0 =  timeSerialStart + indexRead * gr.tSpan / gr.xWidth
+			local x0 =  timeStart + indexRead * (timeEnd - timeStart) / (gr.right - gr.left)
 
-			if x0 < timeSerialEnd + 1E-8 then
+			if x0 < timeEnd + 1E-8 then
 				-- Start searching for bracketing X values
 				while x2 < x0 - 1E-8 do
 					x1 = x2
@@ -331,19 +329,17 @@ else -- No yValues
 			end
 
 			indexRead = indexRead + 1
-		until indexRead > gr.xWidth
+		until indexRead > gr.right - gr.left
 
 		-- All values have been read; time to plot
 		io.close(logFile)
-		gr.yScaleMin = gr.yMin
-		gr.yScaleMax = gr.yMax
 		
 		-- Load Lua file for interactive plotting
-		gr.run = "/SCRIPTS/TELEMETRY/JF/GRAPH.lua" 
+		gr.run = gr.graph
 	end  --  Read()
 
 	local function run()
-		DrawMenu(" Reading... ")
+		soarUtil.InfoBar(" Reading... ")
 
 		if not logFile then
 			return StartReading()

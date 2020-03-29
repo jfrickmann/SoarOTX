@@ -1,7 +1,8 @@
 -- Timing and score keeping, loadable plugin for practice tasks
--- Timestamp: 2019-07-07
+-- Timestamp: 2019-09-20
 -- Created by Jesper Frickmann
 
+local sk = ...  -- List of variables shared between fixed and loadable parts
 local TASK_DEUCES = 3
 
 -- If no task is selected, then return name and task list to the menu
@@ -22,8 +23,8 @@ if sk.state == sk.STATE_IDLE then
 	local targetType
 	
 	--  Variables shared between task def. and UI must be added to own list
-	plugin = { }
-	plugin.totalScore = 0
+	sk.p = { }
+	sk.p.totalScore = 0
 
 	do -- Discard from memory after use
 		local taskData = {
@@ -103,17 +104,17 @@ if sk.state == sk.STATE_IDLE then
 		
 		sk.scores[n] = sk.flightTime
 		
-		plugin.totalScore = 0
+		sk.p.totalScore = 0
 		
 		if sk.task == TASK_DEUCES then
 			if #sk.scores < 2 then
-				plugin.totalScore = 0
+				sk.p.totalScore = 0
 			else
-				plugin.totalScore = math.min(sk.scores[1], sk.scores[2])
+				sk.p.totalScore = math.min(sk.scores[1], sk.scores[2])
 			end
 		else
 			for i = 1, #sk.scores do
-				plugin.totalScore = plugin.totalScore + sk.scores[i]
+				sk.p.totalScore = sk.p.totalScore + sk.scores[i]
 			end
 		end
 	end

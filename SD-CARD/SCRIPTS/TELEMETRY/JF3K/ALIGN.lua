@@ -1,23 +1,20 @@
 -- JF F3K Flaperon Adjustment
--- Timestamp: 2019-07-07
+-- Timestamp: 2019-10-18
 -- Created by Jesper Frickmann
 -- Script for adjusting the flaperon output curves for the JF F3K program.
 
-local nPoints = 5 -- Number of points on the curves
 local gvIndex = 8 -- Index of global variable used for communicating with the model program
 local xValue = getFieldInfo("input7").id -- Step input before applying the output curves must be assigned to a channel
 local indexRgt = 1 -- Index of the right flaperon curve
 local indexLft = 0 -- Index of the left flaperon curve
-
-local crvRgt -- Data structure defining the right flaperon curve
-local crvLft -- Data structure defining the left flaperon curve
 local avgs -- Average values of left and right
 local difs -- Differences between left and right
 local lasti -- Index of point on the curve last time
+local ui = soarUtil.LoadWxH("JF3K/ALIGN.lua") -- Screen size specific function
 
-local Draw -- Draw() function is defined for specific transmitter
+ui.nPoints = 5 -- Number of points on the curves
 
-local function DrawCurve(x, y, w, h, crv, i)
+ui.DrawCurve = function(x, y, w, h, crv, i)
 	local x1, x2, y1, y2, y3
 	local n = #(crv.y)
 	
@@ -51,33 +48,10 @@ local function DrawCurve(x, y, w, h, crv, i)
 	lcd.drawNumber(x + w, y + h - 6, y3, RIGHT + SMLSIZE)
 end -- DrawCurve()
 
--- Transmitter specific
-if LCD_W == 128 then
-	function Draw(i)
-		DrawMenu("Alignment")
-		DrawCurve(2, 8, 56, 56, crvLft, nPoints - i + 1)
-		lcd.drawLine(64, 8, 64, LCD_H, SOLID, FORCE)
-		DrawCurve(70, 8, 56, 56, crvRgt, i)
-	end -- Draw()
-else
-	function Draw(i)
-		DrawMenu(" JF F3K Flaperon alignment ")
-		lcd.drawText(2, 12, "Use the throttle")
-		lcd.drawText(2, 25, "to move flaps.")
-		lcd.drawText(2, 38, "Use the aileron")
-		lcd.drawText(2, 51, "trim to align.")		
-
-		lcd.drawLine(92, 8, 92, LCD_H, SOLID, FORCE)
-		DrawCurve(94, 8, 56, 56, crvLft, nPoints - i + 1)
-		lcd.drawLine(152, 8, 152, LCD_H, SOLID, FORCE)
-		DrawCurve(154, 8, 56, 56, crvRgt, i)
-	end -- Draw()
-end
-
 -- Find index of the curve point that corresponds to the value of the step input
 local function FindIndex()
 	local x = getValue(xValue)
-	return math.floor((nPoints - 1) / 2048 * (x + 1024) + 1.5) 
+	return math.floor((ui.nPoints - 1) / 2048 * (x + 1024) + 1.5) 
 end -- FindIndex()
 
 -- Work around the stupid fact that getCurve and setCurve tables are incompatible...
@@ -86,7 +60,7 @@ local function GetCurve2(crvIndex)
 	local oldTbl = model.getCurve(crvIndex)
 	
 	newTbl["y"] = {}
-	for i = 1, nPoints do
+	for i = 1, ui.nPoints do
 		newTbl["y"][i] = oldTbl["y"][i - 1]
 	end
 	
@@ -98,22 +72,22 @@ end -- GetCurve2()
 
 local function init()
 	lasti = 0
-	crvRgt = GetCurve2(indexRgt)
-	crvLft = GetCurve2(indexLft)
+	ui.crvRgt = GetCurve2(indexRgt)
+	ui.crvLft = GetCurve2(indexLft)
 
 	avgs = {}
 	difs = {}
 
-	for i = 1, nPoints do
+	for i = 1, ui.nPoints do
 		-- Left curve is backwards; both by index and y-value
-		avgs[i] = (crvRgt["y"][i] - crvLft["y"][nPoints - i + 1]) / 2
-		difs[i] = crvRgt["y"][i] + crvLft["y"][nPoints - i + 1]
+		avgs[i] = (ui.crvRgt["y"][i] - ui.crvLft["y"][ui.nPoints - i + 1]) / 2
+		difs[i] = ui.crvRgt["y"][i] + ui.crvLft["y"][ui.nPoints - i + 1]
 	end
 end -- init()
 
 local function run(event)
 	-- Press EXIT to quit
-	if event == EVT_EXIT_BREAK then
+	if soarUtil.EvtExit(event) then
 		return true
 	end
 	
@@ -134,7 +108,7 @@ local function run(event)
 	local minY = 1000
 	local maxY = -1000
 	
-	for j = 1, nPoints do
+	for j = 1, ui.nPoints do
 		local rt = avgs[j] + difs[j] / 2
 		local lt = avgs[j] - difs[j] / 2
 		maxY = math.max(maxY, rt, lt)
@@ -150,15 +124,15 @@ local function run(event)
 	end
 	
 	-- Apply changes to the curves
-	for j = 1, nPoints do
-		crvRgt["y"][j] = a * (avgs[j] + difs[j] / 2) + b
-		model.setCurve(indexRgt, crvRgt)
+	for j = 1, ui.nPoints do
+		ui.crvRgt["y"][j] = a * (avgs[j] + difs[j] / 2) + b
+		model.setCurve(indexRgt, ui.crvRgt)
 		
-		crvLft["y"][nPoints - j + 1] = -(a * (avgs[j] - difs[j] / 2) + b)
-		model.setCurve(indexLft, crvLft)
+		ui.crvLft["y"][ui.nPoints - j + 1] = -(a * (avgs[j] - difs[j] / 2) + b)
+		model.setCurve(indexLft, ui.crvLft)
 	end
 	
-	Draw(i)
+	ui.Draw(i)
 end -- run()
 
 return{init = init, run = run}
