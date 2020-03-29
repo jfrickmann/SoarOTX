@@ -1,9 +1,9 @@
--- JF Library
--- Timestamp: 2019-07-09
+-- JF Utility Library
+-- Timestamp: 2019-10-28
 -- Created by Jesper Frickmann
--- Has a few shared functions and variables for telemetry and functions scripts
--- Works together with a small shell script to load and unload program and telemetry scripts.
--- Method for loading and unloading telemetry scripts was provided by Guido ter Horst "l shems"
+
+soarUtil = { } -- Global "namespace"
+soarUtil.showHelp = true -- Show help text in screens
 
 -- For loading and unloading of programs with the small shell script
 local programs = {} -- List of loaded programs
@@ -15,54 +15,27 @@ local ST_LOADED = 2 -- Program loaded but not yet initialized
 local ST_RUNNING = 3 -- Program is loaded, initialized, and running
 local ST_MARKED = 4 -- Programs are marked inactive and swept if not running
 
--- Input value for the receiver battery
-local RBat
-do
-	local batField = getFieldInfo("RBat")
-	if not batField then batField = getFieldInfo("RxBt") end
-	if not batField then batField = getFieldInfo("A1") end
+-- Load a file chunk for Tx specific screen size
+function soarUtil.LoadWxH(file, ...)
+	-- Add the path to the files for radio's screen resolution
+	local file = string.format("/SCRIPTS/TELEMETRY/%ix%i/%s/", LCD_W, LCD_H, file)
 	
-	if batField then
-		RBat = function()
-			return getValue(batField.id)
-		end
-	else
-		RBat = function()
-			return 0
-		end
-	end
-end
+	local chunk = loadScript(file)
+	return chunk(...)
+end  --  LoadWxH()
 
--- Draw the basic menu with border and title
-if LCD_W == 128 then
-	function DrawMenu(title)
-		local now = getDateTime()
-		local infoStr = string.format("%1.2fV %02i:%02i", RBat(), now.hour, now.min)
-
-		lcd.clear()
-		lcd.drawScreenTitle(title, 0, 0)
-		lcd.drawText(LCD_W, 0, infoStr, RIGHT)
-	end -- DrawMenu()
-else
-	function DrawMenu(title)
-		local now = getDateTime()
-		local infoStr = string.format("%1.2fV %02i:%02i", RBat(), now.hour, now.min)
-
-		lcd.clear()
-		lcd.drawText(LCD_W, 0, infoStr, RIGHT)
-		lcd.drawScreenTitle(title, 0, 0)
-	end -- DrawMenu()
-end
+-- And now use it to load ransmitter specific global graphics functions
+soarUtil.LoadWxH("JFutil.lua")
 
 -- Unload a program
-function Unload(file)
+function soarUtil.Unload(file)
 	programs[file] = nil
 	states[file] = nil
 	return collectgarbage()
 end -- Unload()
 
 -- Load program or forward run() call to the program
-function RunLoadable(file, event)
+function soarUtil.RunLoadable(file, event, ...)
 	if states[file] == nil then
 		-- First, acquire the lock
 		if locked then
@@ -72,7 +45,7 @@ function RunLoadable(file, event)
 		end
 		
 		-- Wait and sweep inactive programs before loading
-		DrawMenu(" Loading . . .", 0, 0)
+		soarUtil.InfoBar(" Loading . . .", 0, 0)
 
 		-- Mark all programs as inactive
 		for f in pairs(states) do
@@ -85,7 +58,7 @@ function RunLoadable(file, event)
 		-- Sweep inactive programs
 		for f, st in pairs(states) do
 			if st == ST_MARKED then
-				Unload(f)
+				soarUtil.Unload(f)
 			end
 		end
 		states[file] = ST_STANDBY
@@ -96,7 +69,7 @@ function RunLoadable(file, event)
 		local chunk, err = loadScript(file) 
 
 		if chunk then
-			programs[file] = chunk()
+			programs[file] = chunk(...)
 			states[file] = ST_LOADED			
 			return collectgarbage()
 		else
@@ -121,6 +94,48 @@ function RunLoadable(file, event)
 		return programs[file].run(event)
 	end
 end -- RunLoadable()
+
+-- Key event handlers
+function soarUtil.EvtEnter(event)
+	return event == EVT_ENTER_BREAK
+end -- EvtEnter()
+
+function soarUtil.EvtExit(event)
+	return event == EVT_EXIT_BREAK
+end -- EvtExit()
+
+function soarUtil.EvtInc(event)
+	return event == EVT_PLUS_BREAK or event == EVT_PLUS_REPT or event == EVT_ROT_RIGHT or event == EVT_UP_BREAK
+end -- EvtInc()
+
+function soarUtil.EvtDec(event)
+	return event == EVT_MINUS_BREAK or event == EVT_MINUS_REPT or event == EVT_ROT_LEFT or event == EVT_DOWN_BREAK
+end -- EvtDec()
+
+function soarUtil.EvtRight(event)
+	return event == EVT_PLUS_BREAK or event == EVT_PLUS_REPT or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK
+end -- EvtRight()
+
+function soarUtil.EvtLeft(event)
+	return event == EVT_MINUS_BREAK or event == EVT_MINUS_REPT or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK
+end -- EvtLeft()
+
+function soarUtil.EvtUp(event)
+	return event == EVT_PLUS_BREAK or event == EVT_PLUS_REPT or event == EVT_ROT_LEFT or event == EVT_UP_BREAK
+end -- EvtUp()
+
+function soarUtil.EvtDown(event)
+	return event == EVT_MINUS_BREAK or event == EVT_MINUS_REPT or event == EVT_ROT_RIGHT or event == EVT_DOWN_BREAK
+end -- EvtDown()
+
+-- Show or hide help text
+function soarUtil.ToggleHelp(event)
+	if soarUtil.showHelp then
+		soarUtil.showHelp = (event ~= EVT_MENU_BREAK and event ~= EVT_SHIFT_BREAK)
+	else
+		soarUtil.showHelp = (event == EVT_MENU_BREAK or event == EVT_SHIFT_BREAK)
+	end
+end -- ToggleHelp()
 
 -- Write the current flight mode to a telemetry sensor.
 -- Create a sensor named "FM" with id 0x5050 in telemetry.

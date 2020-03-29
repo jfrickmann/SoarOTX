@@ -1,10 +1,16 @@
 -- Timing and score keeping, loadable menu for selecting task
--- Timestamp: 2019-08-04
+-- Timestamp: 2019-10-20
 -- Created by Jesper Frickmann
 
+local sk = ...  -- List of variables shared between fixed and loadable parts
 local pluginFile = "/SCRIPTS/TELEMETRY/JF3K/SK%i.lua"
 local plugins = { } -- List of plugins
+plugins[1] = { } -- File
+plugins[2] = { } -- Name
+plugins[3] = { } -- Task lists
+
 local scanPlugin = 1 -- Index of plugin to scan
+local menu = soarUtil.LoadWxH("MENU.lua") -- Screen size specific menu
 
 -- Reset shared variables
 sk.scores = { } -- List of saved scores
@@ -12,7 +18,7 @@ sk.counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45} -- Flight timer c
 sk.state = sk.STATE_IDLE
 
 -- Set up a task that does not record scores
-plugin = nil
+sk.p = nil -- Plugin specific variable list
 sk.task = 0
 sk.taskWindow = 0
 sk.launches = -1
@@ -32,102 +38,71 @@ local function run(event)
 		local chunk = loadScript(file)
 
 		if chunk then
-			local name, tasks = chunk()
-			plugins[#plugins + 1] = { file, name, tasks }
+			local name, tasks = chunk(sk)
+			plugins[1][#plugins[1] + 1] = file
+			plugins[2][#plugins[2] + 1] = name
+			plugins[3][#plugins[3] + 1] = tasks
 		end
 		
-		scanPlugin = scanPlugin + 1		
+		scanPlugin = scanPlugin + 1
 		return collectgarbage()
 	end
-
+	
 	if sk.selectedTask == 0 then -- Show plugin menu
-		DrawMenu("Plugins")
-		lcd.drawPixmap(156, 8, "/IMAGES/Lua-girl.bmp")
+		menu.title = "Plugins"
+		menu.items = plugins[2]
+		menu.Draw(sk.selectedPlugin)
+		soarUtil.ShowHelp({ enter = "SELECT", ud = "MOVE" })
 
-		for line = 1, math.min(6, #plugins - sk.firstPlugin + 1) do
-			local plugin = line + sk.firstPlugin - 1
-			local y0 = 1 + 9 * line
-			local att = 0
-			
-			if plugin == sk.selectedPlugin then att = INVERS end
-			lcd.drawText(0, y0, string.format("%i. %s", plugin, plugins[plugin][2]), att)
-		end
-
-		if event == EVT_ENTER_BREAK then
-			sk.firstTask = 1
+		if soarUtil.EvtEnter(event) then
 			sk.selectedTask = 1
-		elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_PLUS_REPT or event == EVT_UP_BREAK then
+		elseif soarUtil.EvtUp(event) then
 			if sk.selectedPlugin == 1 then
-				sk.selectedPlugin = #plugins
+				sk.selectedPlugin = #plugins[1]
 			else
 				sk.selectedPlugin = sk.selectedPlugin - 1
 			end
-		elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_MINUS_REPT or event == EVT_DOWN_BREAK then
-			if sk.selectedPlugin == #plugins then
+		elseif soarUtil.EvtDown(event) then
+			if sk.selectedPlugin == #plugins[1] then
 				sk.selectedPlugin = 1
 			else
 				sk.selectedPlugin = sk.selectedPlugin + 1
 			end
 		end
-
-		-- Scroll if necessary
-		if sk.selectedPlugin < sk.firstPlugin then
-			sk.firstPlugin = sk.selectedPlugin
-		elseif sk.selectedPlugin - sk.firstPlugin > 5 then
-			sk.firstPlugin = sk.selectedPlugin - 5
-		end
-
 	else -- Show task menu
-		local name = plugins[sk.selectedPlugin][2]
-		local tasks = plugins[sk.selectedPlugin][3]
-
-		-- If there is only one task, then start it!
-		if #tasks == 1 then event = EVT_ENTER_BREAK end
-
-		DrawMenu(name)
-		lcd.drawPixmap(156, 8, "/IMAGES/Lua-girl.bmp")
-		
-		for line = 1, math.min(6, #tasks - sk.firstTask + 1) do
-			local task = line + sk.firstTask - 1
-			local y0 = 1 + 9 * line
-			local att = 0
+		menu.title = plugins[2][sk.selectedPlugin]
+		menu.items = plugins[3][sk.selectedPlugin]
+		menu.Draw(sk.selectedTask)
+		soarUtil.ShowHelp({ enter = "SELECT", ud = "MOVE", exit = "GO BACK" })
 			
-			if task == sk.selectedTask then att = INVERS end
-			lcd.drawText(0, y0, tasks[task], att)
-		end
+		-- If there is only one task, then start it!
+		if #menu.items == 1 then event = EVT_ENTER_BREAK end
 
-		if event == EVT_ENTER_BREAK then
+		if soarUtil.EvtEnter(event) then
 			sk.task = sk.selectedTask
 			sk.state = sk.STATE_IDLE
-			sk.run = plugins[sk.selectedPlugin][1]
-			sk.taskName = plugins[sk.selectedPlugin][3][sk.selectedTask]
+			sk.run = plugins[1][sk.selectedPlugin]
+			sk.taskName = plugins[3][sk.selectedPlugin][sk.selectedTask]
 
 			-- If there is only one task, go back to the Plugin menu after returning!
-			if #tasks == 1 then sk.selectedTask = 0 end
-		elseif event == EVT_EXIT_BREAK then
+			if #menu.items == 1 then sk.selectedTask = 0 end
+		elseif soarUtil.EvtExit(event) then
 			sk.selectedTask = 0
-		elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_PLUS_REPT or event == EVT_UP_BREAK then
+			menu.firstItem = 1
+		elseif soarUtil.EvtUp(event) then
 			if sk.selectedTask == 1 then
-				sk.selectedTask = #tasks
+				sk.selectedTask = #menu.items
 			else
 				sk.selectedTask = sk.selectedTask - 1
 			end
-		elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_MINUS_REPT or event == EVT_DOWN_BREAK then
-			if sk.selectedTask == #tasks then
+		elseif soarUtil.EvtDown(event) then
+			if sk.selectedTask == #menu.items then
 				sk.selectedTask = 1
 			else
 				sk.selectedTask = sk.selectedTask + 1
 			end
 		end
-
-		-- Scroll if necessary
-		if sk.selectedTask < sk.firstTask then
-			sk.firstTask = sk.selectedTask
-		elseif sk.selectedTask - sk.firstTask > 5 then
-			sk.firstTask = sk.selectedTask - 5
-		end
-	
 	end
 end -- run()
 
-return { run = run }
+return { init = init, run = run }
