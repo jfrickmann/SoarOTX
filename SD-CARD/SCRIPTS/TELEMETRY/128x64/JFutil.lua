@@ -1,5 +1,5 @@
 -- 128x64/JFutil.lua
--- Timestamp: 2019-10-28
+-- Timestamp: 2020-03-30
 -- Created by Jesper Frickmann
 
 local helpKeys = { "enter", "up", "down", "ud", "lr", "exit" }
@@ -37,7 +37,7 @@ end -- InfoBar()
 local menu = "MENU"
 do
 	local ver, radio = getVersion()
-	if string.find(radio, "lite") then
+	if string.find(radio, "xlite") then
 		menu ="SHIFT"
 	end
 end
