@@ -1,5 +1,5 @@
 -- JF F3K Flaperon Adjustment
--- Timestamp: 2019-10-18
+-- Timestamp: 2020-xx-xx
 -- Created by Jesper Frickmann
 -- Script for adjusting the flaperon output curves for the JF F3K program.
 
