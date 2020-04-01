@@ -1,5 +1,5 @@
 -- JF Channel configuration
--- Timestamp: 2019-10-22
+-- Timestamp: 2020-04-01
 -- Created by Jesper Frickmann
 
 local N = 32 -- Highest channel number to swap
@@ -215,21 +215,17 @@ local function Draw()
 
 		-- Draw markers
 		if bit32.btest(attCtr, BLINK) then
-			local xx = 2
-			if out.offset < 0 then xx = -1 end
-			lcd.drawNumber(x0 + xx, y0 + 4, out.offset, PREC1)
+			lcd.drawNumber(x0 - 8, y0 + 4, out.offset, PREC1 + SMLSIZE)
 		end
 		lcd.drawText(x0, y0, "|", SMLSIZE + attCtr)
 		
 		if bit32.btest(attLwr, BLINK) then
-			local xx = 2
-			if out.min < 0 then xx = -1 end
-			lcd.drawNumber(x1 + xx, y0 + 4, out.min, PREC1 + SMLSIZE)
+			lcd.drawNumber(x1 - 10, y0 + 4, out.min, PREC1 + SMLSIZE)
 		end
 		lcd.drawText(x1, y0, "|", SMLSIZE + attLwr)
 		
 		if bit32.btest(attUpr, BLINK) then
-			lcd.drawNumber(x2 - 1, y0 + 4, out.max, PREC1 + SMLSIZE + RIGHT)
+			lcd.drawNumber(x2 - 6, y0 + 4, out.max, PREC1 + SMLSIZE)
 		end
 		lcd.drawText(x2, y0, "|", SMLSIZE + attUpr)
 
