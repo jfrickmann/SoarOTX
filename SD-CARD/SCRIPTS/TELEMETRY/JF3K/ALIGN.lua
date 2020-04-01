@@ -47,8 +47,8 @@ local function GetCurve(crvIndex)
 	local oldTbl = model.getCurve(crvIndex)
 	
 	newTbl.y = {}
-	for i = 1, ui.n do
-		newTbl.y[i] = oldTbl.y[i - 1]
+	for p = 1, ui.n do
+		newTbl.y[p] = oldTbl.y[p - 1]
 	end
 	
 	newTbl.smooth = 1
@@ -70,21 +70,32 @@ end -- GetOutput()
 
 -- Compute output after applying curve and center/endpoints
 local function ComputeYs(crv, out, y)
-	for i = 1, ui.n do
-		if crv.y[i] < 0 then
-			y[i] = out.offset + 0.01 * crv.y[i] * (out.offset - out.min)
+	for p = 1, ui.n do
+		if crv.y[p] < 0 then
+			y[p] = out.offset + 0.01 * crv.y[p] * (out.offset - out.min)
 		else
-			y[i] = out.offset + 0.01 * crv.y[i] * (out.max - out.offset)
-		end
-	end
-	
-	-- Make sure that ys are increasing	
-	for i = 2, ui.n do
-		if y[i] <= y[i - 1] then
-			reset = 2
+			y[p] = out.offset + 0.01 * crv.y[p] * (out.max - out.offset)
 		end
 	end
 end -- ComputeYs()
+
+-- Verify that both curves are monotonically increasing and within limits
+local function ValidateYs()
+	-- Check limits
+	if rgtY[1] > 0 or rgtY[1] < -1500 or rgtY[ui.n] < 0 or rgtY[ui.n] > 1500 or 
+	   lftY[1] > 0 or lftY[1] < -1500 or lftY[ui.n] < 0 or lftY[ui.n] > 1500 then
+		return false
+	end
+
+	-- Check that ys are monotonically increasing
+	for p = 2, ui.n do
+		if rgtY[p] - rgtY[p - 1] < 10 or lftY[p] - lftY[p - 1] < 10 then
+			return false
+		end
+	end
+	
+	return true
+end -- ValidateYs()
 
 -- Apply y-values to final outputs
 local function ApplyYs(crv, crvIndex, out, outIndex, y)
@@ -92,12 +103,12 @@ local function ApplyYs(crv, crvIndex, out, outIndex, y)
 	out.offset = y[midpt]
 	out.max = y[ui.n]
 	
-	for i = 1, midpt do
-		crv.y[i] = 100 * (y[i] - out.offset) / (out.offset - out.min)
+	for p = 1, midpt do
+		crv.y[p] = 100 * (y[p] - out.offset) / (out.offset - out.min)
 	end
 	
-	for i = midpt + 1, ui.n do
-		crv.y[i] = 100 * (y[i] - out.offset) / (out.max - out.offset)
+	for p = midpt + 1, ui.n do
+		crv.y[p] = 100 * (y[p] - out.offset) / (out.max - out.offset)
 	end
 	
 	model.setOutput(outIndex, out)
@@ -123,12 +134,14 @@ local function init()
 	
 	ComputeYs(rgtCrv, rgtOut, rgtY)
 	ComputeYs(lftCrv, lftOut, lftY)
+	
+	if not ValidateYs() then reset = 2 end
 end -- init()
 
 -- Reset outputs
 local function Reset(crv, crvIndex, out, outIndex)
-	for i = 1, ui.n do
-		crv.y[i] = 200.0 / (ui.n - 1) * (i - midpt)
+	for p = 1, ui.n do
+		crv.y[p] = 200.0 / (ui.n - 1) * (p - midpt)
 	end
 	
 	out.min = -1000
@@ -199,18 +212,6 @@ local function run(event)
 	if delta ~= 0 then
 		local fac
 		
-		-- Apply limits
-		delta = math.min(delta, (point - 1) * 1500 / n_1 - rgtY[point])
-		delta = math.max(delta, (point - 1) * 1500 / n_1 - 1500 - rgtY[point])
-
-		if sign < 0 then
-			delta = math.min(delta, lftY[n1 - point] - (n1 - point - 1) * 1500 / n_1 + 1500)
-			delta = math.max(delta, lftY[n1 - point] - (n1 - point - 1) * 1500 / n_1)
-		else
-			delta = math.min(delta, (n1 - point - 1) * 1500 / n_1 - lftY[n1 - point])
-			delta = math.max(delta, (n1 - point - 1) * 1500 / n_1 - 1500 - lftY[n1 - point])
-		end
-
 		-- Update the y-values using the "rubber band" algorithm
 		for p = 1, ui.n do
 			if p < point then
@@ -225,6 +226,12 @@ local function run(event)
 			lftY[n1 - p] = lftY[n1 - p] + sign * fac * delta
 		end
 
+		-- If a curve is no longer OK, then cancel the change
+		if not ValidateYs() then
+			ComputeYs(rgtCrv, rgtOut, rgtY)
+			ComputeYs(lftCrv, lftOut, lftY)
+		end
+		
 		UpdateGVs(point)
 
 		-- Update curves and channel outputs

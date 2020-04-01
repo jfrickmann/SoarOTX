@@ -12,7 +12,7 @@ function ui.Draw(rgtY, lftY, i)
 	soarUtil.InfoBar(" JF F3K Flaperon alignment ")	
 
 	lcd.drawText(0, 10, "Use the throttle")
-	lcd.drawText(0, 20, "to move flaperons")
+	lcd.drawText(0, 20, "to select point.")
 	lcd.drawText(0, 30, "Use aileron and")
 	lcd.drawText(0, 40, "throttle trims")		
 	lcd.drawText(0, 50, "to adjust.")		
@@ -34,7 +34,7 @@ function ui.DrawReset(reset)
 		lcd.drawText(4, LCD_H - 16, "NO", MIDSIZE + BLINK)
 	else
 		lcd.drawText(20, 10, "The flaperon outputs", MIDSIZE)
-		lcd.drawText(20, 22, "must be ever increasing.", MIDSIZE)
+		lcd.drawText(20, 22, "did not pass all checks.", MIDSIZE)
 		lcd.drawText(20, 34, "Do you want to reset?", MIDSIZE)
 		lcd.drawText(4, LCD_H - 16, "EXIT", MIDSIZE + BLINK)
 	end
