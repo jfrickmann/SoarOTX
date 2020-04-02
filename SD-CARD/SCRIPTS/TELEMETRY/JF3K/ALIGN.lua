@@ -198,8 +198,8 @@ local function run(event)
 	-- If a GV changed, record changes to determine alignment and adjustment
 	local dAdjust, dAlign
 
-	dAdjust = 5 * (model.getGlobalVariable(gvAdjust, 0) - lastAdjust)
-	dAlign = 2.5 * (model.getGlobalVariable(gvAlign, 0) - lastAlign)
+	dAdjust = 10 * (model.getGlobalVariable(gvAdjust, 0) - lastAdjust)
+	dAlign = 5 * (model.getGlobalVariable(gvAlign, 0) - lastAlign)
 
 	if dAdjust ~= 0 or dAlign ~= 0 then
 		local fac
