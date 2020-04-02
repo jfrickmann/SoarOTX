@@ -117,8 +117,8 @@ end -- ApplyYs()
 -- Update GVs to reflect current point; applying limits may affect it so it has to reset
 local function UpdateGVs(point)
 		-- Left curve is backwards; both by index and y-value
-		lastAdjust = math.floor(0.2 * (rgtY[point] - lftY[n1 - point]) + 0.5)
-		lastAlign = math.floor(0.2 * (rgtY[point] + lftY[n1 - point]) + 0.5)
+		lastAdjust = math.floor(0.05 * (rgtY[point] - lftY[n1 - point]) + 0.5)
+		lastAlign = math.floor(0.1 * (rgtY[point] + lftY[n1 - point]) + 0.5)
 		
 		model.setGlobalVariable(gvAdjust, 0, lastAdjust)
 		model.setGlobalVariable(gvAlign, 0, lastAlign)
