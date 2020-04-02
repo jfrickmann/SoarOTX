@@ -1,5 +1,5 @@
 -- JF F3K Flaperon Adjustment
--- Timestamp: 2020-04-01
+-- Timestamp: 2020-04-02
 -- Created by Jesper Frickmann
 -- Script for adjusting the flaperon output curves for the JF F3K program.
 
@@ -8,7 +8,6 @@ local ui = {} -- Data shared with GUI
 ui.n = 5 -- Number of points on the curves
 
 local n1 = ui.n + 1 -- n + 1
-local n_1 = ui.n - 1 -- n - 1
 local midpt = n1 / 2 -- Mid point on curve
 local reset = 0 -- Reset if > 0. 2 is non-increasing outputs; force reset or quit
 
@@ -30,8 +29,8 @@ local rgtY = {} -- Output values after applying curve and center/endpoints for r
 local lftY = {} -- Output values after applying curve and center/endpoints for left channel
 
 local lastPoint = 0 -- Index of point on the curve last time
-local lastAdj -- Average y-value last time
-local lastAln -- Y-value difference last time
+local lastAdjust -- Average y-value last time
+local lastAlign -- Y-value difference last time
 
 soarUtil.LoadWxH("JF3K/ALIGN.lua", ui) -- Screen size specific function
 
@@ -118,11 +117,11 @@ end -- ApplyYs()
 -- Update GVs to reflect current point; applying limits may affect it so it has to reset
 local function UpdateGVs(point)
 		-- Left curve is backwards; both by index and y-value
-		lastAdj = math.floor(0.25 * (rgtY[point] - lftY[n1 - point]) + 0.5)
-		lastAln = math.floor(0.5 * rgtY[point] + lftY[n1 - point] + 0.5)
+		lastAdjust = math.floor(0.2 * (rgtY[point] - lftY[n1 - point]) + 0.5)
+		lastAlign = math.floor(0.2 * (rgtY[point] + lftY[n1 - point]) + 0.5)
 		
-		model.setGlobalVariable(gvAdjust, 0, lastAdj)
-		model.setGlobalVariable(gvAlign, 0, lastAln)
+		model.setGlobalVariable(gvAdjust, 0, lastAdjust)
+		model.setGlobalVariable(gvAlign, 0, lastAlign)
 end -- UpdateGVs()
 
 local function init()
@@ -196,20 +195,13 @@ local function run(event)
 		UpdateGVs(point)
 	end
 	
-	-- If a GV changed, record delta and set sign to determine alignment or adjustment
-	local sign
+	-- If a GV changed, record changes to determine alignment and adjustment
+	local dAdjust, dAlign
 
-	local delta = 2 * (model.getGlobalVariable(gvAdjust, 0) - lastAdj)
-	if delta ~= 0 then
-		sign = -1		
-	else
-		delta = 2 * (model.getGlobalVariable(gvAlign, 0) - lastAln)
-		if delta ~= 0 then
-			sign = 1
-		end
-	end
+	dAdjust = 5 * (model.getGlobalVariable(gvAdjust, 0) - lastAdjust)
+	dAlign = 2.5 * (model.getGlobalVariable(gvAlign, 0) - lastAlign)
 
-	if delta ~= 0 then
+	if dAdjust ~= 0 or dAlign ~= 0 then
 		local fac
 		
 		-- Update the y-values using the "rubber band" algorithm
@@ -222,8 +214,8 @@ local function run(event)
 				fac = 1
 			end
 		
-			rgtY[p] = rgtY[p] + fac * delta
-			lftY[n1 - p] = lftY[n1 - p] + sign * fac * delta
+			rgtY[p] = rgtY[p] + fac * (dAlign + dAdjust)
+			lftY[n1 - p] = lftY[n1 - p] + fac * (dAlign - dAdjust)
 		end
 
 		-- If a curve is no longer OK, then cancel the change
