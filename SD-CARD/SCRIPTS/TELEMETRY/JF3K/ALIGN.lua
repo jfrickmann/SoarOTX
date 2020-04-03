@@ -1,138 +1,237 @@
 -- JF F3K Flaperon Adjustment
--- Timestamp: 2019-10-18
+-- Timestamp: 2020-04-02
 -- Created by Jesper Frickmann
 -- Script for adjusting the flaperon output curves for the JF F3K program.
 
-local gvIndex = 8 -- Index of global variable used for communicating with the model program
-local xValue = getFieldInfo("input7").id -- Step input before applying the output curves must be assigned to a channel
-local indexRgt = 1 -- Index of the right flaperon curve
-local indexLft = 0 -- Index of the left flaperon curve
-local avgs -- Average values of left and right
-local difs -- Differences between left and right
-local lasti -- Index of point on the curve last time
-local ui = soarUtil.LoadWxH("JF3K/ALIGN.lua") -- Screen size specific function
+local N = 32 -- Highest output channel number
+local ui = {} -- Data shared with GUI
+ui.n = 5 -- Number of points on the curves
 
-ui.nPoints = 5 -- Number of points on the curves
+local n1 = ui.n + 1 -- n + 1
+local midpt = n1 / 2 -- Mid point on curve
+local reset = 0 -- Reset if > 0. 2 is non-increasing outputs; force reset or quit
 
-ui.DrawCurve = function(x, y, w, h, crv, i)
-	local x1, x2, y1, y2, y3
-	local n = #(crv.y)
-	
-	for j = 1, n do
-		local att
-		-- Screen coordinates
-		x2 = x  + w * (j - 1) / (n - 1)
-		y2 = y + h * (0.5 - 0.005 * crv.y[j])
-		-- Mark point i
-		if j == i then
-			att = SMLSIZE + INVERS
-			y3 = crv.y[j]
-		else
-			att = SMLSIZE
-		end
-		-- Draw marker
-		lcd.drawText(x2, y2 - 2.5, "|", att)
-		-- Draw line
-		if j >= 2 then
-			lcd.drawLine(x1, y1, x2, y2, SOLID, FORCE)
-		end
-		-- Save this point before going to the next one
-		x1, y1 = x2, y2
-	end
-	
-	-- Draw reference lines
-	lcd.drawLine(x, y + 0.5 * h, x + w, y + 0.5 * h, DOTTED, FORCE)
-	lcd.drawLine(x + 0.5 * w, y, x + 0.5 * w, y + h, DOTTED, FORCE)
+local xInput = getFieldInfo("input7").id -- Step input before applying the output curves must be assigned to a channel
+local gvAdjust = 7 -- Index of global variable set by throttle trim for common curve adjustment
+local gvAlign = 8 -- Index of global variable set by aileron trim for left/right curve alignment
 
-	-- Draw the value being edited
-	lcd.drawNumber(x + w, y + h - 6, y3, RIGHT + SMLSIZE)
-end -- DrawCurve()
+local rgtCrv -- Table with data for the right flaperon curve
+local lftCrv -- Table with data for the left flaperon curve
+local rgtCrvIndex = 1 -- Index of the right flaperon curve
+local lftCrvIndex = 0 -- Index of the left flaperon curve
+
+local rgtOut -- Table with data for the right flaperon output channel
+local lftOut -- Table with data for the left flaperon output channel
+local rgtOutIndex -- Index of the right output channel
+local lftOutIndex -- Index of the left output channel
+
+local rgtY = {} -- Output values after applying curve and center/endpoints for right channel
+local lftY = {} -- Output values after applying curve and center/endpoints for left channel
+
+local lastPoint = 0 -- Index of point on the curve last time
+local lastAdjust -- Average y-value last time
+local lastAlign -- Y-value difference last time
+
+soarUtil.LoadWxH("JF3K/ALIGN.lua", ui) -- Screen size specific function
 
 -- Find index of the curve point that corresponds to the value of the step input
-local function FindIndex()
-	local x = getValue(xValue)
-	return math.floor((ui.nPoints - 1) / 2048 * (x + 1024) + 1.5) 
-end -- FindIndex()
+local function FindPoint()
+	local x = getValue(xInput)
+	return math.floor((ui.n - 1) / 2048 * (x + 1024) + 1.5) 
+end -- FindPoint()
 
 -- Work around the stupid fact that getCurve and setCurve tables are incompatible...
-local function GetCurve2(crvIndex)
+local function GetCurve(crvIndex)
 	local newTbl = {}
 	local oldTbl = model.getCurve(crvIndex)
 	
-	newTbl["y"] = {}
-	for i = 1, ui.nPoints do
-		newTbl["y"][i] = oldTbl["y"][i - 1]
+	newTbl.y = {}
+	for p = 1, ui.n do
+		newTbl.y[p] = oldTbl.y[p - 1]
 	end
 	
-	newTbl["smooth"] = 1
-	newTbl["name"] = oldTbl["name"]
+	newTbl.smooth = 1
+	newTbl.name = oldTbl.name
 	
 	return newTbl
-end -- GetCurve2()
+end -- GetCurve()
 
-local function init()
-	lasti = 0
-	ui.crvRgt = GetCurve2(indexRgt)
-	ui.crvLft = GetCurve2(indexLft)
-
-	avgs = {}
-	difs = {}
-
-	for i = 1, ui.nPoints do
-		-- Left curve is backwards; both by index and y-value
-		avgs[i] = (ui.crvRgt["y"][i] - ui.crvLft["y"][ui.nPoints - i + 1]) / 2
-		difs[i] = ui.crvRgt["y"][i] + ui.crvLft["y"][ui.nPoints - i + 1]
+-- Find the output where the specified curve index is being used
+local function GetOutput(crvIndex)
+	for i = 0, N - 1 do
+		local out = model.getOutput(i)
+		
+		if out and out.curve == crvIndex then
+			return i, out
+		end
 	end
-end -- init()
+end -- GetOutput()
 
-local function run(event)
-	-- Press EXIT to quit
-	if soarUtil.EvtExit(event) then
-		return true
+-- Compute output after applying curve and center/endpoints
+local function ComputeYs(crv, out, y)
+	for p = 1, ui.n do
+		if crv.y[p] < 0 then
+			y[p] = out.offset + 0.01 * crv.y[p] * (out.offset - out.min)
+		else
+			y[p] = out.offset + 0.01 * crv.y[p] * (out.max - out.offset)
+		end
+	end
+end -- ComputeYs()
+
+-- Verify that both curves are monotonically increasing and within limits
+local function ValidateYs()
+	-- Check limits
+	if rgtY[1] > 0 or rgtY[1] < -1500 or rgtY[ui.n] < 0 or rgtY[ui.n] > 1500 or 
+	   lftY[1] > 0 or lftY[1] < -1500 or lftY[ui.n] < 0 or lftY[ui.n] > 1500 then
+		return false
+	end
+
+	-- Check that ys are monotonically increasing
+	for p = 2, ui.n do
+		if rgtY[p] - rgtY[p - 1] < 10 or lftY[p] - lftY[p - 1] < 10 then
+			return false
+		end
 	end
 	
-	local i = FindIndex() -- Index of curve point to change
+	return true
+end -- ValidateYs()
 
+-- Apply y-values to final outputs
+local function ApplyYs(crv, crvIndex, out, outIndex, y)
+	out.min = y[1]
+	out.offset = y[midpt]
+	out.max = y[ui.n]
+	
+	for p = 1, midpt do
+		crv.y[p] = 100 * (y[p] - out.offset) / (out.offset - out.min)
+	end
+	
+	for p = midpt + 1, ui.n do
+		crv.y[p] = 100 * (y[p] - out.offset) / (out.max - out.offset)
+	end
+	
+	model.setOutput(outIndex, out)
+	model.setCurve(crvIndex, crv)
+end -- ApplyYs()
+
+-- Update GVs to reflect current point; applying limits may affect it so it has to reset
+local function UpdateGVs(point)
+		-- Left curve is backwards; both by index and y-value
+		lastAdjust = math.floor(0.05 * (rgtY[point] - lftY[n1 - point]) + 0.5)
+		lastAlign = math.floor(0.1 * (rgtY[point] + lftY[n1 - point]) + 0.5)
+		
+		model.setGlobalVariable(gvAdjust, 0, lastAdjust)
+		model.setGlobalVariable(gvAlign, 0, lastAlign)
+end -- UpdateGVs()
+
+local function init()
+	rgtCrv = GetCurve(rgtCrvIndex)
+	rgtOutIndex, rgtOut = GetOutput(rgtCrvIndex)
+	
+	lftCrv = GetCurve(lftCrvIndex)
+	lftOutIndex, lftOut = GetOutput(lftCrvIndex)
+	
+	ComputeYs(rgtCrv, rgtOut, rgtY)
+	ComputeYs(lftCrv, lftOut, lftY)
+	
+	if not ValidateYs() then reset = 2 end
+end -- init()
+
+-- Reset outputs
+local function Reset(crv, crvIndex, out, outIndex)
+	for p = 1, ui.n do
+		crv.y[p] = 200.0 / (ui.n - 1) * (p - midpt)
+	end
+	
+	out.min = -1000
+	out.offset = 0
+	out.max = 1000
+	
+	model.setCurve(crvIndex, crv)
+	model.setOutput(outIndex, out)
+	
+	init()
+end -- Reset()
+
+local function run(event)
 	-- Enable adjustment function
 	adj = 1
 
-	-- If index changed, then set GV to current dif. value
-	if i ~= lasti then
-		model.setGlobalVariable(gvIndex, 0, difs[i])
-		lasti = i
+	-- Handle EXIT
+	if soarUtil.EvtExit(event) then
+		if reset == 1 then
+			-- Do not reset curves
+			reset = 0
+		else
+			-- Quit
+			return true
+		end
 	end
 	
-	difs[i] = model.getGlobalVariable(gvIndex, 0)
-	
-	-- Find min. and max. Y-values
-	local minY = 1000
-	local maxY = -1000
-	
-	for j = 1, ui.nPoints do
-		local rt = avgs[j] + difs[j] / 2
-		local lt = avgs[j] - difs[j] / 2
-		maxY = math.max(maxY, rt, lt)
-		minY = math.min(minY, rt, lt)
+	-- Handle ENTER
+	if soarUtil.EvtEnter(event) then
+		if reset == 0 then
+			reset = 1
+		else
+			-- Reset outputs
+			Reset(rgtCrv, rgtCrvIndex, rgtOut, rgtOutIndex) 
+			Reset(lftCrv, lftCrvIndex, lftOut, lftOutIndex)
+			reset = 0
+		end
 	end
+	
+	-- Waiting for input in reset mode
+	if reset ~= 0 then 
+		ui.DrawReset(reset)
+		return
+	end
+	
+	-- Index of selected curve point
+	local point = FindPoint()
 
-	-- Rescale curve to [-100, 100]
-	local a = 1
-	local b = 0
-	if maxY > minY then
-		a = 200 / (maxY - minY)
-		b = 100 - a * maxY
+	-- If index changed, then set GV to current dif. value
+	if point ~= lastPoint then
+		lastPoint = point
+		UpdateGVs(point)
 	end
 	
-	-- Apply changes to the curves
-	for j = 1, ui.nPoints do
-		ui.crvRgt["y"][j] = a * (avgs[j] + difs[j] / 2) + b
-		model.setCurve(indexRgt, ui.crvRgt)
+	-- If a GV changed, record changes to determine alignment and adjustment
+	local dAdjust, dAlign
+
+	dAdjust = 10 * (model.getGlobalVariable(gvAdjust, 0) - lastAdjust)
+	dAlign = 5 * (model.getGlobalVariable(gvAlign, 0) - lastAlign)
+
+	if dAdjust ~= 0 or dAlign ~= 0 then
+		local fac
 		
-		ui.crvLft["y"][ui.nPoints - j + 1] = -(a * (avgs[j] - difs[j] / 2) + b)
-		model.setCurve(indexLft, ui.crvLft)
+		-- Update the y-values using the "rubber band" algorithm
+		for p = 1, ui.n do
+			if p < point then
+				fac = (p - 1) / (point - 1)
+			elseif p > point then
+				fac = (ui.n - p) / (ui.n - point)
+			else
+				fac = 1
+			end
+		
+			rgtY[p] = rgtY[p] + fac * (dAlign + dAdjust)
+			lftY[n1 - p] = lftY[n1 - p] + fac * (dAlign - dAdjust)
+		end
+
+		-- If a curve is no longer OK, then cancel the change
+		if not ValidateYs() then
+			ComputeYs(rgtCrv, rgtOut, rgtY)
+			ComputeYs(lftCrv, lftOut, lftY)
+		end
+		
+		UpdateGVs(point)
+
+		-- Update curves and channel outputs
+		ApplyYs(rgtCrv, rgtCrvIndex, rgtOut, rgtOutIndex, rgtY)
+		ApplyYs(lftCrv, lftCrvIndex, lftOut, lftOutIndex, lftY)
 	end
 	
-	ui.Draw(i)
+	ui.Draw(rgtY, lftY, point)
 end -- run()
 
 return{init = init, run = run}
