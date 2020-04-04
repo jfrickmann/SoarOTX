@@ -15,7 +15,7 @@ function ui.Draw(rgtY, lftY, i)
 	lcd.drawLine(64, 8, 64, LCD_H, SOLID, FORCE)
 	crv.Draw(70, 8, rgtY, i)
 
-	soarUtil.ShowHelp({enter = "RESET", exit = "EXIT" })
+	soarUtil.ShowHelp({msg1 = "Use throttle to select.", msg2 = "Use TrmA, TrmT to align.", enter = "RESET"})
 end -- Draw()
 
 function ui.DrawReset(reset)

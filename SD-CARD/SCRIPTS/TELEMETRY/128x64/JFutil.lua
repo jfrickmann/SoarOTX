@@ -1,5 +1,5 @@
 -- 128x64/JFutil.lua
--- Timestamp: 2020-03-30
+-- Timestamp: 2020-04-04
 -- Created by Jesper Frickmann
 
 local helpKeys = { "enter", "up", "down", "ud", "lr", "exit" }
@@ -46,11 +46,22 @@ end
 function soarUtil.ShowHelp(ht)
 	if not soarUtil.showHelp then return end
 	
-	local y = 22
-	
 	lcd.drawFilledRectangle(0, 9, 128, 56, SOLID)
-	lcd.drawText(1, 11, menu, INVERS)
-	lcd.drawText(45, 11, "SHOW/HIDE HELP", INVERS)
+	local y = 11
+	
+	if ht["msg1"] then
+		lcd.drawText(1, y, ht["msg1"], INVERS)		
+		y = y + 11
+	end
+
+	if ht["msg2"] then
+		lcd.drawText(1, y, ht["msg2"], INVERS)		
+		y = y + 11
+	end
+
+	lcd.drawText(1, y, menu, INVERS)
+	lcd.drawText(45, y, "SHOW/HIDE HELP", INVERS)
+	y = y + 11
 	
 	for i = 1, #helpKeys do
 		if ht[helpKeys[i]] then
