@@ -1,5 +1,5 @@
 -- JF Utility Library
--- Timestamp: 2019-10-28
+-- Timestamp: 2020-04-09
 -- Created by Jesper Frickmann
 
 soarUtil = { } -- Global "namespace"
@@ -128,6 +128,11 @@ function soarUtil.EvtDown(event)
 	return event == EVT_MINUS_BREAK or event == EVT_MINUS_REPT or event == EVT_ROT_RIGHT or event == EVT_DOWN_BREAK
 end -- EvtDown()
 
+-- Some radios do not have MENU and SHIFT buttons
+if not (EVT_MENU_BREAK or EVT_SHIFT_BREAK) and EVT_LEFT_BREAK then
+	EVT_MENU_BREAK = bit32.bor(EVT_LEFT_BREAK, EVT_RIGHT_BREAK)
+end
+
 -- Show or hide help text
 function soarUtil.ToggleHelp(event)
 	if soarUtil.showHelp then
@@ -138,7 +143,7 @@ function soarUtil.ToggleHelp(event)
 end -- ToggleHelp()
 
 -- Write the current flight mode to a telemetry sensor.
--- Create a sensor named "FM" with id 0x5050 in telemetry.
+-- Create a sensor named "FM" with id 0x5050 and instance 32 in telemetry.
 -- DIY DATA IDs 0x5000 - 0x52ff in opentx/radio/src/telemtry/frsky.h
 local function run()
 	local fm = getFlightMode()
