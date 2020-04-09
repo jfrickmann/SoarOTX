@@ -1,10 +1,7 @@
 -- JF F5K Timing and score keeping, fixed part
--- Timestamp: 2020-04-xx
+-- Timestamp: 2020-04-09
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
-
-wTmr = 0 -- Controls window timer with MIXES script
-fTmr = 0 -- Controls flight timer with MIXES script
 
  -- List of variables shared between fixed and loadable parts
 local sk = { }
@@ -26,12 +23,12 @@ sk.selectedTask = 0 -- Selected task in menu
 
 -- Program states
 sk.STATE_IDLE = 1 -- Task window not running
-sk.STATE_PAUSE = 2 -- Task window paused, not flying
-sk.STATE_FINISHED = 3 -- Task has been finished
-sk.STATE_WINDOW = 4 -- Task window started, not flying
-sk.STATE_LAUNCHING = 5 -- Motor launch and 10 sec. zoom
-sk.STATE_FLYING = 6 -- Flight timer started but flight not yet committed
-sk.STATE_FREEZE = 7 -- Freeze the flight timer when window ends
+sk.STATE_FINISHED = 2 -- Task has been finished
+sk.STATE_FREEZE = 3 -- Freeze the flight timer when window ends
+sk.STATE_PAUSE = 4 -- Task window paused, not flying
+sk.STATE_WINDOW = 5 -- Task window started, not flying
+sk.STATE_LAUNCHING = 6 -- Motor launch and 10 sec. zoom
+sk.STATE_FLYING = 7 -- Flight timer started but flight not yet committed
 sk.state = sk.STATE_IDLE -- Current program state
 
 -- Other shared variables
@@ -51,7 +48,7 @@ end
 if not sk.dial then sk.dial = getFieldInfo("s1").id end
 
 -- Local variables
-local FM_MOTOR = 1 -- Flight mode used for motor
+local FM_MOTOR = 2 -- Flight mode used for motor
 local altiId = getFieldInfo("Alti+").id -- Input ID for the Alti sensor
 local triggerId = getFieldInfo("ls7").id -- Input ID for the trigger switch
 
@@ -87,13 +84,6 @@ local function background()
 	triggerPulled = getValue(triggerId) > 0
 	triggerOld, triggerPulled = triggerPulled, triggerPulled and not triggerOld
 	
-	if sk.state == sk.STATE_IDLE or (sk.state >= sk.STATE_WINDOW and sk.state <= sk.STATE_FLYING) then
-		-- Allow flight timer to run
-		fTmr = 1
-	else
-		fTmr = 0
-	end
-
 	if sk.state <= sk.STATE_WINDOW and sk.state ~= sk.STATE_FINISHED then
 		InitializeFlight()
 	end
@@ -102,57 +92,48 @@ local function background()
 	sk.flightTime = math.abs(model.getTimer(0).start - sk.flightTimer)
 	sk.winTimer = model.getTimer(1).value
 	
-	if sk.state < sk.STATE_WINDOW then
-		-- Stop task window timer
-		wTmr = 0
-		
-		if sk.state == sk.STATE_IDLE then
-			-- Set window timer
-			model.setTimer(1, { start = sk.taskWindow, value = sk.taskWindow })
-			sk.winTimer = sk.taskWindow
-			winTimerOld = sk.taskWindow
+	if sk.state == sk.STATE_IDLE then
+		-- Set window timer
+		model.setTimer(1, { start = sk.taskWindow, value = sk.taskWindow })
+		sk.winTimer = sk.taskWindow
+		winTimerOld = sk.taskWindow
+	end
+	
+	if motorStarted and (sk.state == sk.STATE_IDLE or sk.state == sk.STATE_WINDOW) then
+		sk.state = sk.STATE_LAUNCHING
 
-			-- Automatically start window and flight if motor is started
-			if motorStarted then
-				sk.state = sk.STATE_LAUNCHING
-			end
+		if model.getTimer(0).start > 0 then
+			-- Report the target time
+			playDuration(model.getTimer(0).start, 0)
+		else
+			-- ... or beep
+			playTone(1760, 100, PLAY_NOW)
 		end
 
-	else
-		-- Start task window timer
-		wTmr = 1
-		
+		if sk.launches > 0 then 
+			sk.launches = sk.launches - 1
+		end
+	end
+	
+	if sk.state >= sk.STATE_WINDOW then
 		-- Beep at the beginning and end of the task window
 		if (winTimerOld > 0 and sk.winTimer <= 0) or (winTimerOld > sk.taskWindow and sk.winTimer <= sk.taskWindow) then
 			playTone(880, 1000, PLAY_NOW)
 		end
 	
-		if sk.state == sk.STATE_WINDOW then
-			-- Ready to start flight timer
-			fTmr = 1
+		-- Did the window expire?
+		if sk.winTimer <= 0 and model.getTimer(1).start > 0 then
+			playTone(880, 1000, 0)
 
-			-- Did the window expire?
-			if sk.winTimer <= 0 and model.getTimer(1).start > 0 then
-				playTone(880, 1000, 0)
+			if sk.state == sk.STATE_WINDOW then
 				sk.state = sk.STATE_FINISHED
-
-			elseif motorStarted then
-				sk.state = sk.STATE_LAUNCHING
-
-				if model.getTimer(0).start > 0 then
-					-- Report the target time
-					playDuration(model.getTimer(0).start, 0)
-				else
-					-- ... or beep
-					playTone(1760, 100, PLAY_NOW)
-				end
-
-				if sk.launches > 0 then 
-					sk.launches = sk.launches - 1
-				end
+			else
+				sk.state = sk.STATE_FREEZE
 			end
+		end
 
-		elseif sk.state == sk.STATE_LAUNCHING then
+
+		if sk.state == sk.STATE_LAUNCHING then
 			if motorStopped then
 				-- Mark time to record start height
 				altiTime = getTime() + 1000
@@ -168,11 +149,6 @@ local function background()
 			end
 				
 		elseif sk.state == sk.STATE_FLYING then
-			-- If the window expires, then freeze the flight timer
-			if sk.winTimer <= 0 and winTimerOld > 0 then
-				sk.state = sk.STATE_FREEZE
-			end
-			
 			-- Time counts
 			if sk.flightTimer <= sk.counts[countIndex] and flightTimerOld > sk.counts[countIndex]  then
 				if sk.flightTimer > 15 then
@@ -210,6 +186,17 @@ local function background()
 		flightTimerOld = sk.flightTimer
 	end
 
+	if sk.state < sk.STATE_WINDOW then
+		-- Stop both timers
+		model.setGlobalVariable(8, 0, 0)
+	elseif sk.state == sk.STATE_WINDOW then
+		-- Start task window timer, but not flight timer
+		model.setGlobalVariable(8, 0, 1)
+	else
+		-- Start both timers
+		model.setGlobalVariable(8, 0, 2)
+	end
+		
 	-- If loadable part provides a Background() function then execute it here
 	if sk.Background then sk.Background() end	
 end  --  background()
@@ -217,7 +204,9 @@ end  --  background()
 -- Forward run() call to the loadable part
 local function run(event)
 	soarUtil.ToggleHelp(event)
-	return soarUtil.RunLoadable(sk.run, event, sk)
+	--return 
+	soarUtil.RunLoadable(sk.run, event, sk)
+lcd.drawNumber(0,56,sk.state, INVERS)
 end
 
 return {background = background, run = run}
