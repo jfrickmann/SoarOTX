@@ -1,5 +1,5 @@
 -- 128x64/JFutil.lua
--- Timestamp: 2020-04-04
+-- Timestamp: 2020-04-09
 -- Created by Jesper Frickmann
 
 local helpKeys = { "enter", "up", "down", "ud", "lr", "exit" }
@@ -39,6 +39,8 @@ do
 	local ver, radio = getVersion()
 	if string.find(radio, "xlite") then
 		menu ="SHIFT"
+	elseif string.find(radio, "t12") then
+		menu ="\127 \126"
 	end
 end
 
