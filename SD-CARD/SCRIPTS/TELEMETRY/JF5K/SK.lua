@@ -10,6 +10,8 @@ local stopWindow = 0 -- Prompt to stop flight timer first
 local ui = soarUtil.LoadWxH("JF5K/SK.lua", sk)
 
 local function run(event)
+model.setGlobalVariable(8, 8, 88)
+
 	if exitTask == -1 then -- Save scores?
 		ui.PromptScores()
 
