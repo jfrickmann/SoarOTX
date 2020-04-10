@@ -5,12 +5,6 @@
 local sk = ...  -- List of variables shared between fixed and loadable parts
 local ui = { } -- User interface functions
 
--- Convert time to minutes and seconds
-local function MinSec(t)
-	local m = math.floor(t / 60)
-	return m, t - 60 * m
-end -- MinSec()
-
 function ui.Draw()
 	local x = 0
 	local y = 9
@@ -33,7 +27,7 @@ function ui.Draw()
 		end
 
 		if i <= #sk.scores then
-			lcd.drawText(x, y, string.format("%i. %02i:%02i", i, MinSec(sk.scores[i][1])), MIDSIZE)
+			lcd.drawText(x, y, string.format("%i. %s", i, soarUtil.TmrStr(sk.scores[i][1])), MIDSIZE)
 		else
 			lcd.drawText(x, y, string.format("%i. - - -", i), MIDSIZE)
 		end
@@ -75,9 +69,8 @@ function ui.Draw()
 			lcd.drawText(LCD_W, 50, string.format("%i launch%s left", sk.launches, s), RIGHT)
 		end
 
-		if sk.state >= sk.STATE_FLYING and sk.taskScores - #sk.scores > 1 and sk.p.pokerCalled then				
-			lcd.drawText(128, 50, "Next call")
-			lcd.drawTimer(LCD_W, 50, sk.PokerCall(), RIGHT)
+		if sk.state >= sk.STATE_FLYING and sk.taskScores - #sk.scores > 1 and sk.p.pokerCalled then
+			lcd.drawText(LCD_W, 50, string.format("Next call: %s", soarUtil.TmrStr(sk.PokerCall())), RIGHT)
 		end
 	end
 	

@@ -1,5 +1,5 @@
 -- JF Utility Library
--- Timestamp: 2020-04-09
+-- Timestamp: 2020-04-10
 -- Created by Jesper Frickmann
 
 soarUtil = { } -- Global "namespace"
@@ -141,6 +141,13 @@ function soarUtil.ToggleHelp(event)
 		soarUtil.showHelp = (event == EVT_MENU_BREAK or event == EVT_SHIFT_BREAK)
 	end
 end -- ToggleHelp()
+
+-- Return timer as text string
+function soarUtil.TmrStr(secs)
+	local m = math.floor(secs / 60)
+	local s = secs - 60 * m
+	return string.format("%02i:%02i", m, s)
+end -- TmrStr()
 
 -- Write the current flight mode to a telemetry sensor.
 -- Create a sensor named "FM" with id 0x5050 in telemetry.

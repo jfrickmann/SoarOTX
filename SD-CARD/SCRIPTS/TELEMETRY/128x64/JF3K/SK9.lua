@@ -1,5 +1,5 @@
 -- 128x64/JF3K/SK9.lua
--- Timestamp: 2019-09-29
+-- Timestamp: 2020-04-10
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -17,7 +17,7 @@ function ui.Draw()
 	for i = 1, ui.taskScores do
 		if ui.scores[i] then
 			if ui.unitStr == "s" then
-				lcd.drawText(0, y, string.format("%i. %02i:%02i", i, ui.MinSec(ui.scores[i])))
+				lcd.drawText(0, y, string.format("%i. %s", i, soarUtil.TmrStr(ui.scores[i])))
 			else
 				lcd.drawText(0, y, string.format("%i. %4i%s", i, ui.scores[i], ui.unitStr))
 			end

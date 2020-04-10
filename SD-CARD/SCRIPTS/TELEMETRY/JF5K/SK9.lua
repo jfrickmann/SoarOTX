@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for browsing saved scores
--- Timestamp: 2019-10-18
+-- Timestamp: 2020-04-10
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -15,19 +15,13 @@ if sk.task == 0 then
 	return name, tasks
 end
 
-local LOG_FILE = "/LOGS/JF F3K Scores.csv"
+local LOG_FILE = "/LOGS/JF F5K Scores.csv"
 local logFile -- Log file handle
 local lastTime = 0 -- Last time that run() was called, used for refreshing
 local index = 1 -- Index to currently selected line in log file
-local ui = soarUtil.LoadWxH("JF3K/SK9.lua", sk) -- Screen size specific user interface
+local ui = soarUtil.LoadWxH("JF5K/SK9.lua", sk) -- Screen size specific user interface
 
 ui.indices = {0} -- Vector of indices pointing to start of lines in the log file +
-
--- Convert time to minutes and seconds
-ui.MinSec = function(t)
-	local m = math.floor(t / 60)
-	return m, t - 60 * m
-end -- MinSec()
 
 -- Read a line of a log file
 local function ReadLine(logFile, pos, bts)

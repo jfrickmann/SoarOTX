@@ -15,12 +15,6 @@ ui.tMax = sk.taskWindow
 ui.yMin = 0
 ui.yValues = sk.p.yValues
 
--- Convert time to minutes and seconds
-local function MinSec(t)
-	local m = math.floor(t / 60)
-	return m, t - 60 * m
-end -- MinSec()
-
 function ui.Draw()
 	local att
 
@@ -86,7 +80,7 @@ function ui.Draw()
 		if i > #sk.scores then
 			lcd.drawText(126, dy * i, string.format("%i. - - -", i))
 		elseif sk.p.unit == "s" then
-			lcd.drawText(126, dy * i, string.format("%i. %02i:%02i", i, MinSec(sk.scores[i].time)))
+			lcd.drawText(126, dy * i, string.format("%i. %s", i, soarUtil.TmrStr(sk.scores[i].time)))
 		else
 			lcd.drawText(126, dy * i, string.format("%i. %4i%s", i, sk.scores[i].gain, sk.p.unit))
 		end

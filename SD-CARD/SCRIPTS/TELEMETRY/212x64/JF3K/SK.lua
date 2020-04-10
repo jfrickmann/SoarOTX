@@ -5,12 +5,6 @@
 local sk = ...  -- List of variables shared between fixed and loadable parts
 local ui = { } -- User interface functions
 
--- Convert time to minutes and seconds
-local function MinSec(t)
-	local m = math.floor(t / 60)
-	return m, t - 60 * m
-end -- MinSec()
-
 function ui.Draw()
 	local x = 0
 	local y = 9
@@ -33,7 +27,7 @@ function ui.Draw()
 		end
 
 		if i <= #sk.scores then
-			lcd.drawText(x, y, string.format("%i. %02i:%02i", i, MinSec(sk.scores[i])), MIDSIZE)
+			lcd.drawText(x, y, string.format("%i. %s", i, soarUtil.TmrStr(sk.scores[i])), MIDSIZE)
 		else
 			lcd.drawText(x, y, string.format("%i. - - -", i), MIDSIZE)
 		end

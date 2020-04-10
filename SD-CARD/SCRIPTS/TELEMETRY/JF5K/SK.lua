@@ -1,5 +1,5 @@
 -- User interface for several score keeper plugins
--- Timestamp: 2020-04-xx
+-- Timestamp: 2020-04-10
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -11,12 +11,6 @@ local editing -- In ReviewScores()
 -- Screen size specific graphics functions
 local ui = soarUtil.LoadWxH("JF5K/SK.lua", sk)
 local menu = soarUtil.LoadWxH("MENU.lua") -- Screen size specific menu
-
--- Convert time to minutes and seconds
-local function MinSec(t)
-	local m = math.floor(t / 60)
-	return m, t - 60 * m
-end -- MinSec()
 
 local function InitReview()
 	-- Are there scores to review?
@@ -32,8 +26,7 @@ local function InitReview()
 	menu.title = string.format("Total %i pt.", sk.p.totalScore)
 
 	for i, score in ipairs(sk.scores) do
-		local m, s = MinSec(score[1])
-		menu.items[i] = string.format("%i. %02i:%02i %4i m.", i, m, s, score[2])
+		menu.items[i] = string.format("%i. %s %4i m.", i, soarUtil.TmrStr(score[1]), score[2])
 	end
 end
 
@@ -68,8 +61,7 @@ local function ReviewScores(event)
 			score[editing] = score[editing] - 1
 		end
 		
-		local m, s = MinSec(score[1])
-		menu.items[selected] = string.format("%i. %02i:%02i %4i m.", selected, m, s, score[2])
+		menu.items[selected] = string.format("%i. %s %4i m.", selected, soarUtil.TmrStr(score[1]), score[2])
 		ui.DrawEditScore(editing, score)
 		soarUtil.ShowHelp({ enter = "NEXT", ud = "CHANGE" })	
 	end
@@ -87,6 +79,7 @@ local function run(event)
 				local now = getDateTime()
 				io.write(logFile, string.format(",%04i-%02i-%02i", now.year, now.mon, now.day))
 				io.write(logFile, string.format(",%02i:%02i", now.hour, now.min))
+				io.write(logFile, string.format(",s,%i", sk.taskScores))
 				io.write(logFile, string.format(",%i", sk.p.totalScore))
 				local nominal = model.getGlobalVariable(6, 0) + model.getGlobalVariable(6, 1) -- Cutoff + Zoom
 				io.write(logFile, string.format(",%i", nominal))
