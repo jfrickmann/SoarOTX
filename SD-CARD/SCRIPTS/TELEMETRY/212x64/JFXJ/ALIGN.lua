@@ -1,11 +1,11 @@
--- 212x64/JF/ALIGN.lua
--- Timestamp: 2019-09-24
+-- 212x64/JFXJ/ALIGN.lua
+-- Timestamp: 2020-04-10
 -- Created by Jesper Frickmann
 
 local ui = { } -- List of shared variables
 
 function ui.Draw()
-	soarUtil.InfoBar(" Flaps/aileron alignment ")
+	soarUtil.InfoBar("Flaps/aileron alignment")
 
 	lcd.drawText(5, 13, "LA", SMLSIZE)
 	ui.DrawCurve(4, 12, 48, 36, ui.crvLft[2], ui.nPoints - ui.lasti + 1)

@@ -1,12 +1,12 @@
 -- 212x64/JFxK/ADJMIX.lua
--- Timestamp: 2020-04-09
+-- Timestamp: 2020-04-10
 -- Created by Jesper Frickmann
 
 local ui = { } -- List of shared variables
 
 function ui.run(event)
 	-- Draw instructions on the screen
-	soarUtil.InfoBar(" Adjust mixes ")
+	soarUtil.InfoBar("Adjust mixes")
 
 	lcd.drawText(5, 12, "Rudder trim = Aile-rudder", 0)
 	lcd.drawText(5, 24, "Aileron trim = Differential", 0)

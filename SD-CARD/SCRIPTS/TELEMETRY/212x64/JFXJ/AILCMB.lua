@@ -1,11 +1,11 @@
--- 212x64/JF/AILCMB.lua
--- Timestamp: 2019-09-22
+-- 212x64/JFXJ/AILCMB.lua
+-- Timestamp: 2020-04-10
 -- Created by Jesper Frickmann
 
 local gv1, gv2, gv5 = ... -- List of shared variables
 
 local	function Draw()
-	soarUtil.InfoBar(" Aileron and camber ")
+	soarUtil.InfoBar("Aileron and camber")
 	
 	lcd.drawText(10, 18, "Aileron trim = aileron", 0)
 	lcd.drawText(10, 30, "Rudder trim = flaperon", 0)

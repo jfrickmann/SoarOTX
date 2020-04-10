@@ -1,5 +1,5 @@
 -- 212x64/JF3R/SK.lua
--- Timestamp: 2019-09-29
+-- Timestamp: 2020-04-10
 -- Created by Jesper Frickmann
 
 local sk = ... -- List of shared variables
@@ -10,7 +10,7 @@ local	function Draw()
 	local txtFt = "Remain"
 	
 	local fmNbr, fmName = getFlightMode()
-	soarUtil.InfoBar(" " .. fmName .. " ")	
+	soarUtil.InfoBar(fmName)	
 
 	if sk.state == sk.STATE_SETWINTMR then
 		blnkWt = BLINK + INVERS

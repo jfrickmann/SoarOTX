@@ -1,5 +1,5 @@
 -- 212x64/JF3K/ALIGN.lua
--- Timestamp: 2020-04-01
+-- Timestamp: 2020-04-10
 -- Created by Jesper Frickmann
 
 local ui = ... -- List of shared variables
@@ -9,7 +9,7 @@ crv.width = 56
 crv.height = 56
 
 function ui.Draw(rgtY, lftY, i)
-	soarUtil.InfoBar(" JF F3K Flaperon alignment ")	
+	soarUtil.InfoBar("JF F3K Flaperon alignment")	
 
 	lcd.drawText(0, 10, "Use the throttle")
 	lcd.drawText(0, 20, "to select point.")
@@ -26,7 +26,7 @@ function ui.Draw(rgtY, lftY, i)
 end -- Draw()
 
 function ui.DrawReset(reset)
-	soarUtil.InfoBar(" JF F3K Flaperon alignment ")
+	soarUtil.InfoBar("JF F3K Flaperon alignment")
 	
 	if reset == 1 then
 		lcd.drawText(25, 15, "Do you want to reset", MIDSIZE)

@@ -1,11 +1,11 @@
--- 212x64/JF/BRKCRV.lua
--- Timestamp: 2019-09-24
+-- 212x64/JFXJ/BRKCRV.lua
+-- Timestamp: 2020-04-10
 -- Created by Jesper Frickmann
 
 local ui = { } -- List of shared variables
 
 function ui.Draw()
-	soarUtil.InfoBar(" Airbrake curves ")
+	soarUtil.InfoBar("Airbrake curves")
 	lcd.drawText(10, 14, "Use throttle to ")
 	lcd.drawText(10, 26, "move airbrakes.")
 	lcd.drawText(10, 38, "Thr. and elev.")

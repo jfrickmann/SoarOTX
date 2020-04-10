@@ -1,5 +1,5 @@
 -- 212x64/JF5K/SK.lua
--- Timestamp: 2020-04-09
+-- Timestamp: 2020-04-10
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -97,7 +97,7 @@ function ui.DrawEditScore(editing, score)
 end
 
 function ui.PromptScores()
-	soarUtil.InfoBar(" " .. sk.taskName .. " ")
+	soarUtil.InfoBar(sk.taskName)
 	lcd.drawText(38, 15, "Save scores?", DBLSIZE)
 	lcd.drawText(4, LCD_H - 16, "EXIT", MIDSIZE + BLINK)
 	lcd.drawText(LCD_W - 3, LCD_H - 16, "SAVE", MIDSIZE + BLINK + RIGHT)
