@@ -62,7 +62,7 @@ local countIndex -- Index of timer count
 -- Function initializing flight timer
 function InitializeFlight()
 	local targetTime = sk.TargetTime()
-	
+
 	-- Get ready to count down
 	countIndex = #sk.counts
 	while countIndex > 1 and sk.counts[countIndex] >= targetTime do
@@ -204,9 +204,7 @@ end  --  background()
 -- Forward run() call to the loadable part
 local function run(event)
 	soarUtil.ToggleHelp(event)
-	--return 
-	soarUtil.RunLoadable(sk.run, event, sk)
-lcd.drawNumber(0,56,sk.state, INVERS)
+	return soarUtil.RunLoadable(sk.run, event, sk)
 end
 
 return {background = background, run = run}

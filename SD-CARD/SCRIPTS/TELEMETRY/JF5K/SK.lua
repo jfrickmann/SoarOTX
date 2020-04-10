@@ -3,16 +3,80 @@
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
-local 	exitTask = 0 -- Prompt to save task before EXIT
-local stopWindow = 0 -- Prompt to stop flight timer first
+local 	exitTask = 0 -- Review scores before EXIT
+local stopWindow = 0 -- Notify to stop flight timer first
+local selected -- In ReviewScores()
+local editing -- In ReviewScores()
 
 -- Screen size specific graphics functions
 local ui = soarUtil.LoadWxH("JF5K/SK.lua", sk)
+local menu = soarUtil.LoadWxH("MENU.lua") -- Screen size specific menu
+
+-- Convert time to minutes and seconds
+local function MinSec(t)
+	local m = math.floor(t / 60)
+	return m, t - 60 * m
+end -- MinSec()
+
+local function InitReview()
+	-- Are there scores to review?
+	if #sk.scores > 0 then
+		exitTask = -1
+	else
+		exitTask = -2
+		return
+	end
+	
+	selected = 1
+	editing = 0
+	menu.title = string.format("Total %i pt.", sk.p.totalScore)
+
+	for i, score in ipairs(sk.scores) do
+		local m, s = MinSec(score[1])
+		menu.items[i] = string.format("%i. %02i:%02i %4i m.", i, m, s, score[2])
+	end
+end
+
+local function ReviewScores(event)
+	if soarUtil.EvtEnter(event) then
+		editing = editing + 1
+		if editing == 3 then 
+			editing = 0
+			sk.p.UpdateTotal()
+		end
+	end
+	
+	if editing == 0 then
+		if soarUtil.EvtExit(event) then 
+			return true 
+		elseif soarUtil.EvtUp(event) then
+			selected = selected - 1
+			if selected == 0 then selected = #menu.items end
+		elseif soarUtil.EvtDown(event) then
+			selected = selected + 1
+			if selected > #menu.items then selected = 1 end
+		end
+		
+		menu.Draw(selected)
+		soarUtil.ShowHelp({ enter = "EDIT", ud = "SELECT", exit = "DONE" })		
+	else
+		local score = sk.scores[selected]
+		
+		if soarUtil.EvtInc(event) then
+			score[editing] = score[editing] + 1
+		elseif soarUtil.EvtDec(event) then
+			score[editing] = score[editing] - 1
+		end
+		
+		local m, s = MinSec(score[1])
+		menu.items[selected] = string.format("%i. %02i:%02i %4i m.", selected, m, s, score[2])
+		ui.DrawEditScore(editing, score)
+		soarUtil.ShowHelp({ enter = "NEXT", ud = "CHANGE" })	
+	end
+end -- ReviewScores()
 
 local function run(event)
-model.setGlobalVariable(8, 8, 88)
-
-	if exitTask == -1 then -- Save scores?
+	if exitTask == -2 then -- Save scores?
 		ui.PromptScores()
 
 		-- Record scores if user pressed ENTER
@@ -20,15 +84,15 @@ model.setGlobalVariable(8, 8, 88)
 			local logFile = io.open("/LOGS/JF F5K Scores.csv", "a")
 			if logFile then
 				io.write(logFile, string.format("%s,%s", model.getInfo().name, sk.taskName))
-
-				local now = getDateTime()				
+				local now = getDateTime()
 				io.write(logFile, string.format(",%04i-%02i-%02i", now.year, now.mon, now.day))
-				io.write(logFile, string.format(",%02i:%02i", now.hour, now.min))				
-				io.write(logFile, string.format(",s,%i", sk.taskScores))
+				io.write(logFile, string.format(",%02i:%02i", now.hour, now.min))
 				io.write(logFile, string.format(",%i", sk.p.totalScore))
+				local nominal = model.getGlobalVariable(6, 0) + model.getGlobalVariable(6, 1) -- Cutoff + Zoom
+				io.write(logFile, string.format(",%i", nominal))
 				
 				for i = 1, #sk.scores do
-					io.write(logFile, string.format(",%i", sk.scores[i]))
+					io.write(logFile, string.format(",%i,%i", sk.scores[i][1], sk.scores[i][2]))
 				end
 				
 				io.write(logFile, "\n")
@@ -39,6 +103,9 @@ model.setGlobalVariable(8, 8, 88)
 			sk.run = sk.menu
 		end
 
+	elseif exitTask == -1 then -- Review scores
+		if ReviewScores(event) then exitTask = -2 end
+		
 	elseif exitTask > 0 then
 		if getTime() > exitTask then
 			exitTask = 0
@@ -72,7 +139,7 @@ model.setGlobalVariable(8, 8, 88)
 			elseif sk.state == sk.STATE_WINDOW then
 				-- Pause task window
 				sk.state = sk.STATE_PAUSE
-			elseif sk.state >= sk.STATE_FLYING then
+			elseif sk.state >= sk.STATE_LAUNCHING then
 				stopWindow = getTime() + 100
 			end
 			
@@ -97,7 +164,7 @@ model.setGlobalVariable(8, 8, 88)
 				-- Quit task
 				sk.run = sk.menu
 			elseif sk.state == sk.STATE_PAUSE or sk.state == sk.STATE_FINISHED then
-				exitTask = -1
+				InitReview()
 			else
 				exitTask = getTime() + 100
 			end

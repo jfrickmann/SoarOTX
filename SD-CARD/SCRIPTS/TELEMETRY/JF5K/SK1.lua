@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for 2020 F5K tasks
--- Timestamp: 2020-04-xx
+-- Timestamp: 2020-04-10
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -60,10 +60,10 @@ if sk.state == sk.STATE_IDLE then
 		
 	elseif targetType == 3 then -- 334
 		MaxScore = function(iFlight)
-			if iFlight < 3 then
-				return 180
-			else
+			if iFlight == 1 then
 				return 240
+			else
+				return 180
 			end
 		end
 		
@@ -74,11 +74,21 @@ if sk.state == sk.STATE_IDLE then
 	end
 
 	-- UpdateTotal() updates the totalScore
-	local function UpdateTotal()
+	function sk.p.UpdateTotal()
 		sk.p.totalScore = 0
+		local nominal = model.getGlobalVariable(6, 0) + model.getGlobalVariable(6, 1) -- Cutoff + Zoom
 		
-		for i = 1, #sk.scores do
-			sk.p.totalScore = sk.p.totalScore + math.min(MaxScore(i), sk.scores[i])
+		for i, score in ipairs(sk.scores) do
+			local secs = math.min(MaxScore(i), score[1])
+			local bonus = nominal - score[2]
+			
+			if math.abs(bonus) > 6 then
+				bonus = 2 * bonus
+			elseif math.abs(bonus) <= 2 then
+				bonus = 0
+			end
+			
+			sk.p.totalScore = sk.p.totalScore + secs + bonus
 		end
 	end
 	
@@ -127,14 +137,12 @@ if sk.state == sk.STATE_IDLE then
 		-- Note: remaining ensures that recursive calls to this function only test shorter target times. That way, we start with
 		-- the longest flight and work down the list. And we do not waste time testing the same target times in different orders.
 		
-		local targets
-
+		local targets = {}
+		
 		if targetType == 2 then
-			targets = {1, 2, 3, 4} -- Increasing list of target times
-			sk.counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45, 65, 70, 75, 125, 130, 135, 185, 190, 195} -- Extra counts
+			targets = {60, 120, 180, 240}
 		else
-			targets = {3, 3, 4} -- Increasing list of target times
-			sk.counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45, 65, 70, 75} -- Extra counts
+			targets = {180, 180, 240}
 		end
 		
 		local function BestTarget(timeLeft, scores, remaining)
@@ -143,7 +151,7 @@ if sk.state == sk.STATE_IDLE then
 
 			-- Max target index to test
 			local maxi = math.min(remaining, #targets)
-			while maxi > 1 and targets[maxi] > math.ceil(timeLeft / 60) do
+			while maxi > 1 and targets[maxi] > 60 * math.ceil(timeLeft / 60) do
 				maxi = maxi - 1
 			end
 			
@@ -153,9 +161,6 @@ if sk.state == sk.STATE_IDLE then
 				local tot
 				local dummy
 
-				-- Target in seconds
-				local target = 60 * targets[i]
-
 				-- Copy scores to a new table
 				local s = {}
 				for j = 1, #scores do
@@ -163,15 +168,15 @@ if sk.state == sk.STATE_IDLE then
 				end
 
 				-- Add new target time to s; only until the end of the window
-				RecordBest(s, math.min(timeLeft, target))
-				tl = timeLeft - target
+				RecordBest(s, { math.min(timeLeft, targets[i]) })
+				tl = timeLeft - targets[i]
 
 				-- Add up total score, assuming that the new target time was made
 				if tl <= 0 or i == 1 then
 					-- No more flights are made; sum it all up
 					tot = 0
 					for j = 1, math.min(#targets, #s) do
-						tot = tot + math.min(60 * targets[1 + #targets - j], s[j])
+						tot = tot + math.min(targets[1 + #targets - j], s[j][1])
 					end
 				else
 					-- More flights can be made; add more flights recursively
@@ -182,7 +187,7 @@ if sk.state == sk.STATE_IDLE then
 				-- Do we have a new winner?
 				if tot > bestTotal then
 					bestTotal = tot
-					bestTarget = target
+					bestTarget = targets[i]
 				end
 			end
 
@@ -201,7 +206,7 @@ if sk.state == sk.STATE_IDLE then
 	
 	-- sk.Score() must be defined to record scores
 	if scoreType == 1 then -- Best scores
-		-- RecordBest() may also be used by Best1234Target()
+		-- RecordBest() may also be used by BestTarget()
 		RecordBest = function(scores, newScore)
 			local n = #scores
 			local i = 1
@@ -213,7 +218,7 @@ if sk.state == sk.STATE_IDLE then
 			else
 				-- Find the first position where existing score is smaller than the new score
 				while i <= n and j == 0 do
-					if newScore > scores[i] then j = i end
+					if newScore[1] > scores[i][1] then j = i end
 					i = i + 1
 				end
 				
@@ -230,8 +235,8 @@ if sk.state == sk.STATE_IDLE then
 		end  --  RecordBest (..)
 
 		sk.Score = function()
-			RecordBest(sk.scores, sk.flightTime)
-			UpdateTotal()
+			RecordBest(sk.scores, {sk.flightTime, sk.startHeight})
+			sk.p.UpdateTotal()
 		end
 		
 	elseif scoreType == 2 then -- Last scores
@@ -248,13 +253,13 @@ if sk.state == sk.STATE_IDLE then
 				n = n + 1
 			end
 			
-			sk.scores[n] = sk.flightTime
-			UpdateTotal()
+			sk.scores[n] = {sk.flightTime, sk.startHeight}
+			sk.p.UpdateTotal()
 		end
 
 	else -- Must make time to get score
 		sk.Score = function()
-			local score = sk.flightTime
+			local score = {sk.flightTime, sk.startHeight}
 
 			-- Did we make time?
 			if sk.flightTimer > 0 then
@@ -262,13 +267,13 @@ if sk.state == sk.STATE_IDLE then
 			else
 				-- In Poker, only score the call
 				if sk.p.pokerCalled then
-					score = model.getTimer(0).start
+					score = {model.getTimer(0).start, sk.startHeight}
 					sk.p.pokerCalled = false
 				end
 			end
 			
 			sk.scores[#sk.scores + 1] = score
-			UpdateTotal()
+			sk.p.UpdateTotal()
 		end
 	end
 	
