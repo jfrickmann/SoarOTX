@@ -34,7 +34,7 @@ if sk.state == sk.STATE_IDLE then
 		local taskData = {
 			{ 600, -1, 4, false, 2, 1 }, -- A. 1234
 			{ 420, -1, 1, false, 300, 2 }, -- B. Last flight
-			{ 0, 8, 8, true, 240, 2 }, -- C. AULD
+			{ 0, 7, 7, true, 240, 2 }, -- C. AULD
 			{ 600, -1, 3, false, 3, 1 }, -- D. 334
 			{ 600, -1, 3, true, 1, 3 } -- E. Poker 10 min.
 		}

@@ -79,7 +79,7 @@ local function run(event)
 				local now = getDateTime()
 				io.write(logFile, string.format(",%04i-%02i-%02i", now.year, now.mon, now.day))
 				io.write(logFile, string.format(",%02i:%02i", now.hour, now.min))
-				io.write(logFile, string.format(",s,%i", sk.taskScores))
+				io.write(logFile, string.format(",%i", sk.taskScores))
 				io.write(logFile, string.format(",%i", sk.p.totalScore))
 				local nominal = model.getGlobalVariable(6, 0) + model.getGlobalVariable(6, 1) -- Cutoff + Zoom
 				io.write(logFile, string.format(",%i", nominal))

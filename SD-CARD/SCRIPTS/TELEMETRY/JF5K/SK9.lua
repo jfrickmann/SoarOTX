@@ -25,7 +25,7 @@ ui.indices = {0} -- Vector of indices pointing to start of lines in the log file
 
 -- Read a line of a log file
 local function ReadLine(logFile, pos, bts)
-	if not bts then bts = 100 end
+	if not bts then bts = 200 end
 	if logFile and pos then
 		io.seek(logFile, pos)
 		local str = io.read(logFile, bts)
@@ -47,6 +47,7 @@ local function ReadLineData(charPos)
 	local lineStr
 	local i = 0
 	ui.scores = { }
+	local secs = -1
 
 	charPos, lineStr = ReadLine(logFile, charPos)
 	
@@ -62,13 +63,18 @@ local function ReadLineData(charPos)
 		elseif i == 4 then
 			ui.timeStr = field
 		elseif i == 5 then
-			ui.unitStr = field
-		elseif i == 6 then
 			ui.taskScores = tonumber(field)
-		elseif i == 7 then
+		elseif i == 6 then
 			ui.totalScore = tonumber(field)
+		elseif i == 7 then
+			ui.nominal = tonumber(field)
 		else
-			ui.scores[#ui.scores + 1] = tonumber(field)
+			if secs == -1 then 
+				secs = tonumber(field)
+			else
+				ui.scores[#ui.scores + 1] = { secs, tonumber(field) }
+				secs = -1
+			end
 		end
 	end
 end  --  ReadLineData()
