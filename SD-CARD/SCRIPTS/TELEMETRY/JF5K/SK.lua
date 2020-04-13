@@ -1,5 +1,5 @@
 -- User interface for several score keeper plugins
--- Timestamp: 2020-04-10
+-- Timestamp: 2020-04-12
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -81,8 +81,8 @@ local function run(event)
 				io.write(logFile, string.format(",%02i:%02i", now.hour, now.min))
 				io.write(logFile, string.format(",%i", sk.taskScores))
 				io.write(logFile, string.format(",%i", sk.p.totalScore))
-				local nominal = model.getGlobalVariable(6, 0) + model.getGlobalVariable(6, 1) -- Cutoff + Zoom
-				io.write(logFile, string.format(",%i", nominal))
+				local cutoff, zoom = sk.GetStartHeight()
+				io.write(logFile, string.format(",%i", cutoff + zoom))
 				
 				for i = 1, #sk.scores do
 					io.write(logFile, string.format(",%i,%i", sk.scores[i][1], sk.scores[i][2]))

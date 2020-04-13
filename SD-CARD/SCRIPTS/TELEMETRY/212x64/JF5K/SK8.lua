@@ -1,5 +1,5 @@
 -- 212x64/JF3K/SK8.lua
--- Timestamp: 2020-04-10
+-- Timestamp: 2020-04-12
 -- Created by Jesper Frickmann
 
 local ui = { } -- User interface variables
@@ -11,7 +11,7 @@ function ui.Draw()
 	soarUtil.InfoBar("Launch Parameters")
 	
 	lcd.drawText(1, 15, "Nominal height:")
-	lcd.drawNumber(127, 15, ui.nominal, RIGHT + att[1])
+	lcd.drawNumber(127, 15, ui.cutoff + ui.zoom, RIGHT + att[1])
 	
 	lcd.drawText(1, 25, "Zoom:")
 	lcd.drawNumber(127, 25, ui.zoom, RIGHT + att[2])

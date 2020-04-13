@@ -1,5 +1,5 @@
 -- JF F5K Timing and score keeping, fixed part
--- Timestamp: 2020-04-09
+-- Timestamp: 2020-04-12
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 
@@ -46,6 +46,19 @@ end
 
 -- If input lines were not found, then default to S1 and S2
 if not sk.dial then sk.dial = getFieldInfo("s1").id end
+
+-- Functions for getting and setting launch height
+function sk.GetStartHeight()
+	local cutoff = model.getGlobalVariable(6, 0) 
+	local zoom = model.getGlobalVariable(6, 1)
+	
+	return cutoff, zoom
+end -- GetStartHeight()
+
+function sk.SetStartHeight(cutoff, zoom)
+	model.setGlobalVariable(6, 0, cutoff)
+	model.setGlobalVariable(6, 1, zoom)
+end -- SetStartHeight()
 
 -- Local variables
 local FM_MOTOR = 2 -- Flight mode used for motor
@@ -141,10 +154,15 @@ local function background()
 			elseif altiTime > 0 and getTime() > altiTime then
 				-- Record the start height
 				local alti = getValue(altiId)
-				if alti == 0 then alti = 50 end -- If no altimeter; default to 50
+				
+				if alti == 0 then 
+					-- If no altimeter; default to nominal height
+					local cutoff, zoom = sk.GetStartHeight()
+					alti = cutoff + zoom
+				end
+				
 				sk.startHeight = alti
 				altiTime = 0
-				
 				sk.state = sk.STATE_FLYING
 			end
 				

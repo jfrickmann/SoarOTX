@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for 2020 F5K tasks
--- Timestamp: 2020-04-10
+-- Timestamp: 2020-04-12
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -76,7 +76,8 @@ if sk.state == sk.STATE_IDLE then
 	-- UpdateTotal() updates the totalScore
 	function sk.p.UpdateTotal()
 		sk.p.totalScore = 0
-		local nominal = model.getGlobalVariable(6, 0) + model.getGlobalVariable(6, 1) -- Cutoff + Zoom
+		local cutoff, zoom = sk.GetStartHeight()
+		local nominal = cutoff + zoom
 		
 		for i, score in ipairs(sk.scores) do
 			local secs = math.min(MaxScore(i), score[1])
