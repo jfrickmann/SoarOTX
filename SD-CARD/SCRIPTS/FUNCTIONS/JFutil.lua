@@ -1,9 +1,9 @@
 -- JF Utility Library
--- Timestamp: 2020-04-10
+-- Timestamp: 2020-04-12
 -- Created by Jesper Frickmann
 
 soarUtil = { } -- Global "namespace"
-soarUtil.showHelp = true -- Show help text in screens
+soarUtil.showHelp = (model.getGlobalVariable(4, 1) == 1) -- Show help text in screens
 
 -- For loading and unloading of programs with the small shell script
 local programs = {} -- List of loaded programs
@@ -133,10 +133,10 @@ end
 
 -- Show or hide help text
 function soarUtil.ToggleHelp(event)
-	if soarUtil.showHelp then
-		soarUtil.showHelp = (event ~= EVT_MENU_BREAK and event ~= EVT_SHIFT_BREAK)
-	else
-		soarUtil.showHelp = (event == EVT_MENU_BREAK or event == EVT_SHIFT_BREAK)
+	if event == EVT_MENU_BREAK or event == EVT_SHIFT_BREAK then
+		local sh = 1 - model.getGlobalVariable(4, 1)
+		model.setGlobalVariable(4, 1, sh)
+		soarUtil.showHelp = (sh == 1)
 	end
 end -- ToggleHelp()
 
