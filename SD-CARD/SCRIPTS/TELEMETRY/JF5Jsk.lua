@@ -1,12 +1,12 @@
 -- JF F5J Timing and score keeping, fixed part
--- Timestamp: 2019-10-17
+-- Timestamp: 2020-04-13
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F5J.
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 -- Depends on custom script exporting the value of global "tmr" to OpenTX
 
 local sk = { } -- Variables shared with the loadable part
-sk.armId = getFieldInfo("ls19").id -- Input ID for motor arming
+local armId = getFieldInfo("ls19").id -- Input ID for motor arming
 local motorId = getFieldInfo("ls21").id -- Input ID for motor run
 local triggerId = getFieldInfo("ls26").id -- Input ID for the trigger switch
 local altiId = getFieldInfo("Alti+").id -- Input ID for the Alti sensor
@@ -24,6 +24,8 @@ sk.STATE_TIME = 5 -- Input flight time
 sk.STATE_SAVE = 6 -- Ready to save
 sk.state = sk.STATE_INITIAL
 sk.myFile = "/SCRIPTS/TELEMETRY/JF5J/SK.lua" -- Score keeper user interface file
+
+local FlashArmed = soarUtil.LoadWxH("ARMED.lua") -- Screen size specific warning function
 
 local function background()
 	if sk.state == sk.STATE_INITIAL then
@@ -115,7 +117,8 @@ end  --  background()
 -- Forward run() call to the loadable part
 local function run(event)
 	soarUtil.ToggleHelp(event)
-	return soarUtil.RunLoadable(sk.myFile, event, sk)
+	soarUtil.RunLoadable(sk.myFile, event, sk)
+	if getValue(armId) >0 then FlashArmed() end
 end
 
 return {background = background, run = run}

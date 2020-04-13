@@ -1,11 +1,11 @@
 -- JF FxK Configuration Menu
--- Timestamp: 2020-04-xx
+-- Timestamp: 2020-04-13
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFutil.lua
 
 local active = false
 local lastRun = 0
-local ui = {} -- List of  variables shared with loadable user interface
+local cf = {} -- List of shared variables
 local selection = 1
 
 -- Menu texts
@@ -26,6 +26,11 @@ local files = {
 	"/SCRIPTS/TELEMETRY/JFXK/CENTER.lua",
 	"/SCRIPTS/TELEMETRY/JFXK/ADJMIX.lua" }
 
+-- Enable/disable adjustment function
+function cf.SetAdjust(adj)
+	model.setGlobalVariable(7, 0, adj)
+end
+
 local function background()
 	if active then
 		-- Do not leave loaded configuration scripts in the background
@@ -34,7 +39,8 @@ local function background()
 			active = false
 		end
 	else
-		model.setGlobalVariable(7, 0, 0)
+		-- Disable adjustment function
+		cf.SetAdjust(0)
 	end
 end -- background()
 
@@ -52,7 +58,7 @@ local function run(event)
 	if active then
 		-- Run the active function
 		lastRun = getTime()
-		if soarUtil.RunLoadable(files[selection], event) then
+		if soarUtil.RunLoadable(files[selection], event, cf) then
 			soarUtil.Unload(files[selection])
 			active = false
 		end

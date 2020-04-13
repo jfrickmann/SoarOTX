@@ -1,7 +1,8 @@
 -- JF FxK mix adjustment
--- Timestamp: 2020-04-09
+-- Timestamp: 2020-04-13
 -- Created by Jesper Frickmann
 
+local cf = ...
 local ui = soarUtil.LoadWxH("JFXK/ADJMIX.lua", ui) -- Screen size specific function
 
 -- For updating aileron throws with negative differential
@@ -23,7 +24,7 @@ local function run(event)
 	end
 	
 	-- Enable adjustment function
-	model.setGlobalVariable(7, 0, 3)
+	cf.SetAdjust(3)
 	
 	-- Run user interface
 	return ui.run(event)

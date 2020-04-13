@@ -1,5 +1,5 @@
 -- 212x64/JF5J/SK.lua
--- Timestamp: 2020-04-10
+-- Timestamp: 2020-04-13
 -- Created by Jesper Frickmann
 
 local sk = ... -- List of shared variables
@@ -7,11 +7,6 @@ local sk = ... -- List of shared variables
 local 	function Draw()
 	local fmNbr, fmName = getFlightMode()
 	soarUtil.InfoBar(fmName)	
-
-	if getValue(sk.armId) >0 then
-		lcd.drawText(50, 28, "MOTOR  ARMED", DBLSIZE + BLINK + INVERS)
-		return
-	end
 
 	lcd.drawText(0, 20, "Landing", MIDSIZE)
 	lcd.drawText(0, 42, "Start", MIDSIZE)

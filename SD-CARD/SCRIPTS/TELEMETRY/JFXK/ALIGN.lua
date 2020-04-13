@@ -1,8 +1,9 @@
 -- JF FxK Flaperon Adjustment
--- Timestamp: 2020-04-12
+-- Timestamp: 2020-04-13
 -- Created by Jesper Frickmann
 
 local N = 32 -- Highest output channel number
+local cf = ...
 local ui = {} -- Data shared with GUI
 ui.n = 5 -- Number of points on the curves
 
@@ -155,7 +156,7 @@ end -- Reset()
 
 local function run(event)
 	-- Enable adjustment function
-	model.setGlobalVariable(7, 0, 1)
+	cf.SetAdjust(1)
 
 	-- Handle EXIT
 	if soarUtil.EvtExit(event) then
