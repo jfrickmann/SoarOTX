@@ -1,5 +1,5 @@
 -- JF FxK Flaperon Adjustment
--- Timestamp: 2020-04-09
+-- Timestamp: 2020-04-12
 -- Created by Jesper Frickmann
 
 local N = 32 -- Highest output channel number
@@ -11,9 +11,9 @@ local midpt = n1 / 2 -- Mid point on curve
 local reset = 0 -- Reset if > 0. 2 is non-increasing outputs; force reset or quit
 
 local xInput = getFieldInfo("input7").id -- Step input before applying the output curves must be assigned to a channel
-local gvAlign = 0 -- Index of global variable set by aileron trim for left/right curve alignment
+local gvAlign = 2 -- Index of global variable set by aileron trim for left/right curve alignment
 local gvAdjust = 3 -- Index of global variable set by throttle trim for common curve adjustment
-local fmAlign = 1 -- Flight mode for alignment
+local FM_ALIGN = 1 -- Flight mode for alignment
 
 local rgtCrv -- Table with data for the right flaperon curve
 local lftCrv -- Table with data for the left flaperon curve
@@ -120,8 +120,8 @@ local function UpdateGVs(point)
 		lastAdjust = math.floor(0.033 * (rgtY[point] - lftY[n1 - point]) + 0.5)
 		lastAlign = math.floor(0.066 * (rgtY[point] + lftY[n1 - point]) + 0.5)
 		
-		model.setGlobalVariable(gvAdjust, fmAlign, lastAdjust)
-		model.setGlobalVariable(gvAlign, fmAlign, lastAlign)
+		model.setGlobalVariable(gvAdjust, FM_ALIGN, lastAdjust)
+		model.setGlobalVariable(gvAlign, FM_ALIGN, lastAlign)
 end -- UpdateGVs()
 
 local function init()
@@ -198,8 +198,8 @@ local function run(event)
 	-- If a GV changed, record changes to determine alignment and adjustment
 	local dAdjust, dAlign
 
-	dAdjust = 10 * (model.getGlobalVariable(gvAdjust, fmAlign) - lastAdjust)
-	dAlign = 5 * (model.getGlobalVariable(gvAlign, fmAlign) - lastAlign)
+	dAdjust = 10 * (model.getGlobalVariable(gvAdjust, FM_ALIGN) - lastAdjust)
+	dAlign = 5 * (model.getGlobalVariable(gvAlign, FM_ALIGN) - lastAlign)
 
 	if dAdjust ~= 0 or dAlign ~= 0 then
 		local fac
