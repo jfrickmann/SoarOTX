@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for 2020 F3K tasks
--- Timestamp: 2019-12-29
+-- Timestamp: 2020-04-14
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -106,34 +106,34 @@ if sk.state == sk.STATE_IDLE then
 	
 	-- TargetTime is used by JF3Ksk.lua
 	if targetType == 2 then -- Poker
+		-- Table with step sizes for input { Lwr time limit, step in sec. }
+		local tblStep = {
+			{30, 5},
+			{60, 10},
+			{120, 15},
+			{210, 30},
+			{420, 60}
+		}
+		
 		sk.PokerCall = function()
-			local t1, t2, dt, tOut
-			local tIn = getValue(sk.dial)
+			local input = math.min(1023, getValue(sk.dial)) + 1024
+			local i = math.floor(input * #tblStep / 2048)
+			input = input - i * 2048 / #tblStep
+			i = i + 1
+
+			local t1 = tblStep[i][1]
+			local dt = tblStep[i][2]
+			local t2
 			
-			if tIn <= -512 then
-				t1 = 0
-				t2 = 60
-				dt = 5
-				tIn = tIn + 1024
-			elseif tIn <= 0 then
-				t1 = 60
-				t2 = 180
-				dt = 10
-				tIn = tIn + 512
-			elseif tIn <= 512 then
-				t1 = 180
-				t2 = 360
-				dt = 15
+			if i == #tblStep then
+				t2 = sk.taskWindow + dt
 			else
-				t1 = 360
-				t2 = sk.taskWindow
-				dt = 30
-				tIn = tIn - 512
+				t2 = tblStep[i + 1][1]
 			end
 			
-			tOut = t1 + dt * math.floor((t2 - t1) / 512 * tIn / dt)
+			tOut = t1 + dt * math.floor(input * #tblStep / 2048 * (t2 - t1) /dt)
 			
-			return math.max(5, math.min(sk.winTimer - 1, tOut))
+			return math.min(sk.winTimer - 1, tOut)
 		end -- PokerCall()
 
 		sk.TargetTime = function()
