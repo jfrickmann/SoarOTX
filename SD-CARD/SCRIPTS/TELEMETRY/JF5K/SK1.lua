@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for 2020 F5K tasks
--- Timestamp: 2020-04-12
+-- Timestamp: 2020-04-13
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -89,7 +89,7 @@ if sk.state == sk.STATE_IDLE then
 				bonus = 0
 			end
 			
-			sk.p.totalScore = sk.p.totalScore + secs + bonus
+			sk.p.totalScore = math.max(0, sk.p.totalScore + secs + bonus)
 		end
 	end
 	
