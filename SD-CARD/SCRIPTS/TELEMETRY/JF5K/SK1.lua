@@ -95,6 +95,10 @@ if sk.state == sk.STATE_IDLE then
 	
 	-- TargetTime is used by JF5Ksk.lua
 	if targetType == 1 then -- Poker
+		-- Remember these to announce changes
+		local lastInput = getValue(sk.dial)
+		local lastChange = 0
+		
 		-- Table with step sizes for input { Lwr time limit, step in sec. }
 		local tblStep = {
 			{30, 5},
@@ -105,11 +109,9 @@ if sk.state == sk.STATE_IDLE then
 		}
 		
 		sk.PokerCall = function()
-			local input = math.min(1023, getValue(sk.dial)) + 1024
-			local i = math.floor(input * #tblStep / 2048)
-			input = input - i * 2048 / #tblStep
+			local input = getValue(sk.dial)
+			local i, x = math.modf(#tblStep * (math.min(1023, input) + 1024) / 2048)
 			i = i + 1
-
 			local t1 = tblStep[i][1]
 			local dt = tblStep[i][2]
 			local t2
@@ -120,9 +122,20 @@ if sk.state == sk.STATE_IDLE then
 				t2 = tblStep[i + 1][1]
 			end
 			
-			tOut = t1 + dt * math.floor(input * #tblStep / 2048 * (t2 - t1) /dt)
+			local result = math.min(sk.winTimer - 1, t1 + dt * math.floor(x * (t2 - t1) /dt))
 			
-			return math.min(sk.winTimer - 1, tOut)
+			if math.abs(input - lastInput) >= 2 then
+				lastInput = input
+				lastChange = getTime()
+			end
+			
+			if lastChange > 0 and getTime() - lastChange > 50 then
+				playTone(3000, 100, PLAY_NOW)
+				playDuration(result)
+				lastChange = 0
+			end
+			
+			return result
 		end -- PokerCall()
 
 		sk.TargetTime = function()
