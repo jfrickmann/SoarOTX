@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for 2020 F3K tasks
--- Timestamp: 2020-04-14
+-- Timestamp: 2020-04-15
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -129,7 +129,7 @@ if sk.state == sk.STATE_IDLE then
 			
 			local result = math.min(sk.winTimer - 1, t1 + dt * math.floor(x * (t2 - t1) /dt))
 			
-			if math.abs(input - lastInput) >= 2 then
+			if math.abs(input - lastInput) >= 20 then
 				lastInput = input
 				lastChange = getTime()
 			end
