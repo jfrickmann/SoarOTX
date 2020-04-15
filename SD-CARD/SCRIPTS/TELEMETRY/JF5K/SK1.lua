@@ -105,22 +105,16 @@ if sk.state == sk.STATE_IDLE then
 			{60, 10},
 			{120, 15},
 			{210, 30},
-			{420, 60}
+			{420, 60},
+			{sk.taskWindow + 60} -- t2 for the last interval
 		}
 		
 		sk.PokerCall = function()
 			local input = getValue(sk.dial)
-			local i, x = math.modf(#tblStep * (math.min(1023, input) + 1024) / 2048)
-			i = i + 1
+			local i, x = math.modf(1 + (#tblStep - 1) * (math.min(1023, input) + 1024) / 2048)
 			local t1 = tblStep[i][1]
+			local t2 = tblStep[i + 1][1]
 			local dt = tblStep[i][2]
-			local t2
-			
-			if i == #tblStep then
-				t2 = sk.taskWindow + dt
-			else
-				t2 = tblStep[i + 1][1]
-			end
 			
 			local result = math.min(sk.winTimer - 1, t1 + dt * math.floor(x * (t2 - t1) /dt))
 			
