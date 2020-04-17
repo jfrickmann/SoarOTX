@@ -1,4 +1,4 @@
--- Draw a servo output curve
+-- 212x64/CURVE.lua
 -- Timestamp: 2020-04-01
 -- Created by Jesper Frickmann
 -- Needs crv.width, crv.height and crv.n to be set
