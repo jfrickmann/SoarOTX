@@ -1,13 +1,8 @@
 -- JF F3J Timing and score keeping, fixed part
--- Timestamp: 2019-10-17
+-- Timestamp: 2020-04-16
 -- Created by Jesper Frickmann
--- Telemetry script for timing and keeping scores for F3J.
--- Depends on library functions in FUNCTIONS/JFLib.lua
--- Depends on custom script exporting the value of global "tmr" to OpenTX
 
 local sk = {} -- Variables shared with the loadable part
-local winId = getFieldInfo("ls22").id -- Input ID for window timer
-local flightId = getFieldInfo("ls24").id -- Input ID for flight timer
 local altiId = getFieldInfo("Alti+").id -- Input ID for the Alti sensor
 local altiTime -- Time for recording start height
 local prevWt -- Previous window timer value
@@ -22,21 +17,31 @@ sk.STATE_SAVE = 4 -- Ready to save
 sk.state = sk.STATE_INITIAL
 sk.myFile = "/SCRIPTS/TELEMETRY/JF3J/SK.lua" -- Score keeper user interface file
 
+-- Read timer GV
+local function GetGVTmr()
+	return model.getGlobalVariable(8, 0)
+end
+
+-- Set timer GV
+function sk.SetGVTmr(tmr)
+	model.setGlobalVariable(8, 0, tmr)
+end
+
+sk.SetGVTmr(1) -- Ready to start the window timer
+
 local function background()
 	if sk.state == sk.STATE_INITIAL then
 		sk.landingPts = 0
 		sk.startHeight = 0
 		startHeightRec = false
-		tmr = 1 -- Ready to start the window timer
 
-		if getValue(winId) > 0 then -- Window started
+		if GetGVTmr() == 2 then -- Window started
 			altiTime = 0
 			sk.state = sk.STATE_WINDOW
-			tmr = 0
 			prevWt = model.getTimer(0).value
 		end
 	elseif sk.state == sk.STATE_WINDOW then
-		if not startHeightRec and getValue(flightId) > 0 then -- Flight timer started; record the start height in 10 sec.
+		if not startHeightRec and GetGVTmr() == 3 then -- Flight timer started; record the start height in 10 sec.
 			if altiTime == 0 then
 				altiTime = getTime() + 1000
 			elseif getTime() > altiTime then -- Record the start height
@@ -68,7 +73,7 @@ local function background()
 		
 		prevWt = wt
 		
-		if getValue(winId) < 0 then -- Stop timer and record scores
+		if GetGVTmr() == 0 then -- Stop timer and record scores
 			sk.state = sk.STATE_LANDINGPTS
 		end
 	end

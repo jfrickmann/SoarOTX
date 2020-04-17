@@ -1,7 +1,6 @@
 -- JF F3J Timing and score keeping, loadable part
--- Timestamp: 2019-10-22
+-- Timestamp: 2020-04-17
 -- Created by Jesper Frickmann
--- Telemetry script for timing and keeping scores for F3J.
 
 local sbFile = "/SCRIPTS/TELEMETRY/JF3J/SB.lua" -- Score browser user interface file
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -35,7 +34,9 @@ local function run(event)
 		elseif tgt > 5940 then
 			tgt = 60
 		end
+
 		model.setTimer(0, {start = tgt, value = tgt})
+		model.setTimer(1, {start = 0, value = 0})
 		
 		soarUtil.ShowHelp({ exit = "SHOW SCORES", ud = "SET TIME" })
 		
@@ -117,8 +118,12 @@ local function run(event)
 			end
 			
 			sk.state = sk.STATE_INITIAL
+			sk.SetGVTmr(1) -- Ready to start the window timer
+
 		elseif soarUtil.EvtExit(event) then -- Do not record scores if user pressed EXIT
 			sk.state = sk.STATE_INITIAL
+			sk.SetGVTmr(1) -- Ready to start the window timer
+			
 		end
 	end
 end  --  run()
