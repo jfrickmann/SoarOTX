@@ -1,14 +1,11 @@
 -- JF F5J Timing and score keeping, fixed part
--- Timestamp: 2020-04-13
+-- Timestamp: 2020-04-18
 -- Created by Jesper Frickmann
--- Telemetry script for timing and keeping scores for F5J.
--- Depends on library functions in FUNCTIONS/JFLib.lua
--- Depends on custom script exporting the value of global "tmr" to OpenTX
 
 local sk = { } -- Variables shared with the loadable part
-local armId = getFieldInfo("ls19").id -- Input ID for motor arming
-local motorId = getFieldInfo("ls21").id -- Input ID for motor run
-local triggerId = getFieldInfo("ls26").id -- Input ID for the trigger switch
+local FM_MOTOR = 2 -- Motor flight mode
+local triggerId = getFieldInfo("ls9").id -- Input ID for the trigger switch
+local armId = getFieldInfo("ls30").id -- Input ID for motor arming
 local altiId = getFieldInfo("Alti+").id -- Input ID for the Alti sensor
 local altiTime -- Time for recording start height
 local prevMt -- Previous motor timer value
@@ -27,13 +24,20 @@ sk.myFile = "/SCRIPTS/TELEMETRY/JF5J/SK.lua" -- Score keeper user interface file
 
 local FlashArmed = soarUtil.LoadWxH("ARMED.lua") -- Screen size specific warning function
 
+-- Set timer GV
+local function SetGVTmr(tmr)
+	model.setGlobalVariable(8, 0, tmr)
+end
+
 local function background()
+	local motorOn = (getFlightMode() == FM_MOTOR) -- Motor running
+	
 	if sk.state == sk.STATE_INITIAL then
 		sk.landingPts = 0
 		sk.startHeight = 0
-		tmr = 1 -- Ready to start the flight timer
+		SetGVTmr(1) -- Ready to start the flight timer
 
-		if getValue(motorId) > 0 then -- Motor started
+		if motorOn then
 			prevMt = model.getTimer(1).value
 			altiTime = 0
 			sk.state = sk.STATE_MOTOR
@@ -60,14 +64,14 @@ local function background()
 		
 		prevMt = mt
 			
-		if getValue(motorId) < 0 then -- Motor stopped; record the start height in 10 sec.
+		if not motorOn then -- Motor stopped; record the start height in 10 sec.
 			if altiTime == 0 then
 				altiTime = getTime() + 1000
 			end
 			
 			if getValue(triggerId) < 0 then -- Trigger switch released
 				prevFt = model.getTimer(0).value
-				tmr = 0 -- Ready to stop the flight timer
+				SetGVTmr(0) -- Ready to stop the flight timer
 				sk.state = sk.STATE_GLIDE
 			end
 		end
@@ -102,11 +106,11 @@ local function background()
 			altiTime = 0
 		end
 		
-		if getValue(motorId) > 0 then -- Motor restart; score a zero
+		if motorOn then -- Motor restart; score a zero
 			sk.state = sk.STATE_SAVE
 			model.setTimer(0, {value = 0})
 			sk.startHeight = 0
-		elseif getValue(triggerId) > 0 and getTime() > altiTime then -- Stop timer and record scores
+		elseif getValue(armId) < 0 and getValue(triggerId) > 0 and getTime() > altiTime then -- Stop timer and record scores
 			sk.state = sk.STATE_LANDINGPTS
 			local ft = model.getTimer(0)
 			model.setTimer(0, {value = ft.start - ft.value})			

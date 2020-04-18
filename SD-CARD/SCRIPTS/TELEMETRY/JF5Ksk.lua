@@ -1,5 +1,5 @@
 -- JF F5K Timing and score keeping, fixed part
--- Timestamp: 2020-04-14
+-- Timestamp: 2020-04-18
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 
@@ -64,7 +64,7 @@ end -- SetStartHeight()
 local FM_MOTOR = 2 -- Flight mode used for motor
 local altiId = getFieldInfo("Alti+").id -- Input ID for the Alti sensor
 local triggerId = getFieldInfo("ls8").id -- Input ID for the trigger switch
-local armId = getFieldInfo("ls25").id -- Input ID for motor arming
+local armId = getFieldInfo("ls26").id -- Input ID for motor arming
 
 local FlashArmed = soarUtil.LoadWxH("ARMED.lua") -- Screen size specific warning function
 local motorOld = getFlightMode() == FM_MOTOR -- Used for detecting when FM changes
