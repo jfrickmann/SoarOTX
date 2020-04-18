@@ -1,26 +1,30 @@
 -- 128x64/JF/ALIGN.lua
--- Timestamp: 2019-09-29
+-- Timestamp: 2020-04-18
 -- Created by Jesper Frickmann
 
-local ui = { } -- List of shared variables
+local ui = ... -- List of shared variables
+local crv = soarUtil.LoadWxH("CURVE.lua") -- Screen size specific function
+crv.n = ui.n
+crv.width = 61
+crv.height = 26
 
-function ui.Draw()
+function ui.Draw(rgtAilY, lftAilY, rgtFlpY, lftFlpY, i)
 	soarUtil.InfoBar("Alignment")
 
-	lcd.drawLine(64, 10, 64, 61, SOLID, FORCE)
-	lcd.drawLine(2, 36, 126, 36, SOLID, FORCE)
+	lcd.drawLine(64, 9, 64, LCD_H, SOLID, FORCE)
+	lcd.drawLine(1, 36, LCD_W, 36, SOLID, FORCE)
 
-	lcd.drawText(11, 12, "LA", SMLSIZE)
-	ui.DrawCurve(11, 12, 48, 22, ui.crvLft[2], ui.nPoints - ui.lasti + 1)
+	lcd.drawText(1, 9, "LA", SMLSIZE)
+	crv.Draw(1, 9, lftAilY, ui.n + 1 - i)
 
-	lcd.drawText(69, 12, "RA", SMLSIZE)
-	ui.DrawCurve(69, 12, 48, 22, ui.crvRgt[2], ui.lasti)
+	lcd.drawText(1, 37, "LF", SMLSIZE)
+	crv.Draw(1, 37, lftFlpY, ui.n + 1 - i)
 
-	lcd.drawText(11, 38, "LF", SMLSIZE)
-	ui.DrawCurve(11, 38, 48, 22, ui.crvLft[1], ui.nPoints - ui.lasti + 1)
+	lcd.drawText(65, 37, "RF", SMLSIZE)
+	crv.Draw(65, 37, rgtFlpY, i)
 
-	lcd.drawText(69, 38, "RF", SMLSIZE)
-	ui.DrawCurve(69, 38, 48, 22, ui.crvRgt[1], ui.lasti)
+	lcd.drawText(65, 9, "RA", SMLSIZE)
+	crv.Draw(65, 9, rgtAilY, i)
 end -- Draw()
 
 return ui
