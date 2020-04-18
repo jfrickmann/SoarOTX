@@ -109,11 +109,13 @@ local function run(event)
 			end
 			
 			sk.state = sk.STATE_SETWINTMR
+			sk.SetGVTmr(1) -- Ready to start the window timer
 		end
 
 		-- Do not record scores
 		if soarUtil.EvtExit(event) then 
 			sk.state = sk.STATE_SETWINTMR
+			sk.SetGVTmr(1) -- Ready to start the window timer
 		end
 	end
 end  --  run()

@@ -1,7 +1,8 @@
 -- JF F3RES mix adjustment
--- Timestamp: 2019-10-18
+-- Timestamp: 2020-04-18
 -- Created by Jesper Frickmann
 
+local cf = ...
 local gv1 = getFieldInfo("gvar1").id
 
 local Draw = soarUtil.LoadWxH("JF3R/ADJMIX.lua", gv1) -- Screen size specific function
@@ -13,7 +14,7 @@ local function run(event)
 	end
 	
 	-- Enable adjustment function
-	adj = 1
+	cf.SetAdjust(1)
 	
 	Draw()
 end -- run()

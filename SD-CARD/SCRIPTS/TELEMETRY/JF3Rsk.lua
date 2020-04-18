@@ -1,14 +1,10 @@
 -- JF F3RES Timing and score keeping, fixed part
 -- Timestamp: 2019-10-17
 -- Created by Jesper Frickmann
--- Telemetry script for timing and keeping scores for F3RES.
 -- Depends on library functions in FUNCTIONS/JFLib.lua
--- Depends on custom script exporting the value of global "tmr" to OpenTX
 
 local sk = { } -- Variables shared with the loadable part
 local myFile = "/SCRIPTS/TELEMETRY/JF3R/SK.lua" -- Lua file to be loaded and unloaded
-local winId = getFieldInfo("ls16").id -- Input ID for window timer
-local flightId = getFieldInfo("ls18").id -- Input ID for flight timer
 local altiId = getFieldInfo("Alti+").id -- Input ID for the Alti sensor
 local altiTime -- Time for recording start height
 local prevFt -- Previous flight timer value
@@ -22,14 +18,22 @@ sk.STATE_LANDINGPTS = 3 -- Landed, input landing points
 sk.STATE_SAVE = 4 -- Ready to save
 sk.state = sk.STATE_SETWINTMR
 
+-- Read timer GV
+local function GetGVTmr()
+	return model.getGlobalVariable(8, 0)
+end
+
+-- Set timer GV
+function sk.SetGVTmr(tmr)
+	model.setGlobalVariable(8, 0, tmr)
+end
+
 local function background()
 	if sk.state <= sk.STATE_SETFLTTMR then
 		sk.landingPts = 0
-		tmr = 1 -- Ready to start the window timer
 
-		if getValue(winId) > 0 then -- Window started
+		if GetGVTmr() > 1 then -- Window started
 			sk.state = sk.STATE_WINDOW
-			tmr = 0
 			prevFt = model.getTimer(1).value
 		end
 	elseif sk.state == sk.STATE_WINDOW then
@@ -56,7 +60,7 @@ local function background()
 		
 		prevFt = ft.value
 		
-		if getValue(winId) < 0 then -- Stop timer and record scores
+		if GetGVTmr() == 0 then -- Stop timer and record scores
 			model.setTimer(1, {value = ft.start - ft.value})
 			sk.state = sk.STATE_LANDINGPTS
 		end
