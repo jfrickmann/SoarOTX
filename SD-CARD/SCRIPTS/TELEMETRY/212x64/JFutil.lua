@@ -1,5 +1,5 @@
 -- 212x64/JFutil.lua
--- Timestamp: 2019-10-28
+-- Timestamp: 2020-04-17
 -- Created by Jesper Frickmann
 
 -- Input value for the receiver battery
@@ -36,6 +36,16 @@ function soarUtil.ShowHelp(ht)
 	
 	lcd.drawText(0, 4, "SHOW/HIDE HELP", INVERS)
 
+	if ht.msg1 then
+		lcd.drawFilledRectangle(8, 23, 160, 9, FORCE)
+		lcd.drawText(8, 24, ht.msg1, INVERS)
+	end
+	
+	if ht.msg2 then
+		lcd.drawFilledRectangle(8, 31, 160, 9, FORCE)
+		lcd.drawText(8, 32, ht.msg2, INVERS)
+	end
+
 	if ht.enter then lcd.drawText(LCD_W, 52, ht.enter, INVERS + RIGHT) end
 	if ht.exit then lcd.drawText(0, 52, ht.exit, INVERS) end
 	if ht.up then lcd.drawText(LCD_W, 4, ht.up, INVERS + RIGHT) end
@@ -49,5 +59,5 @@ function soarUtil.ShowHelp(ht)
 	if ht.lr then
 		lcd.drawText(LCD_W, 4, " \126 ", INVERS + RIGHT)
 		lcd.drawText(LCD_W, 28, " \127 ", INVERS + RIGHT)
-	end
+	end	
 end -- ShowHelp()
