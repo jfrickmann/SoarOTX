@@ -1,5 +1,5 @@
 -- JF FXJ Configuration Menu
--- Timestamp: 2020-04-17
+-- Timestamp: 2020-04-18
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 -- "adj" is a global var that is output to OpenTX with a custom script
@@ -42,7 +42,8 @@ local function background()
 			active = false
 		end
 	else
-		adj = 0
+		-- Disable adjustment function
+		cf.SetAdjust(0)
 	end
 end -- background()
 
