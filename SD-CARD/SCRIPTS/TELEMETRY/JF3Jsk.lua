@@ -1,5 +1,5 @@
 -- JF F3J Timing and score keeping, fixed part
--- Timestamp: 2020-04-16
+-- Timestamp: 2020-04-18
 -- Created by Jesper Frickmann
 
 local sk = {} -- Variables shared with the loadable part
@@ -26,8 +26,6 @@ end
 function sk.SetGVTmr(tmr)
 	model.setGlobalVariable(8, 0, tmr)
 end
-
-sk.SetGVTmr(1) -- Ready to start the window timer
 
 local function background()
 	if sk.state == sk.STATE_INITIAL then
