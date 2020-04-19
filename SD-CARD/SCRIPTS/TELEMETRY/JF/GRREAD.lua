@@ -13,7 +13,7 @@ local FIRST_EXCLUDED = "Rud" -- ENGLISH or DUTCH log files
 
 -- Constants
 local FM_LAUNCH = 2 -- Launch flight mode
-local ALTI_PLOT ="Alti(m)" -- Default plot variable
+local ALTI_PLOT ="Alt(m)" -- Default plot variable
 local TIME_GAP = 20 -- Time gap that triggers a new flight
 local MIN_TIME = 20 -- Minimum time of flight that will be plotted
 local READ_MAX = 4 -- Max. no. of record to read in one go
