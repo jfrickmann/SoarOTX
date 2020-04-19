@@ -1,5 +1,5 @@
 -- JF Utility Library
--- Timestamp: 2020-04-12
+-- Timestamp: 2020-04-19
 -- Created by Jesper Frickmann
 
 soarUtil = { } -- Global "namespace"
@@ -152,7 +152,7 @@ end -- TmrStr()
 -- DIY DATA IDs 0x5000 - 0x52ff in opentx/radio/src/telemtry/frsky.h
 local function run()
 	local fm = getFlightMode()
-	setTelemetryValue(0x5050, 0, 0, fm, 0, 0, "FM")
+	setTelemetryValue(0x5050, 0, 224, fm, 0, 0, "FM")
 end -- run()
 
 return {run = run}
