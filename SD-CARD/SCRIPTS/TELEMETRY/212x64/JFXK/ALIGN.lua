@@ -1,5 +1,5 @@
 -- 212x64/JFxK/ALIGN.lua
--- Timestamp: 2020-04-10
+-- Timestamp: 2020-04-18
 -- Created by Jesper Frickmann
 
 local ui = ... -- List of shared variables
@@ -9,7 +9,7 @@ crv.width = 56
 crv.height = 56
 
 function ui.Draw(rgtY, lftY, i)
-	soarUtil.InfoBar("JF F3K Flaperon alignment")	
+	soarUtil.InfoBar("Align flaperons")	
 
 	lcd.drawText(0, 10, "Use the throttle")
 	lcd.drawText(0, 20, "to select point.")
