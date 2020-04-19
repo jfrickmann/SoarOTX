@@ -1,5 +1,5 @@
 -- JF Log Data Graph, loadable part for reading data
--- Timestamp: 2019-11-10
+-- Timestamp: 2020-04-19
 -- Created by Jesper Frickmann
 
 local gr = ... -- List of shared variables
@@ -12,7 +12,7 @@ local FIRST_EXCLUDED = "Rud" -- ENGLISH or DUTCH log files
 --local FIRST_EXCLUDED = "Pln" -- CHECH log files
 
 -- Constants
-local FM_LAUNCH = 1 -- Launch flight mode
+local FM_LAUNCH = 2 -- Launch flight mode
 local ALTI_PLOT ="Alti(m)" -- Default plot variable
 local TIME_GAP = 20 -- Time gap that triggers a new flight
 local MIN_TIME = 20 -- Minimum time of flight that will be plotted
