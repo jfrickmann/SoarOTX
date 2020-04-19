@@ -4,6 +4,7 @@
 
 local sk = { } -- Variables shared with the loadable part
 local FM_MOTOR = 2 -- Motor flight mode
+local FM_KAPOW = 3 -- Motor flight mode
 local triggerId = getFieldInfo("ls9").id -- Input ID for the trigger switch
 local armId = getFieldInfo("ls30").id -- Input ID for motor arming
 local altiId = getFieldInfo("Alti+").id -- Input ID for the Alti sensor
@@ -110,10 +111,12 @@ local function background()
 			sk.state = sk.STATE_SAVE
 			model.setTimer(0, {value = 0})
 			sk.startHeight = 0
-		elseif getValue(armId) < 0 and getValue(triggerId) > 0 and getTime() > altiTime then -- Stop timer and record scores
+		elseif getValue(armId) < 0 and getValue(triggerId) > 0 and getTime() > altiTime or
+											getFlightMode() == FM_KAPOW then -- Stop timer and record scores
 			sk.state = sk.STATE_LANDINGPTS
 			local ft = model.getTimer(0)
-			model.setTimer(0, {value = ft.start - ft.value})			
+			model.setTimer(0, {value = ft.start - ft.value})
+			playDuration(ft.start - ft.value)
 		end
 	end
 end  --  background()
