@@ -75,7 +75,9 @@ function soarUtil.RunLoadable(file, event, ...)
 		else
 			err = string.gsub(err, file .. ":", "")
 			lcd.clear()
-			print(0, 0, "ERROR loading the script: ", file, " ", err)
+			lcd.drawText(0, 8, "ERROR loading the script: ", SMLSIZE)
+			lcd.drawText(0, 16, file, SMLSIZE)
+			lcd.drawText(0, 24, err, SMLSIZE)
 		end
 
 	elseif states[file] == ST_LOADED then
