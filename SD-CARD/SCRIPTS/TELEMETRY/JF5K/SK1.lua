@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for 2020 F5K tasks
--- Timestamp: 2020-04-15
+-- Timestamp: 2020-04-21
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts

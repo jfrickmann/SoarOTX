@@ -1,5 +1,5 @@
 -- JF F5K Timing and score keeping, fixed part
--- Timestamp: 2020-04-18
+-- Timestamp: 2020-04-21
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 
@@ -9,6 +9,7 @@ sk.taskWindow = 0 -- Task window duration (zero counts up)
 sk.launches = -1 -- Number of launches allowed, -1 for unlimited
 sk.taskScores = 0 -- Number of scores in task
 sk.finalScores = false -- Task scores are final
+sk.startHeight = 0 -- Start height
 
 -- The following shared functions are redefined by the plugins:
 sk.TargetTime = function() return 0 end -- Function setting target time for flight; will be re-defined by plugin
@@ -24,11 +25,11 @@ sk.selectedTask = 0 -- Selected task in menu
 -- Program states
 sk.STATE_IDLE = 1 -- Task window not running
 sk.STATE_FINISHED = 2 -- Task has been finished
-sk.STATE_FREEZE = 3 -- Freeze the flight timer when window ends
-sk.STATE_PAUSE = 4 -- Task window paused, not flying
-sk.STATE_WINDOW = 5 -- Task window started, not flying
-sk.STATE_LAUNCHING = 6 -- Motor launch and 10 sec. zoom
-sk.STATE_FLYING = 7 -- Flight timer started but flight not yet committed
+sk.STATE_PAUSE = 3 -- Task window paused, not flying
+sk.STATE_WINDOW = 4 -- Task window started, not flying
+sk.STATE_LAUNCHING = 5 -- Motor launch and 10 sec. zoom
+sk.STATE_FLYING = 6 -- Flight timer started but flight not yet committed
+sk.STATE_FREEZE = 7 -- Freeze the flight timer when window ends
 sk.state = sk.STATE_IDLE -- Current program state
 
 -- Other shared variables
@@ -137,9 +138,7 @@ local function background()
 		end
 	
 		-- Did the window expire?
-		if sk.winTimer <= 0 and model.getTimer(1).start > 0 then
-			playTone(880, 1000, 0)
-
+		if sk.state ~= sk.STATE_FREEZE and sk.winTimer <= 0 and model.getTimer(1).start > 0 then
 			if sk.state == sk.STATE_WINDOW then
 				sk.state = sk.STATE_FINISHED
 			else
@@ -168,7 +167,7 @@ local function background()
 				sk.state = sk.STATE_FLYING
 			end
 				
-		elseif sk.state == sk.STATE_FLYING then
+		elseif sk.state >= sk.STATE_FLYING then
 			-- Time counts
 			if sk.flightTimer <= sk.counts[countIndex] and flightTimerOld > sk.counts[countIndex]  then
 				if sk.flightTimer > 15 then
@@ -191,7 +190,7 @@ local function background()
 				end
 
 				sk.Score()
-				
+
 				-- Change state
 				if (sk.finalScores and #sk.scores == sk.taskScores) or sk.launches == 0 then
 					playTone(880, 1000, 0)
@@ -206,7 +205,7 @@ local function background()
 		flightTimerOld = sk.flightTimer
 	end
 
-	if sk.state < sk.STATE_WINDOW then
+	if sk.state < sk.STATE_WINDOW or sk.state == sk.STATE_FREEZE then
 		-- Stop both timers
 		model.setGlobalVariable(8, 0, 0)
 	elseif sk.state == sk.STATE_WINDOW then

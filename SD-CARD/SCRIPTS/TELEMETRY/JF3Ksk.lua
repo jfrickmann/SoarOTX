@@ -1,5 +1,5 @@
 -- JF F3K Timing and score keeping, fixed part
--- Timestamp: 2020-04-15
+-- Timestamp: 2020-04-21
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 
@@ -24,12 +24,12 @@ sk.selectedTask = 0 -- Selected task in menu
 -- Program states
 sk.STATE_IDLE = 1 -- Task window not running
 sk.STATE_FINISHED = 2 -- Task has been finished
-sk.STATE_FREEZE = 3 -- Still committed, but freeze  the flight timer
-sk.STATE_PAUSE = 4 -- Task window paused, not flying
-sk.STATE_WINDOW = 5 -- Task window started, not flying
-sk.STATE_READY = 6 -- Flight timer will be started when launch switch is released
-sk.STATE_FLYING = 7 -- Flight timer started but flight not yet committed
-sk.STATE_COMMITTED = 8 -- Flight timer started, and flight committed
+sk.STATE_PAUSE = 3 -- Task window paused, not flying
+sk.STATE_WINDOW = 4 -- Task window started, not flying
+sk.STATE_READY = 5 -- Flight timer will be started when launch switch is released
+sk.STATE_FLYING = 6 -- Flight timer started but flight not yet committed
+sk.STATE_COMMITTED = 7 -- Flight timer started, and flight committed
+sk.STATE_FREEZE = 8 -- Still committed, but freeze  the flight timer
 sk.state = sk.STATE_IDLE -- Current program state
 
 -- Other shared variables
@@ -197,7 +197,7 @@ local function background()
 		flightTimerOld = sk.flightTimer
 	end
 
-	if sk.state < sk.STATE_WINDOW then
+	if sk.state < sk.STATE_WINDOW or sk.state == sk.STATE_FREEZE then
 		-- Stop both timers
 		model.setGlobalVariable(8, 0, 0)
 	elseif sk.state == sk.STATE_WINDOW then
