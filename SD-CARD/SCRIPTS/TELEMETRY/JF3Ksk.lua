@@ -107,18 +107,17 @@ local function background()
 		end
 
 	else
-		-- Beep at the beginning and end of the task window
-		if (winTimerOld > 0 and sk.winTimer <= 0) or (winTimerOld > sk.taskWindow and sk.winTimer <= sk.taskWindow) then
-			playTone(880, 1000, PLAY_NOW)
-		end
-	
 		-- Did the window expire?
-		if sk.state < sk.STATE_FLYING and sk.state ~= sk.STATE_FINISHED
-		and sk.winTimer <= 0 and model.getTimer(1).start > 0 then
+		if winTimerOld > 0 and sk.winTimer <= 0 then
 			playTone(880, 1000, 0)
-			sk.state = sk.STATE_FINISHED
+
+			if sk.state < sk.STATE_FLYING then
+				sk.state = sk.STATE_FINISHED
+			elseif sk.eowTimerStop then
+				sk.state = sk.STATE_FREEZE
+			end
 		end
-		
+
 		if sk.state == sk.STATE_WINDOW then
 			if launchPulled then
 				sk.state = sk.STATE_READY
@@ -141,11 +140,6 @@ local function background()
 			end
 
 		elseif sk.state >= sk.STATE_FLYING then
-			-- If the window expires, then freeze the flight timer
-			if sk.winTimer <= 0 and winTimerOld > 0 and sk.eowTimerStop then
-				sk.state = sk.STATE_FREEZE
-			end
-		
 			-- Time counts
 			if sk.flightTimer <= sk.counts[countIndex] and flightTimerOld > sk.counts[countIndex]  then
 				if sk.flightTimer > 15 then
@@ -182,7 +176,8 @@ local function background()
 				sk.Score()
 				
 				-- Change state
-				if (sk.finalScores and #sk.scores == sk.taskScores) or sk.launches == 0 then
+				if (sk.finalScores and #sk.scores == sk.taskScores) or sk.launches == 0
+				or (sk.taskWindow > 0 and sk.winTimer <= 0) then
 					playTone(880, 1000, 0)
 					sk.state = sk.STATE_FINISHED
 				elseif sk.quickRelaunch then

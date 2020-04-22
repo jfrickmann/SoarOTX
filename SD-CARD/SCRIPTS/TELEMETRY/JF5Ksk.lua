@@ -132,20 +132,16 @@ local function background()
 	end
 	
 	if sk.state >= sk.STATE_WINDOW then
-		-- Beep at the beginning and end of the task window
-		if (winTimerOld > 0 and sk.winTimer <= 0) or (winTimerOld > sk.taskWindow and sk.winTimer <= sk.taskWindow) then
-			playTone(880, 1000, PLAY_NOW)
-		end
-	
 		-- Did the window expire?
-		if sk.state ~= sk.STATE_FREEZE and sk.winTimer <= 0 and model.getTimer(1).start > 0 then
+		if winTimerOld > 0 and sk.winTimer <= 0 then
+			playTone(880, 1000, 0)
+
 			if sk.state == sk.STATE_WINDOW then
 				sk.state = sk.STATE_FINISHED
 			else
 				sk.state = sk.STATE_FREEZE
 			end
 		end
-
 
 		if sk.state == sk.STATE_LAUNCHING then
 			if motorStopped then
@@ -192,7 +188,8 @@ local function background()
 				sk.Score()
 
 				-- Change state
-				if (sk.finalScores and #sk.scores == sk.taskScores) or sk.launches == 0 then
+				if (sk.finalScores and #sk.scores == sk.taskScores) or sk.launches == 0
+				or (sk.taskWindow > 0 and sk.winTimer <= 0) then
 					playTone(880, 1000, 0)
 					sk.state = sk.STATE_FINISHED
 				else
