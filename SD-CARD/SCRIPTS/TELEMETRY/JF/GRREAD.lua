@@ -1,19 +1,33 @@
 -- JF Log Data Graph, loadable part for reading data
--- Timestamp: 2020-04-19
+-- Timestamp: 2020-04-25
 -- Created by Jesper Frickmann
 
 local gr = ... -- List of shared variables
 
--- International users - un-comment ONE of the following lines:
-local FIRST_EXCLUDED = "Rud" -- ENGLISH or DUTCH log files
---local FIRST_EXCLUDED = "Sei" -- GERMAN log files
---local FIRST_EXCLUDED = "Dir" -- FRENCH log files
---local FIRST_EXCLUDED = "Rod" -- SWEDISH log files
---local FIRST_EXCLUDED = "Pln" -- CHECH log files
+-- First excluded is rudder
+local FIRST_EXCLUDED = "Rud"
+ -- in the right language!
+ do
+	local lang = getGeneralSettings().language
+	
+	if lang == "CZ" then
+		FIRST_EXCLUDED = "Smer"
+	elseif lang == "DE" then
+		FIRST_EXCLUDED = "Sei"
+	elseif lang == "FR" or lang == "IT" then
+		FIRST_EXCLUDED = "Dir"
+	elseif lang == "PL" then
+		FIRST_EXCLUDED = "SK"
+	elseif lang == "PT" then
+		FIRST_EXCLUDED = "Lem"
+	elseif lang == "SE" then
+		FIRST_EXCLUDED = "Rod"
+	end
+end
 
 -- Constants
 local FM_LAUNCH = 2 -- Launch flight mode
-local ALTI_PLOT ="Alt(m)" -- Default plot variable
+local ALTI_PLOT ="Alti(m)" -- Default plot variable
 local TIME_GAP = 20 -- Time gap that triggers a new flight
 local MIN_TIME = 20 -- Minimum time of flight that will be plotted
 local READ_MAX = 4 -- Max. no. of record to read in one go
