@@ -27,7 +27,7 @@ end
 
 -- Constants
 local FM_LAUNCH = 2 -- Launch flight mode
-local ALTI_PLOT ="Alti(m)" -- Default plot variable
+local ALTI_PLOT ="Alt(m)" -- Default plot variable
 local TIME_GAP = 20 -- Time gap that triggers a new flight
 local MIN_TIME = 20 -- Minimum time of flight that will be plotted
 local READ_MAX = 4 -- Max. no. of record to read in one go
@@ -229,6 +229,7 @@ if not gr.yValues then
 else -- yValues
 
 	local findLaunchAlt -- Do we want to find launch altitude?
+	local zero -- Zero value for altitude
 	local timerStart -- Time of starting flight timer
 	local indexRead -- Index of X, Y point currently being read
 	local timeStart, timeEnd -- Start and end of current flight
@@ -247,7 +248,7 @@ else -- yValues
 			y2 = 0
 		else
 			x2 = TimeSerial(lineData[2])
-			y2 = lineData[gr.plotIndex] * 1
+			y2 = lineData[gr.plotIndex] - zero
 		end
 	end  --  ReadXY()
 
@@ -274,9 +275,21 @@ else -- yValues
 			gr.yValues[i] = 0
 		end
 
+		zero = 0
+		
+		-- Read first two lines of data
+		ReadX2Y2()
+		x1 = x2
+		y1 = y2		
+		ReadX2Y2()
+
 		if gr.fmIndex then
 			if gr.logFileHeaders[gr.plotIndex] == ALTI_PLOT then
 				findLaunchAlt = 1
+				
+				zero = (y1 + y2) / 2
+				y1 = y1 - zero
+				y2 = y2 - zero
 			else
 				findLaunchAlt = 0
 			end
@@ -284,12 +297,6 @@ else -- yValues
 		
 		gr.launchAlt = 0
 		indexRead = 0
-		
-		-- Read first two lines of data
-		ReadX2Y2()
-		x1 = x2
-		y1 = y2		
-		ReadX2Y2()
 	end  --  StartReading()
 
 	local function Read()
