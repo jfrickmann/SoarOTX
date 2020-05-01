@@ -1,32 +1,14 @@
 -- 128x64/JFutil.lua
--- Timestamp: 2020-04-09
+-- Timestamp: 2020-04-27
 -- Created by Jesper Frickmann
 
 local helpKeys = { "enter", "up", "down", "ud", "lr", "exit" }
 local helpLabels = { "ENTER", "ROT \192", "ROT \193", "ROT  \192\193", "ROT  \127\126", "EXIT" }
 
--- Input value for the receiver battery
-local RBat
-do
-	local batField = getFieldInfo("RBat")
-	if not batField then batField = getFieldInfo("RxBt") end
-	if not batField then batField = getFieldInfo("A1") end
-	
-	if batField then
-		RBat = function()
-			return getValue(batField.id)
-		end
-	else
-		RBat = function()
-			return 0
-		end
-	end
-end
-
 -- Draw the basic menu with border and title
 function soarUtil.InfoBar(title)
 	local now = getDateTime()
-	local infoStr = string.format("%1.2fV %02i:%02i", RBat(), now.hour, now.min)
+	local infoStr = string.format("%1.2fV %02i:%02i", soarUtil.bat, now.hour, now.min)
 
 	lcd.clear()
 	lcd.drawScreenTitle(title, 0, 0)

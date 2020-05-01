@@ -1,5 +1,5 @@
 -- JF F3J Timing and score keeping, loadable part
--- Timestamp: 2020-04-17
+-- Timestamp: 2020-04-28
 -- Created by Jesper Frickmann
 
 local sbFile = "/SCRIPTS/TELEMETRY/JF3J/SB.lua" -- Score browser user interface file
@@ -118,11 +118,9 @@ local function run(event)
 			end
 			
 			sk.state = sk.STATE_INITIAL
-			sk.SetGVTmr(1) -- Ready to start the window timer
 
 		elseif soarUtil.EvtExit(event) then -- Do not record scores if user pressed EXIT
 			sk.state = sk.STATE_INITIAL
-			sk.SetGVTmr(1) -- Ready to start the window timer
 			
 		end
 	end

@@ -1,8 +1,10 @@
 -- JFXJ/ALIGN.lua
--- Timestamp: 2020-04-17
+-- Timestamp: 2020-04-28
 -- Created by Jesper Frickmann
 
 local N = 32 -- Highest output channel number
+local xInput = getFieldInfo("input8").id -- Step input before applying the output curves must be assigned to a channel
+
 local cf = ...
 local ui = {} -- Data shared with GUI
 ui.n = 5 -- Number of points on the curves
@@ -10,9 +12,6 @@ ui.n = 5 -- Number of points on the curves
 local n1 = ui.n + 1 -- n + 1
 local midpt = n1 / 2 -- Mid point on curve
 local reset = 0 -- Reset if > 0. 2 is non-increasing outputs; force reset or quit
-
-local FM_ALIGN = 1 -- Flight mode for alignment
-local xInput = getFieldInfo("input8").id -- Step input before applying the output curves must be assigned to a channel
 
 local gvFlpAlign = 0 -- Index of global variable set by rudder trim for left/right flap curve alignment
 local gvFlpAdjust = 1 -- Index of global variable set by throttle trim for common flap curve adjustment
@@ -149,10 +148,10 @@ local function UpdateGVs(point)
 		lastFlpAdjust = math.floor(0.033 * (rgtFlpY[point] - lftFlpY[n1 - point]) + 0.5)
 		lastFlpAlign = math.floor(0.066 * (rgtFlpY[point] + lftFlpY[n1 - point]) + 0.5)
 		
-		model.setGlobalVariable(gvAilAdjust, FM_ALIGN, lastAilAdjust)
-		model.setGlobalVariable(gvAilAlign, FM_ALIGN, lastAilAlign)
-		model.setGlobalVariable(gvFlpAdjust, FM_ALIGN, lastFlpAdjust)
-		model.setGlobalVariable(gvFlpAlign, FM_ALIGN, lastFlpAlign)
+		model.setGlobalVariable(gvAilAdjust, soarUtil.FM_ADJUST, lastAilAdjust)
+		model.setGlobalVariable(gvAilAlign, soarUtil.FM_ADJUST, lastAilAlign)
+		model.setGlobalVariable(gvFlpAdjust, soarUtil.FM_ADJUST, lastFlpAdjust)
+		model.setGlobalVariable(gvFlpAlign, soarUtil.FM_ADJUST, lastFlpAlign)
 end -- UpdateGVs()
 
 local function init()
@@ -240,8 +239,8 @@ local function run(event)
 	local dAdjust, dAlign
 
 	-- First ailerons
-	dAdjust = 10 * (model.getGlobalVariable(gvAilAdjust, FM_ALIGN) - lastAilAdjust)
-	dAlign = 5 * (model.getGlobalVariable(gvAilAlign, FM_ALIGN) - lastAilAlign)
+	dAdjust = 10 * (model.getGlobalVariable(gvAilAdjust, soarUtil.FM_ADJUST) - lastAilAdjust)
+	dAlign = 5 * (model.getGlobalVariable(gvAilAlign, soarUtil.FM_ADJUST) - lastAilAlign)
 
 	if dAdjust ~= 0 or dAlign ~= 0 then
 		local fac
@@ -274,8 +273,8 @@ local function run(event)
 	end
 	
 	-- Then flaps
-	dAdjust = 10 * (model.getGlobalVariable(gvFlpAdjust, FM_ALIGN) - lastFlpAdjust)
-	dAlign = 5 * (model.getGlobalVariable(gvFlpAlign, FM_ALIGN) - lastFlpAlign)
+	dAdjust = 10 * (model.getGlobalVariable(gvFlpAdjust, soarUtil.FM_ADJUST) - lastFlpAdjust)
+	dAlign = 5 * (model.getGlobalVariable(gvFlpAlign, soarUtil.FM_ADJUST) - lastFlpAlign)
 
 	if dAdjust ~= 0 or dAlign ~= 0 then
 		local fac

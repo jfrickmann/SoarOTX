@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin part for altimeter based tasks
--- Timestamp: 2019-10-01
+-- Timestamp: 2020-04-27
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -26,7 +26,6 @@ if sk.state == sk.STATE_IDLE then
 	local ceilingType -- Type of Ceiling function
 	local targetTime -- Target time
 	local scoreType -- Type of function recording score
-	local altMaxId -- Input ID for the max. Alt sensor
 	local flightData -- Time and height data for flight to be scored
 	local winTimerOld = sk.winTimer
 	local lastWarning = 0 -- Last time a warning that height is close to the ceiling was played
@@ -59,19 +58,6 @@ if sk.state == sk.STATE_IDLE then
 	end
 	
 	do
-		-- Find input IDs if Alt sensor is configured
-		local alt = getFieldInfo("Alti")
-		if alt then
-			sk.p.altId = alt.id
-			altMaxId = getFieldInfo("Alti+").id
-		else	
-			alt = getFieldInfo("Alt")
-			if alt then
-				sk.p.altId = alt.id
-				altMaxId = getFieldInfo("Alt+").id
-			end
-		end
-
 		local taskData = {
 			{ 3, false, 1, 0, 1 }, -- Height gain
 			{ 1, false, 2, 300, 3 }, -- Under ceiling
@@ -227,7 +213,7 @@ if sk.state == sk.STATE_IDLE then
 			-- Save height timeseries
 			if sk.winTimer >=0 and sk.winTimer <= model.getTimer(1).start and 
 			math.floor(sk.winTimer / sk.p.heightInt) ~= math.floor(winTimerOld / sk.p.heightInt) then
-				local h = getValue(sk.p.altId)
+				local h = soarUtil.alt
 				sk.p.yValues[#sk.p.yValues + 1] = h
 				if h > sk.p.plotMax then
 					sk.p.plotMax = h
@@ -253,7 +239,7 @@ if sk.state == sk.STATE_IDLE then
 				
 				if sk.state < sk.STATE_FREEZE then
 					-- Update launch and max. height
-					local mh = math.floor(getValue(altMaxId))
+					local mh = math.floor(soarUtil.altMax)
 					local now = getTime()
 					
 					if sk.p.launchHeight == 0 and sk.flightTime > 10 then
@@ -265,7 +251,7 @@ if sk.state == sk.STATE_IDLE then
 						sk.p.maxTime = sk.flightTime + sk.p.flightStart
 					end
 					
-					mh = getValue(sk.p.altId)
+					mh = soarUtil.alt
 					if sk.p.ceiling > 0 and mh >= sk.p.ceiling - 3 and lastWarning < now then
 						playNumber(mh, 9)
 						lastWarning = now + 300

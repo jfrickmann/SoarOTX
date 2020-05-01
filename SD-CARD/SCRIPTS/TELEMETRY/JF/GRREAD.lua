@@ -1,5 +1,5 @@
 -- JF Log Data Graph, loadable part for reading data
--- Timestamp: 2020-04-25
+-- Timestamp: 2020-04-28
 -- Created by Jesper Frickmann
 
 local gr = ... -- List of shared variables
@@ -26,7 +26,6 @@ local FIRST_EXCLUDED = "Rud"
 end
 
 -- Constants
-local FM_LAUNCH = 2 -- Launch flight mode
 local ALTI_PLOT ="Alt(m)" -- Default plot variable
 local TIME_GAP = 20 -- Time gap that triggers a new flight
 local MIN_TIME = 20 -- Minimum time of flight that will be plotted
@@ -180,7 +179,7 @@ if not gr.yValues then
 				
 				-- Count consecutive records with flight trigger activated
 				if gr.fmIndex then
-					if 1 * lineData[gr.fmIndex] == FM_LAUNCH then
+					if 1 * lineData[gr.fmIndex] == soarUtil.FM_LAUNCH then
 						fmLaunchCount = fmLaunchCount + 1
 					else
 						fmLaunchCount = 0
@@ -316,7 +315,7 @@ else -- yValues
 					
 					if findLaunchAlt == 1 then
 						-- Set timerStart when Launch is ended
-						if 1 * lineData[gr.fmIndex] ~= FM_LAUNCH then
+						if 1 * lineData[gr.fmIndex] ~= soarUtil.FM_LAUNCH then
 							timerStart = x2
 							findLaunchAlt = 2
 						end

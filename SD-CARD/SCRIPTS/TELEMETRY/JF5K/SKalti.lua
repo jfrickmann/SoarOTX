@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable user interface for altimeter based tasks
--- Timestamp: 2019-10-21
+-- Timestamp: 2020-04-27
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -86,15 +86,7 @@ function ui.DrawLines()
 end -- DrawLines()
 
 local function run(event)
-	-- Do we have an altimeter?
-	if not sk.p.altId then
-		soarUtil.InfoBar("No altimeter")
-		
-		if event ~= 0 then
-			sk.run = sk.menu
-		end
-
-	elseif exitTask == -1 then -- Save scores?
+	if exitTask == -1 then -- Save scores?
 		ui.PromptScores()
 		
 		-- Record scores if user pressed ENTER

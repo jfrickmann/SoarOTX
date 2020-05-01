@@ -1,10 +1,24 @@
 -- JF F5K Timing and score keeping, fixed part
--- Timestamp: 2020-04-21
+-- Timestamp: 2020-05-01
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 
- -- List of variables shared between fixed and loadable parts
+local LS_ALT = getFieldInfo("ls1").id -- Input ID for allowing altitude calls
+local LS_ALT10 = getFieldInfo("ls7").id -- Input ID for altitude calls every 10 sec.
+local LS_TRIGGER = getFieldInfo("ls8").id -- Input ID for the trigger switch
+local LS_ARM = getFieldInfo("ls22").id -- Input ID for motor arming
+
+local FlashArmed = soarUtil.LoadWxH("ARMED.lua") -- Screen size specific warning function
+local prevMotor = (getFlightMode() == soarUtil.FM_LAUNCH) -- Used for detecting when FM changes
+local prevTrigger = getValue(LS_TRIGGER) > 0 -- Used for detecting when trigger is pulled
+local altTime = 0 -- Time to record start height
+local prevWt -- Previous value of the window timer
+local prevFt -- Previous value of flight timer
+local prevArm = (getValue(LS_ARM) > 0) -- Previous arming state
+local countIndex -- Index of timer count
 local sk = { }
+
+ -- List of variables shared between fixed and loadable parts
 sk.taskWindow = 0 -- Task window duration (zero counts up)
 sk.launches = -1 -- Number of launches allowed, -1 for unlimited
 sk.taskScores = 0 -- Number of scores in task
@@ -51,29 +65,15 @@ if not sk.dial then sk.dial = getFieldInfo("s1").id end
 -- Functions for getting and setting launch height
 function sk.GetStartHeight()
 	local cutoff = model.getGlobalVariable(6, 0) 
-	local zoom = model.getGlobalVariable(6, 1)
+	local zoom = model.getGlobalVariable(6, 8)
 	
 	return cutoff, zoom
 end -- GetStartHeight()
 
 function sk.SetStartHeight(cutoff, zoom)
 	model.setGlobalVariable(6, 0, cutoff)
-	model.setGlobalVariable(6, 1, zoom)
+	model.setGlobalVariable(6, 8, zoom)
 end -- SetStartHeight()
-
--- Local variables
-local FM_MOTOR = 2 -- Flight mode used for motor
-local altiId = getFieldInfo("Alti+").id -- Input ID for the Alti sensor
-local triggerId = getFieldInfo("ls8").id -- Input ID for the trigger switch
-local armId = getFieldInfo("ls26").id -- Input ID for motor arming
-
-local FlashArmed = soarUtil.LoadWxH("ARMED.lua") -- Screen size specific warning function
-local motorOld = getFlightMode() == FM_MOTOR -- Used for detecting when FM changes
-local triggerOld = getValue(triggerId) > 0 -- Used for detecting when trigger is pulled
-local altiTime = 0 -- Time to record start height
-local winTimerOld -- Previous value of the window timer
-local flightTimerOld -- Previous value of flight timer
-local countIndex -- Index of timer count
 
 -- Function initializing flight timer
 function InitializeFlight()
@@ -88,20 +88,32 @@ function InitializeFlight()
 	-- Set flight timer
 	model.setTimer(0, { start = targetTime, value = targetTime })
 	sk.flightTimer = targetTime
-	flightTimerOld = targetTime
+	prevFt = targetTime
 end  --  InitializeFlight()
 
+soarUtil.SetGVTmr(0) -- Flight timer off
+
 local function background()	
-	local motorStarted, motorStopped, triggerPulled
+	local motorStarted, motorStopped, triggerPulled, armedNow
 
-	motorStarted = getFlightMode() == FM_MOTOR
-	motorOld, motorStarted, motorStopped = motorStarted, motorStarted and not motorOld, not motorStarted and motorOld
+	motorStarted = (getFlightMode() == soarUtil.FM_LAUNCH)
+	prevMotor, motorStarted, motorStopped = motorStarted, (motorStarted and not prevMotor), (not motorStarted and prevMotor)
 
-	triggerPulled = getValue(triggerId) > 0
-	triggerOld, triggerPulled = triggerPulled, triggerPulled and not triggerOld
+	triggerPulled = (getValue(LS_TRIGGER) > 0)
+	prevTrigger, triggerPulled = triggerPulled, (triggerPulled and not prevTrigger)
+	
+	armedNow = (getValue(LS_ARM) > 0)
+	prevArm, armedNow = armedNow, armedNow and not prevArm
+	
+	soarUtil.callAlt = (getValue(LS_ALT10) > 0) -- Call alt every 10 sec.
 	
 	if sk.state <= sk.STATE_WINDOW and sk.state ~= sk.STATE_FINISHED then
 		InitializeFlight()
+
+		-- Reset altitude if the motor was armed now
+		if armedNow then
+			soarUtil.ResetAlt()
+		end
 	end
 	
 	sk.flightTimer = model.getTimer(0).value
@@ -112,7 +124,7 @@ local function background()
 		-- Set window timer
 		model.setTimer(1, { start = sk.taskWindow, value = sk.taskWindow })
 		sk.winTimer = sk.taskWindow
-		winTimerOld = sk.taskWindow
+		prevWt = sk.taskWindow
 	end
 	
 	if motorStarted and (sk.state == sk.STATE_IDLE or sk.state == sk.STATE_WINDOW) then
@@ -133,7 +145,7 @@ local function background()
 	
 	if sk.state >= sk.STATE_WINDOW then
 		-- Did the window expire?
-		if winTimerOld > 0 and sk.winTimer <= 0 then
+		if prevWt > 0 and sk.winTimer <= 0 then
 			playTone(880, 1000, 0)
 
 			if sk.state == sk.STATE_WINDOW then
@@ -146,33 +158,39 @@ local function background()
 		if sk.state == sk.STATE_LAUNCHING then
 			if motorStopped then
 				-- Mark time to record start height
-				altiTime = getTime() + 1000
+				altTime = getTime() + 1000
 
-			elseif altiTime > 0 and getTime() > altiTime then
+			elseif altTime > 0 and getTime() > altTime then
+				sk.state = sk.STATE_FLYING
+
 				-- Record the start height
-				local alti = getValue(altiId)
+				local alt = soarUtil.altMax
 				
-				if alti == 0 then 
+				if alt == 0 then 
 					-- If no altimeter; default to nominal height
 					local cutoff, zoom = sk.GetStartHeight()
-					alti = cutoff + zoom
+					alt = cutoff + zoom
 				end
-				
-				sk.startHeight = alti
-				altiTime = 0
-				sk.state = sk.STATE_FLYING
+
+				sk.startHeight = alt
+				altTime = 0
+
+				-- Call launch height
+				if getValue(LS_ALT) > 0 then
+					playNumber(alt, soarUtil.altUnit)
+				end
 			end
 				
 		elseif sk.state >= sk.STATE_FLYING then
 			-- Time counts
-			if sk.flightTimer <= sk.counts[countIndex] and flightTimerOld > sk.counts[countIndex]  then
+			if sk.flightTimer <= sk.counts[countIndex] and prevFt > sk.counts[countIndex]  then
 				if sk.flightTimer > 15 then
 					playDuration(sk.flightTimer, 0)
 				else
 					playNumber(sk.flightTimer, 0)
 				end
 				if countIndex > 1 then countIndex = countIndex - 1 end
-			elseif math.ceil(sk.flightTimer / 60) < math.ceil(flightTimerOld / 60) then
+			elseif math.ceil(sk.flightTimer / 60) < math.ceil(prevFt / 60) then
 				playDuration(sk.flightTimer, 0)
 			end
 
@@ -198,19 +216,19 @@ local function background()
 			end			
 		end
 		
-		winTimerOld = sk.winTimer
-		flightTimerOld = sk.flightTimer
+		prevWt = sk.winTimer
+		prevFt = sk.flightTimer
 	end
 
 	if sk.state < sk.STATE_WINDOW or sk.state == sk.STATE_FREEZE then
 		-- Stop both timers
-		model.setGlobalVariable(8, 0, 0)
+		soarUtil.SetGVTmr(0)
 	elseif sk.state == sk.STATE_WINDOW then
 		-- Start task window timer, but not flight timer
-		model.setGlobalVariable(8, 0, 1)
+		soarUtil.SetGVTmr(1)
 	else
 		-- Start both timers
-		model.setGlobalVariable(8, 0, 2)
+		soarUtil.SetGVTmr(2)
 	end
 		
 	-- If loadable part provides a Background() function then execute it here
@@ -221,7 +239,7 @@ end  --  background()
 local function run(event)
 	soarUtil.ToggleHelp(event)
 	soarUtil.RunLoadable(sk.run, event, sk)
-	if getValue(armId) >0 then FlashArmed() end
+	if getValue(LS_ARM) >0 then FlashArmed() end
 end
 
 return {background = background, run = run}

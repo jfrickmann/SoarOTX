@@ -1,5 +1,5 @@
 -- JF F3J Score Browser
--- Timestamp: 2019-10-22
+-- Timestamp: 2020-04-28
 -- Created by Jesper Frickmann
 -- Telemetry script for browsing scores recorded in the log file.
 
@@ -95,7 +95,7 @@ local function run(event)
 		index = index - 1
 		if index <= 0 then
 			index = #ui.indices - 1
-			playTone(3000, 100, 0, PLAY_NOW)
+			playTone(1760, 100, 0, PLAY_NOW)
 		end
 
 		logFile = io.open(LOG_FILE, "r")
