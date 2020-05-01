@@ -61,7 +61,7 @@ if not sk.dial then sk.dial = getFieldInfo("s1").id end
 soarUtil.SetGVTmr(0)
 
 -- Function initializing flight timer
-function InitializeFlight()
+local function InitializeFlight()
 	local targetTime = sk.TargetTime()
 	
 	-- Get ready to count down
