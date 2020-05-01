@@ -1,5 +1,5 @@
 -- JF FxK Configuration Menu
--- Timestamp: 2020-04-13
+-- Timestamp: 2020-05-01
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFutil.lua
 
@@ -13,7 +13,8 @@ local texts = {
 	"1. Channel configuration",
 	"2. Align flaperons",
 	"3. Center flaperons",
-	"4. Adjust other mixes" }
+	"4. Adjust other mixes",
+	"5. Battery warning" }
 
 local menu = soarUtil.LoadWxH("MENU.lua") -- Screen size specific menu
 menu.items = texts
@@ -24,7 +25,8 @@ local files = {
 	"/SCRIPTS/TELEMETRY/JF/CHANNELS.lua",
 	"/SCRIPTS/TELEMETRY/JFXK/ALIGN.lua",
 	"/SCRIPTS/TELEMETRY/JFXK/CENTER.lua",
-	"/SCRIPTS/TELEMETRY/JFXK/ADJMIX.lua" }
+	"/SCRIPTS/TELEMETRY/JFXK/ADJMIX.lua",
+	"/SCRIPTS/TELEMETRY/JF/BATTERY.lua" }
 
 -- Enable/disable adjustment function
 function cf.SetAdjust(adj)

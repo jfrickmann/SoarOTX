@@ -65,10 +65,10 @@ local function run(event)
 		lastpoint = point
 	end
 	
-	flpCrv.y[point] = model.getGlobalVariable(gvFlp, 1)
+	flpCrv.y[point] = model.getGlobalVariable(gvFlp, soarUtil.FM_ADJUST)
 	model.setCurve(flpCrvIndex, flpCrv)
 
-	ailCrv.y[point] = model.getGlobalVariable(gvAil, 1)
+	ailCrv.y[point] = model.getGlobalVariable(gvAil, soarUtil.FM_ADJUST)
 	model.setCurve(ailCrvIndex, ailCrv)
 
 	ui.Draw(flpCrv.y, ailCrv.y, point)

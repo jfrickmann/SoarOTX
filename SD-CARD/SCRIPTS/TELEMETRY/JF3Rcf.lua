@@ -1,5 +1,5 @@
 -- JF F3RES Configuration Menu
--- Timestamp: 2020-04-18
+-- Timestamp: 2020-05-01
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 
@@ -11,7 +11,8 @@ local cf = {} -- List of shared variables
 -- Menu texts
 local texts = {
 	"1. Channel configuration",
-	"2. Adjust brake-elevator" }
+	"2. Adjust brake-elevator",
+	"3. Battery warning" }
 
 local menu = soarUtil.LoadWxH("MENU.lua") -- Screen size specific menu
 menu.items = texts
@@ -20,7 +21,8 @@ menu.title = "Configuration"
 -- Lua files to be loaded and unloaded
 local files = {
 	"/SCRIPTS/TELEMETRY/JF/CHANNELS.lua",
-	"/SCRIPTS/TELEMETRY/JF3R/ADJMIX.lua" }
+	"/SCRIPTS/TELEMETRY/JF3R/ADJMIX.lua",
+	"/SCRIPTS/TELEMETRY/JF/BATTERY.lua" }
 
 -- Enable/disable adjustment function
 function cf.SetAdjust(adj)

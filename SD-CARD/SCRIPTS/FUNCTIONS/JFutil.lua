@@ -238,7 +238,7 @@ local function run()
 		if soarUtil.bat > 0 and soarUtil.bat < lowBat then
 			-- Low battery warning
 			playFile("lowbat.wav")
-			playNumber(10 * soarUtil.bat, 1, PREC1)
+			playNumber(10 * soarUtil.bat + 0.5, 1, PREC1)
 			nextWarning = now + 2000
 		end
 	end

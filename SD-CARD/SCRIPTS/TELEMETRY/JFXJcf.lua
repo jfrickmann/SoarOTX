@@ -1,5 +1,5 @@
 -- JF FXJ Configuration Menu
--- Timestamp: 2020-04-18
+-- Timestamp: 2020-05-01
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 -- "adj" is a global var that is output to OpenTX with a custom script
@@ -15,7 +15,8 @@ local texts = {
 	"2. Align flaps & ailerons",
 	"3. Adjust airbrake curves",
 	"4. Aileron and camber",
-	"5. Adjust other mixes" }
+	"5. Adjust other mixes",
+	"6. Battery warning" }
 
 local menu = soarUtil.LoadWxH("MENU.lua") -- Screen size specific menu
 menu.items = texts
@@ -27,7 +28,8 @@ local files = {
 	"/SCRIPTS/TELEMETRY/JFXJ/ALIGN.lua",
 	"/SCRIPTS/TELEMETRY/JFXJ/BRKCRV.lua",
 	"/SCRIPTS/TELEMETRY/JFXJ/AILCMB.lua",
-	"/SCRIPTS/TELEMETRY/JFXJ/ADJMIX.lua" }
+	"/SCRIPTS/TELEMETRY/JFXJ/ADJMIX.lua",
+	"/SCRIPTS/TELEMETRY/JF/BATTERY.lua" }
 
 -- Enable/disable adjustment function
 function cf.SetAdjust(adj)
