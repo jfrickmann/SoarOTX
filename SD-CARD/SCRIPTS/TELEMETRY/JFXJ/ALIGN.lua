@@ -1,9 +1,19 @@
 -- JFXJ/ALIGN.lua
--- Timestamp: 2020-04-28
+-- Timestamp: 2020-05-01
 -- Created by Jesper Frickmann
 
 local N = 32 -- Highest output channel number
-local xInput = getFieldInfo("input8").id -- Step input before applying the output curves must be assigned to a channel
+local INP_STEP = getFieldInfo("input8").id -- Step input before applying the output curves must be assigned to a channel
+
+local GV_FLP_ALIGN = 0 -- Index of global variable set by rudder trim for left/right flap curve alignment
+local GV_FLP_ADJUST = 1 -- Index of global variable set by throttle trim for common flap curve adjustment
+local GV_AIL_ALIGN = 2 -- Index of global variable set by aileron trim for left/right aileron curve alignment
+local GV_AIL_ADJUST = 3 -- Index of global variable set by elevator trim for common aileron curve adjustment
+
+local CRV_AIL_LFT = 0 -- Index of the left aileron curve
+local CRV_AIL_RGT = 1 -- Index of the right aileron curve
+local CRV_FLP_LFT = 2 -- Index of the left flap curve
+local CRV_FLP_RGT = 3 -- Index of the right flap curve
 
 local cf = ...
 local ui = {} -- Data shared with GUI
@@ -13,20 +23,10 @@ local n1 = ui.n + 1 -- n + 1
 local midpt = n1 / 2 -- Mid point on curve
 local reset = 0 -- Reset if > 0. 2 is non-increasing outputs; force reset or quit
 
-local gvFlpAlign = 0 -- Index of global variable set by rudder trim for left/right flap curve alignment
-local gvFlpAdjust = 1 -- Index of global variable set by throttle trim for common flap curve adjustment
-local gvAilAlign = 2 -- Index of global variable set by aileron trim for left/right aileron curve alignment
-local gvAilAdjust = 3 -- Index of global variable set by elevator trim for common aileron curve adjustment
-
 local lftAilCrv -- Table with data for the left aileron curve
 local rgtAilCrv -- Table with data for the right aileron curve
 local lftFlpCrv -- Table with data for the left flap curve
 local rgtFlpCrv -- Table with data for the right flap curve
-
-local lftAilCrvIndex = 0 -- Index of the left aileron curve
-local rgtAilCrvIndex = 1 -- Index of the right aileron curve
-local lftFlpCrvIndex = 2 -- Index of the left flap curve
-local rgtFlpCrvIndex = 3 -- Index of the right flap curve
 
 local lftAilOut -- Table with data for the left aileron output channel
 local rgtAilOut -- Table with data for the right aileron output channel
@@ -53,7 +53,7 @@ soarUtil.LoadWxH("JFXJ/ALIGN.lua", ui) -- Screen size specific function
 
 -- Find index of the curve point that corresponds to the value of the step input
 local function FindPoint()
-	local x = getValue(xInput)
+	local x = getValue(INP_STEP)
 	return math.floor((ui.n - 1) / 2048 * (x + 1024) + 1.5) 
 end -- FindPoint()
 
@@ -148,27 +148,27 @@ local function UpdateGVs(point)
 		lastFlpAdjust = math.floor(0.033 * (rgtFlpY[point] - lftFlpY[n1 - point]) + 0.5)
 		lastFlpAlign = math.floor(0.066 * (rgtFlpY[point] + lftFlpY[n1 - point]) + 0.5)
 		
-		model.setGlobalVariable(gvAilAdjust, soarUtil.FM_ADJUST, lastAilAdjust)
-		model.setGlobalVariable(gvAilAlign, soarUtil.FM_ADJUST, lastAilAlign)
-		model.setGlobalVariable(gvFlpAdjust, soarUtil.FM_ADJUST, lastFlpAdjust)
-		model.setGlobalVariable(gvFlpAlign, soarUtil.FM_ADJUST, lastFlpAlign)
+		model.setGlobalVariable(GV_AIL_ADJUST, soarUtil.FM_ADJUST, lastAilAdjust)
+		model.setGlobalVariable(GV_AIL_ALIGN, soarUtil.FM_ADJUST, lastAilAlign)
+		model.setGlobalVariable(GV_FLP_ADJUST, soarUtil.FM_ADJUST, lastFlpAdjust)
+		model.setGlobalVariable(GV_FLP_ALIGN, soarUtil.FM_ADJUST, lastFlpAlign)
 end -- UpdateGVs()
 
 local function init()
-	lftAilCrv = GetCurve(lftAilCrvIndex)
-	lftAilOutIndex, lftAilOut = GetOutput(lftAilCrvIndex)
+	lftAilCrv = GetCurve(CRV_AIL_LFT)
+	lftAilOutIndex, lftAilOut = GetOutput(CRV_AIL_LFT)
 	ComputeYs(lftAilCrv, lftAilOut, lftAilY)
 
-	rgtAilCrv = GetCurve(rgtAilCrvIndex)
-	rgtAilOutIndex, rgtAilOut = GetOutput(rgtAilCrvIndex)
+	rgtAilCrv = GetCurve(CRV_AIL_RGT)
+	rgtAilOutIndex, rgtAilOut = GetOutput(CRV_AIL_RGT)
 	ComputeYs(rgtAilCrv, rgtAilOut, rgtAilY)
 
-	lftFlpCrv = GetCurve(lftFlpCrvIndex)
-	lftFlpOutIndex, lftFlpOut = GetOutput(lftFlpCrvIndex)	
+	lftFlpCrv = GetCurve(CRV_FLP_LFT)
+	lftFlpOutIndex, lftFlpOut = GetOutput(CRV_FLP_LFT)	
 	ComputeYs(lftFlpCrv, lftFlpOut, lftFlpY)
 	
-	rgtFlpCrv = GetCurve(rgtFlpCrvIndex)
-	rgtFlpOutIndex, rgtFlpOut = GetOutput(rgtFlpCrvIndex)
+	rgtFlpCrv = GetCurve(CRV_FLP_RGT)
+	rgtFlpOutIndex, rgtFlpOut = GetOutput(CRV_FLP_RGT)
 	ComputeYs(rgtFlpCrv, rgtFlpOut, rgtFlpY)
 	
 	if not ValidateYs() then reset = 2 end
@@ -211,10 +211,10 @@ local function run(event)
 			reset = 1
 		else
 			-- Reset outputs
-			Reset(lftAilCrv, lftAilCrvIndex, lftAilOut, lftAilOutIndex)
-			Reset(rgtAilCrv, rgtAilCrvIndex, rgtAilOut, rgtAilOutIndex) 
-			Reset(lftFlpCrv, lftFlpCrvIndex, lftFlpOut, lftFlpOutIndex)
-			Reset(rgtFlpCrv, rgtFlpCrvIndex, rgtFlpOut, rgtFlpOutIndex) 
+			Reset(lftAilCrv, CRV_AIL_LFT, lftAilOut, lftAilOutIndex)
+			Reset(rgtAilCrv, CRV_AIL_RGT, rgtAilOut, rgtAilOutIndex) 
+			Reset(lftFlpCrv, CRV_FLP_LFT, lftFlpOut, lftFlpOutIndex)
+			Reset(rgtFlpCrv, CRV_FLP_RGT, rgtFlpOut, rgtFlpOutIndex) 
 
 			reset = 0
 		end
@@ -239,8 +239,8 @@ local function run(event)
 	local dAdjust, dAlign
 
 	-- First ailerons
-	dAdjust = 10 * (model.getGlobalVariable(gvAilAdjust, soarUtil.FM_ADJUST) - lastAilAdjust)
-	dAlign = 5 * (model.getGlobalVariable(gvAilAlign, soarUtil.FM_ADJUST) - lastAilAlign)
+	dAdjust = 10 * (model.getGlobalVariable(GV_AIL_ADJUST, soarUtil.FM_ADJUST) - lastAilAdjust)
+	dAlign = 5 * (model.getGlobalVariable(GV_AIL_ALIGN, soarUtil.FM_ADJUST) - lastAilAlign)
 
 	if dAdjust ~= 0 or dAlign ~= 0 then
 		local fac
@@ -268,13 +268,13 @@ local function run(event)
 		UpdateGVs(point)
 
 		-- Update curves and channel outputs
-		ApplyYs(rgtAilCrv, rgtAilCrvIndex, rgtAilOut, rgtAilOutIndex, rgtAilY)
-		ApplyYs(lftAilCrv, lftAilCrvIndex, lftAilOut, lftAilOutIndex, lftAilY)
+		ApplyYs(rgtAilCrv, CRV_AIL_RGT, rgtAilOut, rgtAilOutIndex, rgtAilY)
+		ApplyYs(lftAilCrv, CRV_AIL_LFT, lftAilOut, lftAilOutIndex, lftAilY)
 	end
 	
 	-- Then flaps
-	dAdjust = 10 * (model.getGlobalVariable(gvFlpAdjust, soarUtil.FM_ADJUST) - lastFlpAdjust)
-	dAlign = 5 * (model.getGlobalVariable(gvFlpAlign, soarUtil.FM_ADJUST) - lastFlpAlign)
+	dAdjust = 10 * (model.getGlobalVariable(GV_FLP_ADJUST, soarUtil.FM_ADJUST) - lastFlpAdjust)
+	dAlign = 5 * (model.getGlobalVariable(GV_FLP_ALIGN, soarUtil.FM_ADJUST) - lastFlpAlign)
 
 	if dAdjust ~= 0 or dAlign ~= 0 then
 		local fac
@@ -302,8 +302,8 @@ local function run(event)
 		UpdateGVs(point)
 
 		-- Update curves and channel outputs
-		ApplyYs(rgtFlpCrv, rgtFlpCrvIndex, rgtFlpOut, rgtFlpOutIndex, rgtFlpY)
-		ApplyYs(lftFlpCrv, lftFlpCrvIndex, lftFlpOut, lftFlpOutIndex, lftFlpY)
+		ApplyYs(rgtFlpCrv, CRV_FLP_RGT, rgtFlpOut, rgtFlpOutIndex, rgtFlpY)
+		ApplyYs(lftFlpCrv, CRV_FLP_LFT, lftFlpOut, lftFlpOutIndex, lftFlpY)
 	end
 	
 	ui.Draw(rgtAilY, lftAilY, rgtFlpY, lftFlpY, point)

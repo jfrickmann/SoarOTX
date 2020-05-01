@@ -1,9 +1,14 @@
 -- JF FxK Flaperon Adjustment
--- Timestamp: 2020-04-28
+-- Timestamp: 2020-05-01
 -- Created by Jesper Frickmann
 
 local N = 32 -- Highest output channel number
-local xInput = getFieldInfo("input7").id -- Step input before applying the output curves must be assigned to a channel
+local INP_STEP = getFieldInfo("input7").id -- Step input before applying the output curves must be assigned to a channel
+
+local GV_ALIGN = 2 -- Index of global variable set by aileron trim for left/right curve alignment
+local GV_ADJUST = 3 -- Index of global variable set by throttle trim for common curve adjustment
+local CRV_RGT = 1 -- Index of the right flaperon curve
+local CRV_LFT = 0 -- Index of the left flaperon curve
 
 local cf = ...
 local ui = {} -- Data shared with GUI
@@ -13,13 +18,8 @@ local n1 = ui.n + 1 -- n + 1
 local midpt = n1 / 2 -- Mid point on curve
 local reset = 0 -- Reset if > 0. 2 is non-increasing outputs; force reset or quit
 
-local gvAlign = 2 -- Index of global variable set by aileron trim for left/right curve alignment
-local gvAdjust = 3 -- Index of global variable set by throttle trim for common curve adjustment
-
 local rgtCrv -- Table with data for the right flaperon curve
 local lftCrv -- Table with data for the left flaperon curve
-local rgtCrvIndex = 1 -- Index of the right flaperon curve
-local lftCrvIndex = 0 -- Index of the left flaperon curve
 
 local rgtOut -- Table with data for the right flaperon output channel
 local lftOut -- Table with data for the left flaperon output channel
@@ -37,7 +37,7 @@ soarUtil.LoadWxH("JFXK/ALIGN.lua", ui) -- Screen size specific function
 
 -- Find index of the curve point that corresponds to the value of the step input
 local function FindPoint()
-	local x = getValue(xInput)
+	local x = getValue(INP_STEP)
 	return math.floor((ui.n - 1) / 2048 * (x + 1024) + 1.5) 
 end -- FindPoint()
 
@@ -121,16 +121,16 @@ local function UpdateGVs(point)
 		lastAdjust = math.floor(0.033 * (rgtY[point] - lftY[n1 - point]) + 0.5)
 		lastAlign = math.floor(0.066 * (rgtY[point] + lftY[n1 - point]) + 0.5)
 		
-		model.setGlobalVariable(gvAdjust, soarUtil.FM_ADJUST, lastAdjust)
-		model.setGlobalVariable(gvAlign, soarUtil.FM_ADJUST, lastAlign)
+		model.setGlobalVariable(GV_ADJUST, soarUtil.FM_ADJUST, lastAdjust)
+		model.setGlobalVariable(GV_ALIGN, soarUtil.FM_ADJUST, lastAlign)
 end -- UpdateGVs()
 
 local function init()
-	rgtCrv = GetCurve(rgtCrvIndex)
-	rgtOutIndex, rgtOut = GetOutput(rgtCrvIndex)
+	rgtCrv = GetCurve(CRV_RGT)
+	rgtOutIndex, rgtOut = GetOutput(CRV_RGT)
 	
-	lftCrv = GetCurve(lftCrvIndex)
-	lftOutIndex, lftOut = GetOutput(lftCrvIndex)
+	lftCrv = GetCurve(CRV_LFT)
+	lftOutIndex, lftOut = GetOutput(CRV_LFT)
 	
 	ComputeYs(rgtCrv, rgtOut, rgtY)
 	ComputeYs(lftCrv, lftOut, lftY)
@@ -175,8 +175,8 @@ local function run(event)
 			reset = 1
 		else
 			-- Reset outputs
-			Reset(rgtCrv, rgtCrvIndex, rgtOut, rgtOutIndex) 
-			Reset(lftCrv, lftCrvIndex, lftOut, lftOutIndex)
+			Reset(rgtCrv, CRV_RGT, rgtOut, rgtOutIndex) 
+			Reset(lftCrv, CRV_LFT, lftOut, lftOutIndex)
 			reset = 0
 		end
 	end
@@ -199,8 +199,8 @@ local function run(event)
 	-- If a GV changed, record changes to determine alignment and adjustment
 	local dAdjust, dAlign
 
-	dAdjust = 10 * (model.getGlobalVariable(gvAdjust, soarUtil.FM_ADJUST) - lastAdjust)
-	dAlign = 5 * (model.getGlobalVariable(gvAlign, soarUtil.FM_ADJUST) - lastAlign)
+	dAdjust = 10 * (model.getGlobalVariable(GV_ADJUST, soarUtil.FM_ADJUST) - lastAdjust)
+	dAlign = 5 * (model.getGlobalVariable(GV_ALIGN, soarUtil.FM_ADJUST) - lastAlign)
 
 	if dAdjust ~= 0 or dAlign ~= 0 then
 		local fac
@@ -228,8 +228,8 @@ local function run(event)
 		UpdateGVs(point)
 
 		-- Update curves and channel outputs
-		ApplyYs(rgtCrv, rgtCrvIndex, rgtOut, rgtOutIndex, rgtY)
-		ApplyYs(lftCrv, lftCrvIndex, lftOut, lftOutIndex, lftY)
+		ApplyYs(rgtCrv, CRV_RGT, rgtOut, rgtOutIndex, rgtY)
+		ApplyYs(lftCrv, CRV_LFT, lftOut, lftOutIndex, lftY)
 	end
 	
 	ui.Draw(rgtY, lftY, point)
