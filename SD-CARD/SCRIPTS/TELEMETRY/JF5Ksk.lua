@@ -65,18 +65,23 @@ if not sk.dial then sk.dial = getFieldInfo("s1").id end
 -- Functions for getting and setting launch height
 function sk.GetStartHeight()
 	local cutoff = model.getGlobalVariable(6, 0) 
-	local zoom = model.getGlobalVariable(6, 8)
+	local zoom = -model.getGlobalVariable(5, 1)
 	
 	return cutoff, zoom
 end -- GetStartHeight()
 
 function sk.SetStartHeight(cutoff, zoom)
 	model.setGlobalVariable(6, 0, cutoff)
-	model.setGlobalVariable(6, 8, zoom)
+	model.setGlobalVariable(5, 1, -zoom)
 end -- SetStartHeight()
 
+-- Global variable stops motor at cutoff altitude
+local function MotorStop(x)
+	model.setGlobalVariable(6, soarUtil.FM_LAUNCH, x)
+end -- MotorStop()
+
 -- Function initializing flight timer
-function InitializeFlight()
+local function InitializeFlight()
 	local targetTime = sk.TargetTime()
 
 	-- Get ready to count down
@@ -92,6 +97,7 @@ function InitializeFlight()
 end  --  InitializeFlight()
 
 soarUtil.SetGVTmr(0) -- Flight timer off
+MotorStop(0) -- Allow motor to run
 
 local function background()	
 	local motorStarted, motorStopped, triggerPulled, armedNow
@@ -156,22 +162,27 @@ local function background()
 		end
 
 		if sk.state == sk.STATE_LAUNCHING then
+			local alt = soarUtil.altMax
+			local cutoff, zoom = sk.GetStartHeight()
+			
+			if alt >= cutoff then
+				MotorStop(1)
+			end
+			
 			if motorStopped then
 				-- Mark time to record start height
 				altTime = getTime() + 1000
-
+				
 			elseif altTime > 0 and getTime() > altTime then
 				sk.state = sk.STATE_FLYING
+				MotorStop(0)
 
-				-- Record the start height
-				local alt = soarUtil.altMax
-				
-				if alt == 0 then 
-					-- If no altimeter; default to nominal height
-					local cutoff, zoom = sk.GetStartHeight()
+				-- If no altimeter; default to nominal height
+				if alt == 0 then
 					alt = cutoff + zoom
 				end
 
+				-- Record the start height
 				sk.startHeight = alt
 				altTime = 0
 
