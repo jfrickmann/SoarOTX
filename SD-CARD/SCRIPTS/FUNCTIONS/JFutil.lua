@@ -1,5 +1,5 @@
 -- JF Utility Library
--- Timestamp: 2020-04-30
+-- Timestamp: 2020-05-01
 -- Created by Jesper Frickmann
 
 soarUtil = { } -- Global "namespace"
@@ -31,6 +31,7 @@ local idAlt -- Id of altimeter sensor
 local zeroAlt = 0 -- Internal zero'ing of altimetry
 local nextCall = 0 -- Timer between altitude announcements
 local afterLaunch = 0 -- Time period after launch where battery warning threshold is lowered
+local rescan = 0 -- Rescan battery sensor, because Cels can be a little slow getting started
 
 -- Load a file chunk for Tx specific screen size
 function soarUtil.LoadWxH(file, ...)
@@ -180,42 +181,39 @@ function soarUtil.ResetAlt()
 end
 
 local function run()
+	local now = getTime()
+	
 	-- Write the current flight mode to a telemetry sensor.
 	local flightMode = getFlightMode()
 	setTelemetryValue(0x5050, 0, 224, flightMode, 0, 0, "FM")
 	
 	-- Battery sensor
-	if not idBat then
+	if now > rescan then
 		local field = getFieldInfo("Cels")
 		if not field then field = getFieldInfo("RxBt") end
 		if not field then field = getFieldInfo("A1") end
 		
 		if field then
 			idBat = field.id
-		end
-		
-		soarUtil.bat = 0
-	else
-		local bat = getValue(idBat)
-		
-		if bat then
-			if type(bat) == "table" then
-				local cel = bat[1]
-					for i, c in ipairs(bat) do
-						cel = math.min(cel, c)
-					end
-				soarUtil.bat = cel
-			else
-				soarUtil.bat = bat
-			end
-		else -- The sensor was deleted?
-			idBat = nil
+			rescan = now + 1000 -- Rescan every 10 sec.
 		end
 	end
+
+	if idBat then
+		local bat = getValue(idBat)
 		
-	-- Battery warnings
-	local now = getTime()
+		if type(bat) == "table" then
+			for i = 2, #bat do
+				bat[1] = math.min(bat[1], bat[i])
+			end
+
+			soarUtil.bat = bat[1]
+		else
+			soarUtil.bat = bat
+		end
+	end
 	
+	-- Battery warnings
 	if now > nextWarning then		
 		local lowBat = 0.1 * model.getGlobalVariable(soarUtil.GV_BAT, soarUtil.FM_ADJUST)
 
@@ -223,7 +221,7 @@ local function run()
 			if soarUtil.bat == 0 then
 				-- Warning in launch mode - is the plane off?
 				playHaptic(200, 200, 3)
-				playTone(160, 500, 0 , PLAY_NOW , 4)
+				playTone(150, 400, 0 , PLAY_NOW , 4)
 				nextWarning = now + 500
 			else
 				afterLaunch = now + 300
@@ -252,8 +250,6 @@ local function run()
 			unitAlt = field.unit
 		end
 
-		soarUtil.alt = 0
-		soarUtil.altMax = 0
 	else
 		local alt = getValue(idAlt)
 		
