@@ -1,5 +1,5 @@
 -- JF F5J Timing and score keeping, fixed part
--- Timestamp: 2020-05-01
+-- Timestamp: 2020-05-02
 -- Created by Jesper Frickmann
 
 local FM_KAPOW = 3 -- KAPOW flight mode
@@ -8,7 +8,8 @@ local LS_ALT10 = getFieldInfo("ls8").id -- Input ID for altitude calls every 10 
 local LS_TRIGGER = getFieldInfo("ls9").id -- Input ID for the trigger switch
 local LS_ARM = getFieldInfo("ls23").id -- Input ID for motor arming
 
-local altTime -- Time for recording start height
+local offTime -- Time motor off
+local prevCnt -- Previous motor off count
 local prevMt -- Previous motor timer value
 local prevFt -- Previous flight timer value
 local prevArm = (getValue(LS_ARM) > 0) -- Previous arming state
@@ -30,6 +31,7 @@ sk.state = sk.STATE_INITIAL
 soarUtil.SetGVTmr(0) -- Flight timer off
 
 local function background()
+	local cnt -- Count interval
 	local motorOn = (getFlightMode() == soarUtil.FM_LAUNCH) -- Motor running
 
 	local armedNow = (getValue(LS_ARM) > 0)
@@ -39,7 +41,7 @@ local function background()
 	
 	if sk.state == sk.STATE_INITIAL then
 		sk.landingPts = 0
-		sk.startHeight = 0
+		sk.startHeight = 100 -- default if no Alt
 
 		-- Reset altitude if the motor was armed now
 		if armedNow then
@@ -50,13 +52,12 @@ local function background()
 			sk.state = sk.STATE_MOTOR
 			soarUtil.SetGVTmr(1) -- Flight timer on
 			prevMt = model.getTimer(1).value
-			altTime = 0
+			offTime = 0
 		end
 
 	elseif sk.state == sk.STATE_MOTOR then
 		local mt = model.getTimer(1).value -- Current motor timer value
 		local sayt -- Timer value to announce (we don't have time to say "twenty-something")
-		local cnt -- Count interval
 		
 		if mt <= 20 then
 			cnt = 5
@@ -75,9 +76,10 @@ local function background()
 		
 		prevMt = mt
 			
-		if not motorOn then -- Motor stopped; record the start height in 10 sec.
-			if altTime == 0 then
-				altTime = getTime() + 1000
+		if not motorOn then -- Motor stopped; start 10 sec. count and record start height
+			if offTime == 0 then
+				offTime = getTime()
+				prevCnt = 1
 			end
 			
 			if getValue(LS_TRIGGER) < 0 then -- Trigger switch released
@@ -88,8 +90,8 @@ local function background()
 
 	elseif sk.state == sk.STATE_GLIDE then
 		local ft = model.getTimer(0).value -- Current flight timer value
-		local cnt -- Count interval
 		
+		-- Count down flight time
 		if ft > 120 then
 			cnt = 60
 		elseif ft >60 then
@@ -109,16 +111,32 @@ local function background()
 		end
 		
 		prevFt = ft
+		
+		if offTime > 0 then
+			-- 10 sec. count after motor off
+			cnt = math.floor((getTime() - offTime) / 100)
 			
-		if altTime > 0 and getTime() > altTime then -- Record the start height
-			local alt = soarUtil.altMax
-			if alt == 0 then alt = 100 end -- If no altimeter; default to 100
-			sk.startHeight = alt
-			altTime = 0
+			if cnt > prevCnt then
+				prevCnt = cnt
+				
+				if cnt >= 10 then
+					offTime = 0 -- No more counts
 
-			-- Call launch height
-			if getValue(LS_ALT) > 0 then
-				playNumber(alt, soarUtil.altUnit)
+					-- Time to record start height
+					local alt = soarUtil.altMax
+					if alt > 0 then
+						sk.startHeight = alt
+					end
+					
+					if getValue(LS_ALT) > 0 then
+						-- Call launch height
+						playNumber(alt, soarUtil.altUnit)
+					else
+						playNumber(cnt, 0)
+					end
+				else
+					playNumber(cnt, 0)
+				end
 			end
 		end
 		
@@ -127,7 +145,7 @@ local function background()
 			model.setTimer(0, {value = 0})
 			sk.startHeight = 0
 			
-		elseif (getValue(LS_TRIGGER) > 0 and getTime() > altTime) or getFlightMode() == FM_KAPOW then
+		elseif (getValue(LS_TRIGGER) > 0 and offTime == 0) or getFlightMode() == FM_KAPOW then
 			-- Stop timer and record scores
 			sk.state = sk.STATE_LANDINGPTS
 			soarUtil.SetGVTmr(0) -- Flight timer off

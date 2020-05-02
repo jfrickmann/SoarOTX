@@ -1,5 +1,5 @@
 -- 212x64/JF5J/SK.lua
--- Timestamp: 2020-04-13
+-- Timestamp: 2020-05-02
 -- Created by Jesper Frickmann
 
 local sk = ... -- List of shared variables
@@ -13,7 +13,7 @@ local 	function Draw()
 	lcd.drawText(110, 42, "Motor", MIDSIZE)
 	lcd.drawTimer(212, 38, sk.motTmr.value, DBLSIZE + RIGHT)
 
-	if sk.state == sk.STATE_INITIAL then
+	if sk.state == sk.STATE_INITIAL or sk.resetTime then
 		lcd.drawText(110, 20, "Target", MIDSIZE)
 	elseif sk.state <= sk.STATE_GLIDE then
 		lcd.drawText(110, 20, "Remain", MIDSIZE)
@@ -21,7 +21,7 @@ local 	function Draw()
 		lcd.drawText(110, 20, "Flight", MIDSIZE)
 	end
 
-	if sk.state == sk.STATE_INITIAL or sk.state == sk.STATE_TIME then
+	if sk.state == sk.STATE_INITIAL or sk.state == sk.STATE_TIME or sk.resetTime then
 		lcd.drawTimer(212, 16, sk.fltTmr.value, DBLSIZE + RIGHT + BLINK + INVERS)
 	else
 		lcd.drawTimer(212, 16, sk.fltTmr.value, DBLSIZE + RIGHT)

@@ -1,5 +1,5 @@
 -- JF F5J Timing and score keeping, loadable part
--- Timestamp: 2019-10-22
+-- Timestamp: 2020-05-02
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F5J.
 
@@ -13,7 +13,7 @@ local function run(event)
 	
 	Draw()
 	
-	if sk.state == sk.STATE_INITIAL then -- Set flight time before the flight
+	if sk.state == sk.STATE_INITIAL or sk.resetTime then -- Set flight time
 		local dt = 0
 		
 		-- Show score browser
@@ -34,6 +34,14 @@ local function run(event)
 		model.setTimer(0, {start = tgt, value = tgt})
 		
 		soarUtil.ShowHelp({ exit = "SHOW SCORES", ud = "SET TIME" })
+	end
+	
+	if sk.state == sk.STATE_GLIDE then
+		if soarUtil.EvtExit(event) then
+			sk.resetTime = true
+		elseif soarUtil.EvtEnter(event) then
+			sk.resetTime = false
+		end
 		
 	elseif sk.state == sk.STATE_LANDINGPTS then -- Landed, input landing points 
 		local dpts = 0
