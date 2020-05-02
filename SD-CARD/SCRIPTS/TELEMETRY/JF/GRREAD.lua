@@ -1,5 +1,5 @@
 -- JF Log Data Graph, loadable part for reading data
--- Timestamp: 2020-04-28
+-- Timestamp: 2020-05-02
 -- Created by Jesper Frickmann
 
 local gr = ... -- List of shared variables
@@ -26,10 +26,10 @@ local FIRST_EXCLUDED = "Rud"
 end
 
 -- Constants
-local ALTI_PLOT ="Alt(m)" -- Default plot variable
+local ALTI_PLOT ="Alt" -- Default plot variable
 local TIME_GAP = 20 -- Time gap that triggers a new flight
 local MIN_TIME = 20 -- Minimum time of flight that will be plotted
-local READ_MAX = 4 -- Max. no. of record to read in one go
+local READ_MAX = 3 -- Max. no. of record to read in one go
 
 -- Construct the file name for today's log file for the current model
 local logFileName = string.gsub (model.getInfo().name, " ", "_") -- Log file name
@@ -127,6 +127,7 @@ if not gr.yValues then
 
 			-- Look for trigger field and default plot variable field
 			gr.plotIndex = 3
+			gr.altIndex = -1
 			gr.plotIndexLast = #gr.logFileHeaders
 
 			for i = 1, #lineData do
@@ -134,8 +135,9 @@ if not gr.yValues then
 					gr.fmIndex = i
 				end
 				
-				if gr.logFileHeaders[i] == ALTI_PLOT then
+				if string.sub(gr.logFileHeaders[i], 1, string.len(ALTI_PLOT)) == ALTI_PLOT then
 					gr.plotIndex = i
+					gr.altIndex = i
 				end
 
 				if gr.logFileHeaders[i] == FIRST_EXCLUDED then
@@ -282,16 +284,16 @@ else -- yValues
 		y1 = y2		
 		ReadX2Y2()
 
-		if gr.fmIndex then
-			if gr.logFileHeaders[gr.plotIndex] == ALTI_PLOT then
+		if gr.plotIndex == gr.altIndex then
+			if gr.fmIndex then
 				findLaunchAlt = 1
-				
-				zero = (y1 + y2) / 2
-				y1 = y1 - zero
-				y2 = y2 - zero
-			else
-				findLaunchAlt = 0
 			end
+			
+			zero = math.min(y1, y2)
+			y1 = y1 - zero
+			y2 = y2 - zero
+		else
+			findLaunchAlt = 0
 		end
 		
 		gr.launchAlt = 0
