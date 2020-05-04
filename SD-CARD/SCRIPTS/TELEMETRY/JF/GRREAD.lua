@@ -29,7 +29,7 @@ end
 local ALTI_PLOT ="Alt" -- Default plot variable
 local TIME_GAP = 20 -- Time gap that triggers a new flight
 local MIN_TIME = 20 -- Minimum time of flight that will be plotted
-local READ_MAX = 3 -- Max. no. of record to read in one go
+local READ_MAX = 4 -- Max. no. of record to read in one go
 
 -- Construct the file name for today's log file for the current model
 local logFileName = string.gsub (model.getInfo().name, " ", "_") -- Log file name
