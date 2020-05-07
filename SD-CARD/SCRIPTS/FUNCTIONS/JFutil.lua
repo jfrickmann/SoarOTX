@@ -1,5 +1,5 @@
 -- JF Utility Library
--- Timestamp: 2020-05-01
+-- Timestamp: 2020-05-06
 -- Created by Jesper Frickmann
 
 soarUtil = { } -- Global "namespace"
@@ -220,7 +220,7 @@ local function run()
 		if flightMode == soarUtil.FM_LAUNCH then
 			if soarUtil.bat == 0 then
 				-- Warning in launch mode - is the plane off?
-				playHaptic(200, 200, 3)
+				playHaptic(200, 0, 1)
 				playTone(150, 400, 0 , PLAY_NOW , 4)
 				nextWarning = now + 500
 			else
