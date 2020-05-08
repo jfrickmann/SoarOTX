@@ -6,7 +6,7 @@ local sbFile = "/SCRIPTS/TELEMETRY/JF3J/SB.lua" -- Score browser user interface 
 local sk = ...  -- List of variables shared between fixed and loadable parts
 local Draw = soarUtil.LoadWxH("JF3J/SK.lua", sk) -- Screen size specific function
 
-sk.target = sk.windowTimer.start
+sk.target = math.max(sk.windowTimer.start)
 
 local function run(event)
 	local dt = 0
@@ -138,11 +138,11 @@ local function run(event)
 			end
 			
 			sk.state = sk.STATE_INITIAL
-			sk.target = sk.flightTimer.start
+			sk.target = math.max(sk.windowTimer.start)
 
 		elseif soarUtil.EvtExit(event) then -- Do not record scores if user pressed EXIT
 			sk.state = sk.STATE_INITIAL
-			sk.target = sk.flightTimer.start
+			sk.target = math.max(sk.windowTimer.start)
 			
 		end
 	end
