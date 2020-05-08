@@ -1,5 +1,5 @@
 -- JF F5J Timing and score keeping, fixed part
--- Timestamp: 2020-05-02
+-- Timestamp: 2020-05-08
 -- Created by Jesper Frickmann
 
 local FM_KAPOW = 3 -- KAPOW flight mode
@@ -39,6 +39,9 @@ local function background()
 
 	soarUtil.callAlt = (getValue(LS_ALT10) > 0) -- Call alt every 10 sec.
 	
+	sk.flightTimer = model.getTimer(0) -- Current flight timer value
+	sk.motorTimer = model.getTimer(1) -- Current motor timer value
+		
 	if sk.state == sk.STATE_INITIAL then
 		sk.landingPts = 0
 		sk.startHeight = 100 -- default if no Alt
@@ -53,10 +56,11 @@ local function background()
 			soarUtil.SetGVTmr(1) -- Flight timer on
 			prevMt = model.getTimer(1).value
 			offTime = 0
+			sk.target = 0
 		end
 
 	elseif sk.state == sk.STATE_MOTOR then
-		local mt = model.getTimer(1).value -- Current motor timer value
+		local mt = sk.motorTimer.value -- Current motor timer value
 		local sayt -- Timer value to announce (we don't have time to say "twenty-something")
 		
 		if mt <= 20 then
@@ -89,7 +93,7 @@ local function background()
 		end
 
 	elseif sk.state == sk.STATE_GLIDE then
-		local ft = model.getTimer(0).value -- Current flight timer value
+		local ft = sk.flightTimer.value
 		
 		-- Count down flight time
 		if ft > 120 then
@@ -150,10 +154,8 @@ local function background()
 			sk.state = sk.STATE_LANDINGPTS
 			soarUtil.SetGVTmr(0) -- Flight timer off
 
-			-- Calculate and show flight time instead of remaining
-			local ft = model.getTimer(0)
-			model.setTimer(0, {value = ft.start - ft.value})
-			playDuration(ft.start - ft.value)
+			model.setTimer(0, {value = sk.flightTimer.start - sk.flightTimer.value})
+			playDuration(sk.flightTimer.start - sk.flightTimer.value)
 		end
 	end
 end  --  background()

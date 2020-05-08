@@ -1,5 +1,5 @@
 -- JF F5J Timing and score keeping, loadable part
--- Timestamp: 2020-05-02
+-- Timestamp: 2020-05-07
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F5J.
 
@@ -7,42 +7,58 @@ local sk = ...  -- List of variables shared between fixed and loadable parts
 local sbFile = "/SCRIPTS/TELEMETRY/JF5J/SB.lua" -- Score browser user interface file
 local Draw = soarUtil.LoadWxH("JF5J/SK.lua", sk) -- Screen size specific function
 
+sk.target = sk.flightTimer.start
+
 local function run(event)
-	sk.fltTmr = model.getTimer(0)
-	sk.motTmr = model.getTimer(1)
+	local dt = 0
 	
-	Draw()
-	
-	if sk.state == sk.STATE_INITIAL or sk.resetTime then -- Set flight time
-		local dt = 0
+	-- Set flight time
+	if sk.target > 0 then
+		dt = 0
 		
-		-- Show score browser
-		if soarUtil.EvtExit(event) then
-			sk.myFile = sbFile
-		elseif soarUtil.EvtInc(event) then
+		if soarUtil.EvtInc(event) then
 			dt = 60
 		elseif soarUtil.EvtDec(event) then
 			dt = -60
 		end
 		
-		local tgt = sk.fltTmr.start + dt
-		if tgt < 60 then
-			tgt = 5940
-		elseif tgt > 5940 then
-			tgt = 60
+		sk.target = sk.target + dt
+
+		if sk.target < 60 then
+			sk.target = 5940
+		elseif sk.target > 5940 then
+			sk.target = 60
 		end
-		model.setTimer(0, {start = tgt, value = tgt})
-		
-		soarUtil.ShowHelp({ exit = "SHOW SCORES", ud = "SET TIME" })
 	end
 	
-	if sk.state == sk.STATE_GLIDE then
+	if sk.state == sk.STATE_INITIAL then
 		if soarUtil.EvtExit(event) then
-			sk.resetTime = true
-		elseif soarUtil.EvtEnter(event) then
-			sk.resetTime = false
+			-- Show score browser
+			sk.myFile = sbFile
+		end
+
+		model.setTimer(0, {start = sk.target, value = sk.target})
+		soarUtil.ShowHelp({ exit = "SHOW SCORES", ud = "SET TIME" })
+
+	elseif sk.state == sk.STATE_GLIDE then
+		if soarUtil.EvtEnter(event) then
+			if sk.target == 0 then
+				sk.target = math.max(60, 60 * math.floor(sk.flightTimer.value / 60))
+			else
+				model.setTimer(0, {start = sk.target, value = sk.target})
+				sk.target = 0
+			end
+			
+		elseif soarUtil.EvtExit(event) then
+			sk.target = 0
 		end
 		
+		if sk.target > 0 then
+			soarUtil.ShowHelp({ enter = "RE-SET TIME" })
+		else
+			soarUtil.ShowHelp({ enter = "RE-SET TIME" , exit = "ESCAPE", ud = "CHANGE" })
+		end
+
 	elseif sk.state == sk.STATE_LANDINGPTS then -- Landed, input landing points 
 		local dpts = 0
 		
@@ -99,8 +115,8 @@ local function run(event)
 		end
 		
 		if dt ~= 0 then
-			sk.fltTmr.value = sk.fltTmr.value + dt
-			model.setTimer(0, sk.fltTmr)
+			sk.flightTimer.value = sk.flightTimer.value + dt
+			model.setTimer(0, sk.flightTimer)
 		end
 		
 		if soarUtil.EvtEnter(event) then
@@ -124,17 +140,24 @@ local function run(event)
 
 				io.write(logFile, string.format("%s,%s,%s,", nameStr, dateStr, timeStr))
 				io.write(logFile, string.format("%s,%4.1f,", sk.landingPts, sk.startHeight))
-				io.write(logFile, string.format("%s,%s\n", sk.fltTmr.start, sk.fltTmr.value))
+				io.write(logFile, string.format("%s,%s\n", sk.flightTimer.start, sk.flightTimer.value))
 
 				io.close(logFile)
 			end
 			
 			sk.state = sk.STATE_INITIAL
+			sk.target = sk.flightTimer.start
+
 		elseif soarUtil.EvtExit(event) then
 			 -- Do not record scores if user pressed EXIT
 			sk.state = sk.STATE_INITIAL
+			sk.target = sk.flightTimer.start
+
 		end
 	end
+	
+	Draw()
+	
 end  --  run()
 
 return {run = run}

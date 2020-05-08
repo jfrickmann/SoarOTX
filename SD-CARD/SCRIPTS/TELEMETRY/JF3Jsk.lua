@@ -1,5 +1,5 @@
 -- JF F3J Timing and score keeping, fixed part
--- Timestamp: 2020-05-01
+-- Timestamp: 2020-05-08
 -- Created by Jesper Frickmann
 
 local FM_KAPOW = 3 -- KAPOW flight mode
@@ -32,6 +32,9 @@ local function background()
 	local triggerReleased = (not trigger and triggerOld)	
 	triggerOld = trigger
 
+	sk.windowTimer = model.getTimer(0)
+	sk.flightTimer = model.getTimer(1)
+
 	soarUtil.callAlt = (getValue(LS_ALT10) > 0) -- Call alt every 10 sec.
 	
 	if sk.state == sk.STATE_INITIAL then
@@ -44,6 +47,7 @@ local function background()
 			soarUtil.SetGVTmr(1)
 			prevWt = model.getTimer(0).value
 			altTime = 0
+			sk.target = 0
 		end
 
 		-- Reset altitude if launch mode entered
@@ -65,15 +69,15 @@ local function background()
 	elseif sk.state == sk.STATE_FLYING then
 		-- Record (and announce) start height
 		if altTime > 0 and getTime() > altTime then
-			local alt = soarUtil.altMax
-			if alt == 0 then alt = 100 end -- If no altimeter; default to 100
-			sk.startHeight = alt
+			sk.startHeight = soarUtil.altMax
 			altTime = 0
 			
 			-- Call launch height
 			if getValue(LS_ALT) > 0 then
-				playNumber(alt, soarUtil.altUnit)
+				playNumber(sk.startHeight, soarUtil.altUnit)
 			end
+			
+			if sk.startHeight == 0 then sk.startHeight = 100 end -- If no altimeter; default to 100
 		end
 
 		local wt = model.getTimer(0).value -- Current window timer value
