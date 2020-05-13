@@ -1,5 +1,5 @@
 -- JF F5K Timing and score keeping, fixed part
--- Timestamp: 2020-05-01
+-- Timestamp: 2020-05-13
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 
@@ -64,15 +64,11 @@ if not sk.dial then sk.dial = getFieldInfo("s1").id end
 
 -- Functions for getting and setting launch height
 function sk.GetStartHeight()
-	local cutoff = model.getGlobalVariable(6, 0) 
-	local zoom = -model.getGlobalVariable(5, soarUtil.FM_ADJUST)
-	
-	return cutoff, zoom
+	return model.getGlobalVariable(6, 0) 
 end -- GetStartHeight()
 
-function sk.SetStartHeight(cutoff, zoom)
-	model.setGlobalVariable(6, 0, cutoff)
-	model.setGlobalVariable(5, soarUtil.FM_ADJUST, -zoom)
+function sk.SetStartHeight(height)
+	model.setGlobalVariable(6, 0, height)
 end -- SetStartHeight()
 
 -- Global variable stops motor at cutoff altitude
@@ -163,7 +159,7 @@ local function background()
 
 		if sk.state == sk.STATE_LAUNCHING then
 			local alt = soarUtil.altMax
-			local cutoff, zoom = sk.GetStartHeight()
+			local cutoff = sk.GetStartHeight()
 			
 			if alt >= cutoff then
 				MotorStop(1)
@@ -179,7 +175,7 @@ local function background()
 
 				-- If no altimeter; default to nominal height
 				if alt == 0 then
-					alt = cutoff + zoom
+					alt = cutoff
 				end
 
 				-- Record the start height

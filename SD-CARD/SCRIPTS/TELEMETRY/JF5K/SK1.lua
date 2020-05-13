@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for 2020 F5K tasks
--- Timestamp: 2020-04-21
+-- Timestamp: 2020-05-13
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -76,12 +76,10 @@ if sk.state == sk.STATE_IDLE then
 	-- UpdateTotal() updates the totalScore
 	function sk.p.UpdateTotal()
 		sk.p.totalScore = 0
-		local cutoff, zoom = sk.GetStartHeight()
-		local nominal = cutoff + zoom
 		
 		for i, score in ipairs(sk.scores) do
 			local secs = math.min(MaxScore(i), score[1])
-			local bonus = nominal - score[2]
+			local bonus = sk.GetStartHeight() - score[2]
 			
 			if math.abs(bonus) > 6 then
 				bonus = 2 * bonus
@@ -123,7 +121,7 @@ if sk.state == sk.STATE_IDLE then
 				lastChange = getTime()
 			end
 			
-			if lastChange > 0 and getTime() - lastChange > 50 then
+			if lastChange > 0 and getTime() - lastChange > 100 then
 				playTone(3000, 100, PLAY_NOW)
 				playDuration(result)
 				lastChange = 0

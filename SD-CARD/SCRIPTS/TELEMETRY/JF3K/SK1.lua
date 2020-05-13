@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for 2020 F3K tasks
--- Timestamp: 2020-04-15
+-- Timestamp: 2020-05-10
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -134,7 +134,7 @@ if sk.state == sk.STATE_IDLE then
 				lastChange = getTime()
 			end
 			
-			if lastChange > 0 and getTime() - lastChange > 50 then
+			if lastChange > 0 and getTime() - lastChange > 100 then
 				playTone(3000, 100, PLAY_NOW)
 				playDuration(result)
 				lastChange = 0
