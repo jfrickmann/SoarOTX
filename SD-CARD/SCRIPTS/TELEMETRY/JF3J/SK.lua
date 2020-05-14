@@ -1,12 +1,10 @@
 -- JF F3J Timing and score keeping, loadable part
--- Timestamp: 2020-05-08
+-- Timestamp: 2020-05-14
 -- Created by Jesper Frickmann
 
 local sbFile = "/SCRIPTS/TELEMETRY/JF3J/SB.lua" -- Score browser user interface file
 local sk = ...  -- List of variables shared between fixed and loadable parts
 local Draw = soarUtil.LoadWxH("JF3J/SK.lua", sk) -- Screen size specific function
-
-sk.target = math.max(sk.windowTimer.start)
 
 local function run(event)
 	local dt = 0

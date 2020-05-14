@@ -1,5 +1,5 @@
 -- JF F5J Timing and score keeping, fixed part
--- Timestamp: 2020-05-08
+-- Timestamp: 2020-05-14
 -- Created by Jesper Frickmann
 
 local FM_KAPOW = 3 -- KAPOW flight mode
@@ -16,6 +16,7 @@ local prevArm = (getValue(LS_ARM) > 0) -- Previous arming state
 
 local FlashArmed = soarUtil.LoadWxH("ARMED.lua") -- Screen size specific warning function
 local sk = { } -- Variables shared with the loadable part
+sk.target = math.max(60, model.getTimer(0).start)
 
 -- Program states, shared with loadable part
 sk.myFile = "/SCRIPTS/TELEMETRY/JF5J/SK.lua" -- Score keeper user interface file

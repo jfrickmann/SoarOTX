@@ -1,5 +1,5 @@
 -- JF F3J Timing and score keeping, fixed part
--- Timestamp: 2020-05-08
+-- Timestamp: 2020-05-14
 -- Created by Jesper Frickmann
 
 local FM_KAPOW = 3 -- KAPOW flight mode
@@ -7,11 +7,12 @@ local LS_ALT = getFieldInfo("ls1").id -- Input ID for allowing altitude calls
 local LS_ALT10 = getFieldInfo("ls8").id -- Input ID for altitude calls every 10 sec.
 local LS_TRIGGER = getFieldInfo("ls9").id -- Input ID for the trigger switch
 
-local sk = {} -- Variables shared with the loadable part
 local altTime -- Time for recording start height
 local prevWt -- Previous window timer value
 local TriggerOld = (getValue(LS_TRIGGER) > 0) -- Previous position
 local flightModeOld = getFlightMode() -- To be able to detect flight mode changes
+local sk = {} -- Variables shared with the loadable part
+sk.target = math.max(60, model.getTimer(0).start)
 
 -- Program states, shared with loadable part
 sk.STATE_INITIAL = 0 -- Set flight time before the flight

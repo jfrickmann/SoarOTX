@@ -1,13 +1,11 @@
 -- JF F5J Timing and score keeping, loadable part
--- Timestamp: 2020-05-07
+-- Timestamp: 2020-05-14
 -- Created by Jesper Frickmann
 -- Telemetry script for timing and keeping scores for F5J.
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
 local sbFile = "/SCRIPTS/TELEMETRY/JF5J/SB.lua" -- Score browser user interface file
 local Draw = soarUtil.LoadWxH("JF5J/SK.lua", sk) -- Screen size specific function
-
-sk.target = math.max(60, sk.flightTimer.start)
 
 local function run(event)
 	local dt = 0
