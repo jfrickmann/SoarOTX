@@ -1,11 +1,13 @@
--- Draw a servo output curve
--- Timestamp: 2020-04-01
+-- 128x64/CURVE.lua
+-- Timestamp: 2020-04-18
 -- Created by Jesper Frickmann
 -- Needs crv.width, crv.height and crv.n to be set
 
 local crv = { } -- Shared data
 
-crv.Draw = function(lft, top, y, i)
+crv.Draw = function(lft, top, y, i, scale)
+	if not scale then scale = 1 end
+
 	local x1, x2, y1, y2, y3
 	
 	if not (crv.width and crv.height and crv.n) then return end
@@ -15,12 +17,12 @@ crv.Draw = function(lft, top, y, i)
 		
 		-- Screen coordinates
 		x2 = lft  + crv.width * (j - 1) / (crv.n - 1)
-		y2 = top + crv.height * (0.5 - 0.00033 * y[j])
+		y2 = top + crv.height * (0.5 - 0.00033 * scale * y[j])
 		
 		-- Mark point i
 		if j == i then
 			att = SMLSIZE + INVERS
-			y3 = y[j]
+			y3 = scale * y[j]
 		else
 			att = SMLSIZE
 		end
