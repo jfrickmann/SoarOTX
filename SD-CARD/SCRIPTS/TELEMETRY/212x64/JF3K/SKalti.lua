@@ -1,5 +1,5 @@
 -- 212x64/JF3Kalti/SK.lua
--- Timestamp: 2019-10-02
+-- Timestamp: 2020-04-10
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -14,12 +14,6 @@ ui.tMin = 0
 ui.tMax = sk.taskWindow
 ui.yMin = 0
 ui.yValues = sk.p.yValues
-
--- Convert time to minutes and seconds
-local function MinSec(t)
-	local m = math.floor(t / 60)
-	return m, t - 60 * m
-end -- MinSec()
 
 function ui.Draw()
 	local att
@@ -86,7 +80,7 @@ function ui.Draw()
 		if i > #sk.scores then
 			lcd.drawText(126, dy * i, string.format("%i. - - -", i))
 		elseif sk.p.unit == "s" then
-			lcd.drawText(126, dy * i, string.format("%i. %02i:%02i", i, MinSec(sk.scores[i].time)))
+			lcd.drawText(126, dy * i, string.format("%i. %s", i, soarUtil.TmrStr(sk.scores[i].time)))
 		else
 			lcd.drawText(126, dy * i, string.format("%i. %4i%s", i, sk.scores[i].gain, sk.p.unit))
 		end
@@ -94,20 +88,20 @@ function ui.Draw()
 end  --  Draw()
 	
 function ui.PromptScores()
-	soarUtil.InfoBar(" " .. sk.taskName .. " ")
+	soarUtil.InfoBar(sk.taskName)
 	lcd.drawText(38, 15, "Save scores?", DBLSIZE)
 	lcd.drawText(4, LCD_H - 16, "EXIT", MIDSIZE + BLINK)
 	lcd.drawText(LCD_W - 3, LCD_H - 16, "SAVE", MIDSIZE + BLINK + RIGHT)
 end -- PromptScores()
 
 function ui.NotifyStopWindow()
-	soarUtil.InfoBar(" " .. sk.taskName .. " ")
+	soarUtil.InfoBar(sk.taskName)
 	lcd.drawText(38, 18, "Stop window timer", MIDSIZE)
 	lcd.drawText(38, 40, "before leaving task.", MIDSIZE)
 end -- NotifyStopWindow()
 
 function ui.NotifyStopFlight()
-	soarUtil.InfoBar(" " .. sk.taskName .. " ")
+	soarUtil.InfoBar(sk.taskName)
 	lcd.drawText(30, 18, "Stop the flight timer", MIDSIZE)
 	lcd.drawText(30, 40, "before pausing window.", MIDSIZE)
 end -- NotifyStopFlight()

@@ -1,10 +1,11 @@
 -- JF F3R Score Browser
--- Timestamp: 2019-10-22
+-- Timestamp: 2020-04-30
 -- Created by Jesper Frickmann
 -- Telemetry script for browsing scores recorded in the log file.
 
+local sk = ...
 local LOG_FILE = "/LOGS/JF F3RES Scores.csv"
-
+local skFile = "/SCRIPTS/TELEMETRY/JF3R/SK.lua" -- Score keeper user interface file
 local logFile -- Log file handle
 local lastTime -- Last time that run() was called, used for refreshing
 local index -- Index to currently selected line in log file
@@ -85,6 +86,11 @@ local function run(event)
 	end
 
 	lastTime = thisTime
+	
+	-- Show score keeper
+	if soarUtil.EvtExit(event) then
+		sk.myFile = skFile
+	end
 	
 	-- Go to previous record
 	if soarUtil.EvtLeft(event) then

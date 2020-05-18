@@ -1,12 +1,12 @@
 -- JF FXJ Configuration Menu
--- Timestamp: 2019-10-20
+-- Timestamp: 2020-05-01
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 -- "adj" is a global var that is output to OpenTX with a custom script
 
 local active = false
 local lastRun = 0
-local ui = {} -- List of  variables shared with loadable user interface
+local cf = {} -- List of shared variables
 local selection = 1
 
 -- Menu texts
@@ -15,7 +15,8 @@ local texts = {
 	"2. Align flaps & ailerons",
 	"3. Adjust airbrake curves",
 	"4. Aileron and camber",
-	"5. Adjust other mixes" }
+	"5. Adjust other mixes",
+	"6. Battery warning" }
 
 local menu = soarUtil.LoadWxH("MENU.lua") -- Screen size specific menu
 menu.items = texts
@@ -27,7 +28,13 @@ local files = {
 	"/SCRIPTS/TELEMETRY/JFXJ/ALIGN.lua",
 	"/SCRIPTS/TELEMETRY/JFXJ/BRKCRV.lua",
 	"/SCRIPTS/TELEMETRY/JFXJ/AILCMB.lua",
-	"/SCRIPTS/TELEMETRY/JFXJ/ADJMIX.lua" }
+	"/SCRIPTS/TELEMETRY/JFXJ/ADJMIX.lua",
+	"/SCRIPTS/TELEMETRY/JF/BATTERY.lua" }
+
+-- Enable/disable adjustment function
+function cf.SetAdjust(adj)
+	model.setGlobalVariable(7, 0, adj)
+end
 
 local function background()
 	if active then
@@ -37,7 +44,8 @@ local function background()
 			active = false
 		end
 	else
-		adj = 0
+		-- Disable adjustment function
+		cf.SetAdjust(0)
 	end
 end -- background()
 
@@ -55,7 +63,7 @@ local function run(event)
 	if active then
 		-- Run the active function
 		lastRun = getTime()
-		if soarUtil.RunLoadable(files[selection], event) then
+		if soarUtil.RunLoadable(files[selection], event, cf) then
 			soarUtil.Unload(files[selection])
 			active = false
 		end

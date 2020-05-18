@@ -1,13 +1,18 @@
 -- JF F3K Timing and score keeping, fixed part
--- Timestamp: 2019-10-17
+-- Timestamp: 2020-05-01
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 
-wTmr = 0 -- Controls window timer with MIXES script
-fTmr = 0 -- Controls flight timer with MIXES script
+local LS_ALT = getFieldInfo("ls1").id -- Input ID for allowing altitude calls
+local LS_ALT10 = getFieldInfo("ls6").id -- Input ID for altitude calls every 10 sec.
 
- -- List of variables shared between fixed and loadable parts
+local prevFM = getFlightMode() -- Used for detecting when FM changes
+local prevWt -- Previous value of the window timer
+local prevFt -- Previous value of flight timer
+local countIndex -- Index of timer count
 local sk = { }
+
+-- List of variables shared between fixed and loadable parts
 sk.taskWindow = 0 -- Task window duration (zero counts up)
 sk.launches = -1 -- Number of launches allowed, -1 for unlimited
 sk.taskScores = 0 -- Number of scores in task
@@ -26,8 +31,8 @@ sk.selectedTask = 0 -- Selected task in menu
 
 -- Program states
 sk.STATE_IDLE = 1 -- Task window not running
-sk.STATE_PAUSE = 2 -- Task window paused, not flying
-sk.STATE_FINISHED = 3 -- Task has been finished
+sk.STATE_FINISHED = 2 -- Task has been finished
+sk.STATE_PAUSE = 3 -- Task window paused, not flying
 sk.STATE_WINDOW = 4 -- Task window started, not flying
 sk.STATE_READY = 5 -- Flight timer will be started when launch switch is released
 sk.STATE_FLYING = 6 -- Flight timer started but flight not yet committed
@@ -53,15 +58,10 @@ end
 -- If input lines were not found, then default to S1 and S2
 if not sk.dial then sk.dial = getFieldInfo("s1").id end
 
--- Local variables
-local FM_LAUNCH = 1 -- Flight mode used for launch
-local flightModeOld = getFlightMode() -- Used for detecting when FM changes
-local winTimerOld -- Previous value of the window timer
-local flightTimerOld -- Previous value of flight timer
-local countIndex -- Index of timer count
+soarUtil.SetGVTmr(0)
 
 -- Function initializing flight timer
-function InitializeFlight()
+local function InitializeFlight()
 	local targetTime = sk.TargetTime()
 	
 	-- Get ready to count down
@@ -73,23 +73,20 @@ function InitializeFlight()
 	-- Set flight timer
 	model.setTimer(0, { start = targetTime, value = targetTime })
 	sk.flightTimer = targetTime
-	flightTimerOld = targetTime
+	prevFt = targetTime
 end  --  InitializeFlight()
 
 local function background()	
 	local flightMode = getFlightMode()
-	local launchPulled, launchReleased
+	local launchPulled = (flightMode == soarUtil.FM_LAUNCH and prevFM ~= flightMode)
+	local launchReleased = (flightMode ~= prevFM and prevFM == soarUtil.FM_LAUNCH)
+	prevFM = flightMode
 
-	if flightMode == FM_LAUNCH and flightModeOld ~= FM_LAUNCH then
-		launchPulled = true
-	elseif flightMode ~= FM_LAUNCH and flightModeOld == FM_LAUNCH then
-		launchReleased = true
+	if launchPulled then -- Reset altitude
+		soarUtil.ResetAlt()
 	end
 	
-	if sk.state < sk.STATE_READY or sk.state == sk.STATE_FREEZE then
-		-- Stop flight timer
-		fTmr = 0
-	end
+	soarUtil.callAlt = (getValue(LS_ALT10) > 0) -- Call alt every 10 sec.
 
 	if sk.state <= sk.STATE_READY and sk.state ~= sk.STATE_FINISHED then
 		InitializeFlight()
@@ -100,14 +97,11 @@ local function background()
 	sk.winTimer = model.getTimer(1).value
 	
 	if sk.state < sk.STATE_WINDOW then
-		-- Stop task window timer
-		wTmr = 0
-		
 		if sk.state == sk.STATE_IDLE then
 			-- Set window timer
 			model.setTimer(1, { start = sk.taskWindow, value = sk.taskWindow })
 			sk.winTimer = sk.taskWindow
-			winTimerOld = sk.taskWindow
+			prevWt = sk.taskWindow
 
 			-- Automatically start window and flight if launch switch is released
 			if launchPulled then
@@ -116,23 +110,17 @@ local function background()
 		end
 
 	else
-		-- Start task window timer (wait if task window started by pulling launch)
-		if sk.state ~= sk.STATE_READY then
-			wTmr = 1
-		end
-		
-		-- Beep at the beginning and end of the task window
-		if (winTimerOld > 0 and sk.winTimer <= 0) or (winTimerOld > sk.taskWindow and sk.winTimer <= sk.taskWindow) then
-			playTone(880, 1000, PLAY_NOW)
-		end
-	
 		-- Did the window expire?
-		if sk.state < sk.STATE_FLYING and sk.state ~= sk.STATE_FINISHED
-		and sk.winTimer <= 0 and model.getTimer(1).start > 0 then
+		if prevWt > 0 and sk.winTimer <= 0 then
 			playTone(880, 1000, 0)
-			sk.state = sk.STATE_FINISHED
+
+			if sk.state < sk.STATE_FLYING then
+				sk.state = sk.STATE_FINISHED
+			elseif sk.eowTimerStop then
+				sk.state = sk.STATE_FREEZE
+			end
 		end
-		
+
 		if sk.state == sk.STATE_WINDOW then
 			if launchPulled then
 				sk.state = sk.STATE_READY
@@ -142,9 +130,6 @@ local function background()
 			end
 			
 		elseif sk.state == sk.STATE_READY then
-			-- Ready to start flight timer
-			fTmr = 1
-
 			if launchReleased then
 				sk.state = sk.STATE_FLYING
 
@@ -158,35 +143,33 @@ local function background()
 			end
 
 		elseif sk.state >= sk.STATE_FLYING then
-			if sk.state < sk.STATE_FREEZE then
-				-- If the window expires, then freeze the flight timer
-				if sk.winTimer <= 0 and winTimerOld > 0 and sk.eowTimerStop then
-					sk.state = sk.STATE_FREEZE
-				end
-			
-				-- Time counts
-				if sk.flightTimer <= sk.counts[countIndex] and flightTimerOld > sk.counts[countIndex]  then
-					if sk.flightTimer > 15 then
-						playDuration(sk.flightTimer, 0)
-					else
-						playNumber(sk.flightTimer, 0)
-					end
-					if countIndex > 1 then countIndex = countIndex - 1 end
-				elseif math.ceil(sk.flightTimer / 60) < math.ceil(flightTimerOld / 60) then
+			-- Time counts
+			if sk.flightTimer <= sk.counts[countIndex] and prevFt > sk.counts[countIndex]  then
+				if sk.flightTimer > 15 then
 					playDuration(sk.flightTimer, 0)
+				else
+					playNumber(sk.flightTimer, 0)
 				end
+				if countIndex > 1 then countIndex = countIndex - 1 end
+			elseif math.ceil(sk.flightTimer / 60) < math.ceil(prevFt / 60) then
+				playDuration(sk.flightTimer, 0)
 			end
 			
 			if sk.state == sk.STATE_FLYING then
-				-- Within 5 sec. "grace period", cancel the flight
+				-- Within 10 sec. "grace period", cancel the flight
 				if launchPulled then
 					sk.state = sk.STATE_WINDOW
 				end
 
 				-- After 5 seconds, commit flight
-				if sk.flightTime > 5 then
+				if sk.flightTime >= 10 then
 					sk.state = sk.STATE_COMMITTED
 
+					-- Call launch height
+					if getValue(LS_ALT) > 0 then
+						playNumber(soarUtil.altMax, soarUtil.altUnit)
+					end
+					
 					if sk.launches > 0 then 
 						sk.launches = sk.launches - 1
 					end
@@ -201,7 +184,8 @@ local function background()
 				sk.Score()
 				
 				-- Change state
-				if (sk.finalScores and #sk.scores == sk.taskScores) or sk.launches == 0 then
+				if (sk.finalScores and #sk.scores == sk.taskScores) or sk.launches == 0
+				or (sk.taskWindow > 0 and sk.winTimer <= 0) then
 					playTone(880, 1000, 0)
 					sk.state = sk.STATE_FINISHED
 				elseif sk.quickRelaunch then
@@ -212,14 +196,23 @@ local function background()
 			end			
 		end
 		
-		winTimerOld = sk.winTimer
-		flightTimerOld = sk.flightTimer
+		prevWt = sk.winTimer
+		prevFt = sk.flightTimer
+	end
+
+	if sk.state < sk.STATE_WINDOW or sk.state == sk.STATE_FREEZE then
+		-- Stop both timers
+		soarUtil.SetGVTmr(0)
+	elseif sk.state == sk.STATE_WINDOW then
+		-- Start task window timer, but not flight timer
+		soarUtil.SetGVTmr(1)
+	else
+		-- Start both timers
+		soarUtil.SetGVTmr(2)
 	end
 
 	-- If loadable part provides a Background() function then execute it here
-	if sk.Background then sk.Background() end
-	
-	flightModeOld = flightMode
+	if sk.Background then sk.Background() end	
 end  --  background()
 
 -- Forward run() call to the loadable part

@@ -1,17 +1,18 @@
 -- JF F3RES Configuration Menu
--- Timestamp: 2019-10-20
+-- Timestamp: 2020-05-01
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
--- "adj" is a global var that is output to OpenTX with a custom script
 
 local active = false
 local lastRun = 0
 local selection = 1
+local cf = {} -- List of shared variables
 
 -- Menu texts
 local texts = {
 	"1. Channel configuration",
-	"2. Adjust brake-elevator" }
+	"2. Adjust brake-elevator",
+	"3. Battery warning" }
 
 local menu = soarUtil.LoadWxH("MENU.lua") -- Screen size specific menu
 menu.items = texts
@@ -20,7 +21,13 @@ menu.title = "Configuration"
 -- Lua files to be loaded and unloaded
 local files = {
 	"/SCRIPTS/TELEMETRY/JF/CHANNELS.lua",
-	"/SCRIPTS/TELEMETRY/JF3R/ADJMIX.lua" }
+	"/SCRIPTS/TELEMETRY/JF3R/ADJMIX.lua",
+	"/SCRIPTS/TELEMETRY/JF/BATTERY.lua" }
+
+-- Enable/disable adjustment function
+function cf.SetAdjust(adj)
+	model.setGlobalVariable(7, 0, adj)
+end
 
 local function background()
 	if active then
@@ -30,7 +37,7 @@ local function background()
 			active = false
 		end
 	else
-		adj = 0
+		cf.SetAdjust(0)
 	end
 end -- background()
 
@@ -48,7 +55,7 @@ local function run(event)
 	if active then
 		-- Run the active function
 		lastRun = getTime()
-		if soarUtil.RunLoadable(files[selection], event) then
+		if soarUtil.RunLoadable(files[selection], event, cf) then
 			soarUtil.Unload(files[selection])
 			active = false
 		end

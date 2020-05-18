@@ -1,16 +1,20 @@
 -- 128x64/JF/BRKCRV.lua
--- Timestamp: 2019-09-29
+-- Timestamp: 2020-04-18
 -- Created by Jesper Frickmann
 
-local ui = { } -- List of shared variables
+local ui = ... -- List of shared variables
+local crv = soarUtil.LoadWxH("CURVE.lua") -- Screen size specific function
+crv.n = ui.n
+crv.width = 60
+crv.height = 56
 
-function ui.Draw()
+function ui.Draw(yFlp, yAil, point)
 	soarUtil.InfoBar("Airbrakes")
-	lcd.drawText(12, 13, "Flap", SMLSIZE)
-	ui.DrawCurve(11, 12, 48, 48, ui.crv[1], ui.lasti)
-	lcd.drawLine(64, 10, 64, 61, SOLID, FORCE)
-	lcd.drawText(70, 13, "Aile", SMLSIZE)
-	ui.DrawCurve(69, 12, 48, 48, ui.crv[2], ui.lasti)
+	lcd.drawText(1, 9, "Flap", SMLSIZE)
+	crv.Draw(1, 8, yFlp, point, 10)
+	lcd.drawLine(64, 8, 64, LCD_H, SOLID, FORCE)
+	lcd.drawText(66, 9, "Aile", SMLSIZE)
+	crv.Draw(66, 8, yAil, point, 10)
 end -- Draw()
 
 return ui

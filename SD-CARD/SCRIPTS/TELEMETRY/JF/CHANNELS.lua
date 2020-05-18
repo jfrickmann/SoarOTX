@@ -1,5 +1,5 @@
 -- JF Channel configuration
--- Timestamp: 2020-04-01
+-- Timestamp: 2020-04-18
 -- Created by Jesper Frickmann
 
 local N = 32 -- Highest channel number to swap
@@ -264,6 +264,8 @@ local function run(event)
 	if stage == 1 then
 		if soarUtil.EvtEnter(event) then
 			stage = 2
+		elseif soarUtil.EvtExit(event) then
+			return true -- Quit
 		end
 	elseif stage == 2 then
 		local iCh

@@ -1,10 +1,11 @@
 -- JF FXJ aileron and camber adjustment
--- Timestamp: 2019-10-18
+-- Timestamp: 2020-04-17
 -- Created by Jesper Frickmann
 
-local gv1 = getFieldInfo("gvar1").id
-local gv2 = getFieldInfo("gvar2").id
-local gv5 = getFieldInfo("gvar5").id
+local cf = ...
+local gv1 = getFieldInfo("gvar1").id -- Aileron
+local gv2 = getFieldInfo("gvar2").id -- Aileron -> Flap
+local gv5 = getFieldInfo("gvar7").id -- Camber -> Aileron
 
 local Draw = soarUtil.LoadWxH("JFXJ/AILCMB.lua", gv1, gv2, gv5) -- Screen size specific function
 
@@ -15,7 +16,7 @@ local function run(event)
 	end
 	
 	-- Enable adjustment function
-	adj = 3
+	cf.SetAdjust(3)
 	
 	Draw()
 end -- run()

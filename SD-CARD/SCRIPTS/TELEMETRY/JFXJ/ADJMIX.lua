@@ -1,11 +1,12 @@
 -- JF FXJ mix adjustment
--- Timestamp: 2019-10-18
+-- Timestamp: 2020-04-17
 -- Created by Jesper Frickmann
 
-local gv3 = getFieldInfo("gvar3").id
-local gv4 = getFieldInfo("gvar4").id
-local gv6 = getFieldInfo("gvar6").id
-local gv7 = getFieldInfo("gvar7").id
+local cf = ...
+local gv3 = getFieldInfo("gvar3").id -- Aileron -> Rudder
+local gv4 = getFieldInfo("gvar4").id -- Differential
+local gv6 = getFieldInfo("gvar5").id -- Brake -> Elevator
+local gv7 = getFieldInfo("gvar6").id -- Snapflap
 
 local Draw = soarUtil.LoadWxH("JFXJ/ADJMIX.lua", gv3, gv4, gv6, gv7) -- Screen size specific function
 
@@ -16,7 +17,7 @@ local function run(event)
 	end
 	
 	-- Enable adjustment function
-	adj = 4
+	cf.SetAdjust(4)
 	
 	Draw()
 end -- run()

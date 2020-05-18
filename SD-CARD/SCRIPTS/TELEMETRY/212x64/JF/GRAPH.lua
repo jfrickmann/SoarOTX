@@ -1,5 +1,5 @@
 -- 212x64/JF/GRAPH.lua
--- Timestamp: 2019-10-20
+-- Timestamp: 2020-04-10
 -- Created by Jesper Frickmann
 -- Telemetry script for plotting telemetry parameters recorded in the log file.
 
@@ -15,7 +15,7 @@ end
 local Plot = soarUtil.LoadWxH("PLOT.lua", gr) -- Screen size specific function
 
 local function Draw(event)
-	soarUtil.InfoBar(" " .. string.sub(gr.flightTable[gr.flightIndex][2], 1, 8) .. "\t" .. gr.logFileHeaders[gr.plotIndex])
+	soarUtil.InfoBar(string.sub(gr.flightTable[gr.flightIndex][2], 1, 8) .. "\t" .. gr.logFileHeaders[gr.plotIndex])
 	Plot()
 	
 	if gr.viewMode == 1 then -- Normal graph view

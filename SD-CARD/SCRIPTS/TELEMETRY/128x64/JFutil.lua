@@ -54,4 +54,5 @@ function soarUtil.ShowHelp(ht)
 			y = y + 11
 		end
 	end
+
 end -- ShowHelp()

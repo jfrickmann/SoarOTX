@@ -1,5 +1,5 @@
 -- 128x64/JF5J/SK.lua
--- Timestamp: 2019-10-18
+-- Timestamp: 2020-05-08
 -- Created by Jesper Frickmann
 
 local sk = ... -- List of shared variables
@@ -8,17 +8,12 @@ local 	function Draw()
 	local fmNbr, fmName = getFlightMode()
 	soarUtil.InfoBar(fmName)	
 
-	if getValue(sk.armId) >0 then
-		lcd.drawText(2, 28, "MOTOR  ARMED", DBLSIZE + BLINK + INVERS)
-		return
-	end
-
 	lcd.drawText(0, 20, "Landing")
 	lcd.drawText(0, 42, "Start")
 	lcd.drawText(72, 42, "Mot")
-	lcd.drawTimer(128, 38, sk.motTmr.value, MIDSIZE + RIGHT)
+	lcd.drawTimer(128, 38, sk.motorTimer.value, MIDSIZE + RIGHT)
 
-	if sk.state == sk.STATE_INITIAL then
+	if sk.state == sk.STATE_INITIAL or sk.target > 0 then
 		lcd.drawText(72, 20, "Tgt")
 	elseif sk.state <= sk.STATE_GLIDE then
 		lcd.drawText(72, 20, "Rem")
@@ -26,10 +21,12 @@ local 	function Draw()
 		lcd.drawText(72, 20, "Flt")
 	end
 
-	if sk.state == sk.STATE_INITIAL or sk.state == sk.STATE_TIME then
-		lcd.drawTimer(128, 16, sk.fltTmr.value, MIDSIZE + RIGHT + BLINK + INVERS)
+	if sk.target > 0 then
+		lcd.drawTimer(128, 16, sk.target, MIDSIZE + RIGHT + BLINK + INVERS)
+	elseif sk.state == sk.STATE_TIME then
+		lcd.drawTimer(128, 16, sk.flightTimer.value, MIDSIZE + RIGHT + BLINK + INVERS)
 	else
-		lcd.drawTimer(128, 16, sk.fltTmr.value, MIDSIZE + RIGHT)
+		lcd.drawTimer(128, 16, sk.flightTimer.value, MIDSIZE + RIGHT)
 	end
 
 	if sk.state < sk.STATE_LANDINGPTS then

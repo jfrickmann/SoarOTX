@@ -1,48 +1,84 @@
 -- JF F3J Timing and score keeping, fixed part
--- Timestamp: 2019-10-17
+-- Timestamp: 2020-05-14
 -- Created by Jesper Frickmann
--- Telemetry script for timing and keeping scores for F3J.
--- Depends on library functions in FUNCTIONS/JFLib.lua
--- Depends on custom script exporting the value of global "tmr" to OpenTX
 
-local sk = {} -- Variables shared with the loadable part
-local winId = getFieldInfo("ls22").id -- Input ID for window timer
-local flightId = getFieldInfo("ls24").id -- Input ID for flight timer
-local altiId = getFieldInfo("Alti+").id -- Input ID for the Alti sensor
-local altiTime -- Time for recording start height
+local FM_KAPOW = 3 -- KAPOW flight mode
+local LS_ALT = getFieldInfo("ls1").id -- Input ID for allowing altitude calls
+local LS_ALT10 = getFieldInfo("ls8").id -- Input ID for altitude calls every 10 sec.
+local LS_TRIGGER = getFieldInfo("ls9").id -- Input ID for the trigger switch
+
+local altTime -- Time for recording start height
 local prevWt -- Previous window timer value
-local startHeightRec -- Start height has been recorded
+local TriggerOld = (getValue(LS_TRIGGER) > 0) -- Previous position
+local flightModeOld = getFlightMode() -- To be able to detect flight mode changes
+local sk = {} -- Variables shared with the loadable part
+sk.target = math.max(60, model.getTimer(0).start)
 
 -- Program states, shared with loadable part
 sk.STATE_INITIAL = 0 -- Set flight time before the flight
 sk.STATE_WINDOW = 1 -- Task window is active
-sk.STATE_LANDINGPTS = 2 -- Landed, input landing points
-sk.STATE_TIME = 3 -- Input flight time
-sk.STATE_SAVE = 4 -- Ready to save
+sk.STATE_FLYING = 2 -- Flight timer is running
+sk.STATE_LANDINGPTS = 3 -- Landed, input landing points
+sk.STATE_TIME = 4 -- Input flight time
+sk.STATE_SAVE = 5 -- Ready to save
 sk.state = sk.STATE_INITIAL
 sk.myFile = "/SCRIPTS/TELEMETRY/JF3J/SK.lua" -- Score keeper user interface file
 
+soarUtil.SetGVTmr(0)
+
 local function background()
+	local flightMode = getFlightMode()
+	local trigger = (getValue(LS_TRIGGER) > 0)
+	local triggerPulled = (trigger and not triggerOld)
+	local triggerReleased = (not trigger and triggerOld)	
+	triggerOld = trigger
+
+	sk.windowTimer = model.getTimer(0)
+	sk.flightTimer = model.getTimer(1)
+
+	soarUtil.callAlt = (getValue(LS_ALT10) > 0) -- Call alt every 10 sec.
+	
 	if sk.state == sk.STATE_INITIAL then
 		sk.landingPts = 0
 		sk.startHeight = 0
-		startHeightRec = false
-		tmr = 1 -- Ready to start the window timer
 
-		if getValue(winId) > 0 then -- Window started
-			altiTime = 0
+		if triggerReleased then -- Window started
+			playTone(1760, 100, PLAY_NOW)
 			sk.state = sk.STATE_WINDOW
-			tmr = 0
+			soarUtil.SetGVTmr(1)
 			prevWt = model.getTimer(0).value
+			altTime = 0
+			sk.target = 0
 		end
+
+		-- Reset altitude if launch mode entered
+		if flightMode == soarUtil.FM_LAUNCH and flightModeOld ~= flightMode then
+			soarUtil.ResetAlt()
+		end
+		
 	elseif sk.state == sk.STATE_WINDOW then
-		if not startHeightRec and getValue(flightId) > 0 then -- Flight timer started; record the start height in 10 sec.
-			if altiTime == 0 then
-				altiTime = getTime() + 1000
-			elseif getTime() > altiTime then -- Record the start height
-				sk.startHeight = getValue(altiId)
-				startHeightRec = true
+		if triggerPulled then
+			-- Start flight timer
+			playTone(1760, 100, PLAY_NOW)
+			soarUtil.SetGVTmr(2)
+
+			sk.state = sk.STATE_FLYING
+			altTime = getTime() + 1000
+			sk.startHeight = soarUtil.altMax
+		end
+
+	elseif sk.state == sk.STATE_FLYING then
+		-- Record (and announce) start height
+		if altTime > 0 and getTime() > altTime then
+			sk.startHeight = soarUtil.altMax
+			altTime = 0
+			
+			-- Call launch height
+			if getValue(LS_ALT) > 0 then
+				playNumber(sk.startHeight, soarUtil.altUnit)
 			end
+			
+			if sk.startHeight == 0 then sk.startHeight = 100 end -- If no altimeter; default to 100
 		end
 
 		local wt = model.getTimer(0).value -- Current window timer value
@@ -66,12 +102,22 @@ local function background()
 			end
 		end
 		
+		-- Stop flight when the window expires
+		if wt <= 0 and prevWt > 0 then
+			soarUtil.SetGVTmr(1)
+		end
+		
 		prevWt = wt
 		
-		if getValue(winId) < 0 then -- Stop timer and record scores
+		if (triggerPulled and getTime() > altTime) or getFlightMode() == FM_KAPOW then
+			-- Stop timer and record scores
+			playTone(1760, 100, PLAY_NOW)
 			sk.state = sk.STATE_LANDINGPTS
+			soarUtil.SetGVTmr(0)
 		end
 	end
+	
+	flightModeOld = flightMode
 end  --  background()
 
 -- Forward run() call to the loadable part

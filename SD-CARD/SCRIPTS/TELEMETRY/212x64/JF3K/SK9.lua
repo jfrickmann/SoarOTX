@@ -1,5 +1,5 @@
 -- 212x64/JF3K/SK9.lua
--- Timestamp: 2019-09-29
+-- Timestamp: 2020-04-10
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -11,7 +11,7 @@ function ui.Draw()
 	local split
 
 	if not ui.planeName then
-		return soarUtil.InfoBar(" No scores recorded ")
+		return soarUtil.InfoBar("No scores recorded ")
 	end
 	
 	soarUtil.InfoBar(ui.taskName)
@@ -30,7 +30,7 @@ function ui.Draw()
 
 		if ui.scores[i] then
 			if ui.unitStr == "s" then
-				lcd.drawText(x, y, string.format("%i. %02i:%02i", i, ui.MinSec(ui.scores[i])), MIDSIZE)
+				lcd.drawText(x, y, string.format("%i. %s", i, soarUtil.TmrStr(ui.scores[i])), MIDSIZE)
 			else
 				lcd.drawText(x, y, string.format("%i. %4i%s", i, ui.scores[i], ui.unitStr), MIDSIZE)
 			end

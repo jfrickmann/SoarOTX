@@ -1,19 +1,32 @@
 -- JF Log Data Graph, loadable part for reading data
--- Timestamp: 2019-11-10
+-- Timestamp: 2020-05-02
 -- Created by Jesper Frickmann
 
 local gr = ... -- List of shared variables
 
--- International users - un-comment ONE of the following lines:
-local FIRST_EXCLUDED = "Rud" -- ENGLISH or DUTCH log files
---local FIRST_EXCLUDED = "Sei" -- GERMAN log files
---local FIRST_EXCLUDED = "Dir" -- FRENCH log files
---local FIRST_EXCLUDED = "Rod" -- SWEDISH log files
---local FIRST_EXCLUDED = "Pln" -- CHECH log files
+-- First excluded is rudder
+local FIRST_EXCLUDED = "Rud"
+ -- in the right language!
+ do
+	local lang = getGeneralSettings().language
+	
+	if lang == "CZ" then
+		FIRST_EXCLUDED = "Smer"
+	elseif lang == "DE" then
+		FIRST_EXCLUDED = "Sei"
+	elseif lang == "FR" or lang == "IT" then
+		FIRST_EXCLUDED = "Dir"
+	elseif lang == "PL" then
+		FIRST_EXCLUDED = "SK"
+	elseif lang == "PT" then
+		FIRST_EXCLUDED = "Lem"
+	elseif lang == "SE" then
+		FIRST_EXCLUDED = "Rod"
+	end
+end
 
 -- Constants
-local FM_LAUNCH = 1 -- Launch flight mode
-local ALTI_PLOT ="Alti(m)" -- Default plot variable
+local ALTI_PLOT ="Alt" -- Default plot variable
 local TIME_GAP = 20 -- Time gap that triggers a new flight
 local MIN_TIME = 20 -- Minimum time of flight that will be plotted
 local READ_MAX = 4 -- Max. no. of record to read in one go
@@ -114,6 +127,7 @@ if not gr.yValues then
 
 			-- Look for trigger field and default plot variable field
 			gr.plotIndex = 3
+			gr.altIndex = -1
 			gr.plotIndexLast = #gr.logFileHeaders
 
 			for i = 1, #lineData do
@@ -121,8 +135,9 @@ if not gr.yValues then
 					gr.fmIndex = i
 				end
 				
-				if gr.logFileHeaders[i] == ALTI_PLOT then
+				if string.sub(gr.logFileHeaders[i], 1, string.len(ALTI_PLOT)) == ALTI_PLOT then
 					gr.plotIndex = i
+					gr.altIndex = i
 				end
 
 				if gr.logFileHeaders[i] == FIRST_EXCLUDED then
@@ -166,7 +181,7 @@ if not gr.yValues then
 				
 				-- Count consecutive records with flight trigger activated
 				if gr.fmIndex then
-					if 1 * lineData[gr.fmIndex] == FM_LAUNCH then
+					if 1 * lineData[gr.fmIndex] == soarUtil.FM_LAUNCH then
 						fmLaunchCount = fmLaunchCount + 1
 					else
 						fmLaunchCount = 0
@@ -215,6 +230,7 @@ if not gr.yValues then
 else -- yValues
 
 	local findLaunchAlt -- Do we want to find launch altitude?
+	local zero -- Zero value for altitude
 	local timerStart -- Time of starting flight timer
 	local indexRead -- Index of X, Y point currently being read
 	local timeStart, timeEnd -- Start and end of current flight
@@ -233,7 +249,7 @@ else -- yValues
 			y2 = 0
 		else
 			x2 = TimeSerial(lineData[2])
-			y2 = lineData[gr.plotIndex] * 1
+			y2 = lineData[gr.plotIndex] - zero
 		end
 	end  --  ReadXY()
 
@@ -260,22 +276,28 @@ else -- yValues
 			gr.yValues[i] = 0
 		end
 
-		if gr.fmIndex then
-			if gr.logFileHeaders[gr.plotIndex] == ALTI_PLOT then
-				findLaunchAlt = 1
-			else
-				findLaunchAlt = 0
-			end
-		end
-		
-		gr.launchAlt = 0
-		indexRead = 0
+		zero = 0
 		
 		-- Read first two lines of data
 		ReadX2Y2()
 		x1 = x2
 		y1 = y2		
 		ReadX2Y2()
+
+		if gr.plotIndex == gr.altIndex then
+			if gr.fmIndex then
+				findLaunchAlt = 1
+			end
+			
+			zero = math.min(y1, y2)
+			y1 = y1 - zero
+			y2 = y2 - zero
+		else
+			findLaunchAlt = 0
+		end
+		
+		gr.launchAlt = 0
+		indexRead = 0
 	end  --  StartReading()
 
 	local function Read()
@@ -295,7 +317,7 @@ else -- yValues
 					
 					if findLaunchAlt == 1 then
 						-- Set timerStart when Launch is ended
-						if 1 * lineData[gr.fmIndex] ~= FM_LAUNCH then
+						if 1 * lineData[gr.fmIndex] ~= soarUtil.FM_LAUNCH then
 							timerStart = x2
 							findLaunchAlt = 2
 						end

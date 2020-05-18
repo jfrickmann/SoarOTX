@@ -1,5 +1,5 @@
 -- 128x64/JF3Kalti/SK.lua
--- Timestamp: 2019-10-09
+-- Timestamp: 2020-04-10
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -14,12 +14,6 @@ ui.tMin = 0
 ui.tMax = sk.taskWindow
 ui.yMin = 0
 ui.yValues = sk.p.yValues
-
--- Convert time to minutes and seconds
-local function MinSec(t)
-	local m = math.floor(t / 60)
-	return m, t - 60 * m
-end -- MinSec()
 
 function ui.Draw()
 	local att
@@ -82,7 +76,7 @@ function ui.Draw()
 		if i > #sk.scores then
 			lcd.drawText(73, dy * i, "- - -", SMLSIZE)
 		elseif sk.p.unit == "s" then
-			lcd.drawText(73, dy * i, string.format("%02i:%02i", MinSec(sk.scores[i].time)), SMLSIZE)
+			lcd.drawText(73, dy * i, string.format("%s", soarUtil.TmrStr(sk.scores[i].time)), SMLSIZE)
 		else
 			lcd.drawText(73, dy * i, string.format("%4i%s", sk.scores[i].gain, sk.p.unit), SMLSIZE)
 		end

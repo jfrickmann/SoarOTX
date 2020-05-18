@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable plugin for 2020 F3K tasks
--- Timestamp: 2019-12-29
+-- Timestamp: 2020-05-10
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -106,34 +106,41 @@ if sk.state == sk.STATE_IDLE then
 	
 	-- TargetTime is used by JF3Ksk.lua
 	if targetType == 2 then -- Poker
+		-- Remember these to announce changes
+		local lastInput = getValue(sk.dial)
+		local lastChange = 0
+		
+		-- Table with step sizes for input { Lwr time limit, step in sec. }
+		local tblStep = {
+			{30, 5},
+			{60, 10},
+			{120, 15},
+			{210, 30},
+			{420, 60},
+			{sk.taskWindow + 60} -- t2 for the last interval
+		}
+		
 		sk.PokerCall = function()
-			local t1, t2, dt, tOut
-			local tIn = getValue(sk.dial)
+			local input = getValue(sk.dial)
+			local i, x = math.modf(1 + (#tblStep - 1) * (math.min(1023, input) + 1024) / 2048)
+			local t1 = tblStep[i][1]
+			local t2 = tblStep[i + 1][1]
+			local dt = tblStep[i][2]
 			
-			if tIn <= -512 then
-				t1 = 0
-				t2 = 60
-				dt = 5
-				tIn = tIn + 1024
-			elseif tIn <= 0 then
-				t1 = 60
-				t2 = 180
-				dt = 10
-				tIn = tIn + 512
-			elseif tIn <= 512 then
-				t1 = 180
-				t2 = 360
-				dt = 15
-			else
-				t1 = 360
-				t2 = sk.taskWindow
-				dt = 30
-				tIn = tIn - 512
+			local result = math.min(sk.winTimer - 1, t1 + dt * math.floor(x * (t2 - t1) /dt))
+			
+			if math.abs(input - lastInput) >= 20 then
+				lastInput = input
+				lastChange = getTime()
 			end
 			
-			tOut = t1 + dt * math.floor((t2 - t1) / 512 * tIn / dt)
+			if lastChange > 0 and getTime() - lastChange > 100 then
+				playTone(3000, 100, PLAY_NOW)
+				playDuration(result)
+				lastChange = 0
+			end
 			
-			return math.max(5, math.min(sk.winTimer - 1, tOut))
+			return result
 		end -- PokerCall()
 
 		sk.TargetTime = function()

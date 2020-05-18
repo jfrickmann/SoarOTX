@@ -1,77 +1,50 @@
--- JF FXJ flap curve adjustment
--- Timestamp: 2019-10-18
+-- JFXJ/BRKCRV.lua
+-- Timestamp: 2020-05-01
 -- Created by Jesper Frickmann
--- Script for adjusting the flaps curves for the JF FXJ program.
 
-local nPoints = 5 -- Number of points on the curves
-local xValue = getFieldInfo("input8").id -- Step input before applying the output curves must be assigned to a channel
-local gvIndex = {7, 8} -- Index of global variables used for communicating with the model program
-local index = {4, 5} -- Indices of the curves
+local GV_FLP = 1 -- Index of global variable set by throttle trim for common flap curve adjustment
+local GV_AIL = 3 -- Index of global variable set by elevator trim for common aileron curve adjustment
 
-local ui = soarUtil.LoadWxH("JFXJ/BRKCRV.lua") -- Screen size specific function
-ui.crv ={} -- Data structures defining the curves
-ui.lasti = 0 -- Index of point on the curves last time
+local CRV_FLP = 4 -- Index of the  flap curve
+local CRV_AIL = 5 -- Index of the  aileron curve
 
-function ui.DrawCurve(x, y, w, h, crv, i)
-	local x1, x2, y1, y2, y3
-	local n = #(crv.y)
-	
-	for j = 1, n do
-		local att
-		-- Screen coordinates
-		x2 = x  + w * (j - 1) / (n - 1)
-		y2 = y + h * (0.5 - 0.005 * crv.y[j])
-		-- Mark point i
-		if j == i then
-			att = SMLSIZE + INVERS
-			y3 = crv.y[j]
-		else
-			att = SMLSIZE
-		end
-		-- Draw marker
-		lcd.drawText(x2, y2 - 2.5, "|", att)
-		-- Draw line
-		if j >= 2 then
-			lcd.drawLine(x1, y1, x2, y2, SOLID, FORCE)
-		end
-		-- Save this point before going to the next one
-		x1, y1 = x2, y2
-	end
-	
-	-- Draw reference lines
-	lcd.drawLine(x, y + 0.5 * h, x + w, y + 0.5 * h, DOTTED, FORCE)
-	lcd.drawLine(x + 0.5 * w, y, x + 0.5 * w, y + h, DOTTED, FORCE)
+local INP_STEP = getFieldInfo("input8").id -- Step input before applying the output curves must be assigned to a channel
 
-	-- Draw the value being edited
-	lcd.drawNumber(x + w, y + h - 6, y3, RIGHT + SMLSIZE)
-end -- DrawCurve()
+local cf = ...
+local ui = {} -- Data shared with GUI
+ui.n = 5 -- Number of points on the curves
+
+local flpCrv -- Table with data for the flap curve
+local ailCrv -- Table with data for the aileron curve
+local lastpoint = 0 -- Index of point on the curves last time
+
+soarUtil.LoadWxH("JFXJ/BRKCRV.lua", ui) -- Screen size specific function
 
 -- Find index of the curve point that corresponds to the value of the step input
-local function FindIndex()
-	local x = getValue(xValue)
-	return math.floor((nPoints - 1) / 2048 * (x + 1024) + 1.5) 
-end -- FindIndex()
+local function FindPoint()
+	local x = getValue(INP_STEP)
+	return math.floor((ui.n - 1) / 2048 * (x + 1024) + 1.5) 
+end -- FindPoint()
 
 -- Work around the stupid fact that getCurve and setCurve tables are incompatible...
-local function GetCurve2(crvIndex)
+local function GetCurve(crvIndex)
 	local newTbl = {}
 	local oldTbl = model.getCurve(crvIndex)
 	
-	newTbl["y"] = {}
-	for i = 1, nPoints do
-		newTbl["y"][i] = oldTbl["y"][i - 1]
+	newTbl.y = {}
+	for i = 1, ui.n do
+		newTbl.y[i] = oldTbl.y[i - 1]
 	end
 	
-	newTbl["smooth"] = 0
-	newTbl["name"] = oldTbl["name"]
+	newTbl.smooth = 0
+	newTbl.name = oldTbl.name
 	
 	return newTbl
-end -- GetCurve2()
+end -- GetCurve()
 
 local function init()
-	for j = 1, 2 do
-		ui.crv[j] = GetCurve2(index[j])
-	end
+	flpCrv = GetCurve(CRV_FLP)
+	ailCrv = GetCurve(CRV_AIL)
 end -- init()
 
 local function run(event)
@@ -80,30 +53,26 @@ local function run(event)
 		return true
 	end
 	
-	local i = FindIndex() -- Index of curve points to change
+	local point = FindPoint() -- Index of curve points to change
 
 	-- Enable adjustment function
-	adj = 2
+	cf.SetAdjust(2)
 
 	-- If index changed, then set GV to current dif. value
-	if i ~= ui.lasti then
-		for j = 1, 2 do
-			model.setGlobalVariable(gvIndex[j], 0, ui.crv[j]["y"][i])
-		end
-
-		ui.lasti = i
+	if point ~= lastpoint then
+		model.setGlobalVariable(GV_FLP, 1, flpCrv.y[point])
+		model.setGlobalVariable(GV_AIL, 1, ailCrv.y[point])
+		lastpoint = point
 	end
 	
-	for j = 1, 2 do
-		local y = model.getGlobalVariable(gvIndex[j], 0)
-		y = math.max(-100, y)
-		y = math.min(100, y)
-		
-		ui.crv[j]["y"][i] = y
-		model.setCurve(index[j], ui.crv[j])
-	end
+	flpCrv.y[point] = model.getGlobalVariable(GV_FLP, soarUtil.FM_ADJUST)
+	model.setCurve(CRV_FLP, flpCrv)
 
-	ui.Draw()
+	ailCrv.y[point] = model.getGlobalVariable(GV_AIL, soarUtil.FM_ADJUST)
+	model.setCurve(CRV_AIL, ailCrv)
+
+	ui.Draw(flpCrv.y, ailCrv.y, point)
+	soarUtil.ShowHelp({msg1 = "Throttle - select point", msg2 = "TrmT, TrmE - adjust", exit = "DONE" })
 end -- run()
 
 return{init = init, run = run}

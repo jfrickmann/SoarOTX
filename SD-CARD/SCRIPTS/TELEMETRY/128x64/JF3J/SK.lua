@@ -1,18 +1,17 @@
 -- 128x64/JF3J/SK.lua
--- Timestamp: 2019-09-29
+-- Timestamp: 2020-05-08
 -- Created by Jesper Frickmann
 
 local sk = ... -- List of shared variables
-local ui = { } -- List of  variables shared with loadable user interface
 
-function ui.Draw()
+local function Draw()
 	local fmNbr, fmName = getFlightMode()
 	soarUtil.InfoBar(fmName)	
 
 	lcd.drawText(0, 20, "Landing")
 	lcd.drawText(0, 42, "Start")
 
-	if sk.state == sk.STATE_INITIAL then
+	if sk.state == sk.STATE_INITIAL or sk.target > 0 then
 		lcd.drawText(72, 20, "Tgt")
 	elseif sk.state <= sk.STATE_WINDOW then
 		lcd.drawText(72, 20, "Rem")
@@ -20,18 +19,18 @@ function ui.Draw()
 		lcd.drawText(72, 20, "Win")
 	end
 
-	if sk.state == sk.STATE_INITIAL then
-		lcd.drawTimer(128, 16, ui.winTmr.value, MIDSIZE + RIGHT + BLINK + INVERS)
+	if sk.target > 0 then
+		lcd.drawTimer(128, 16, sk.target, MIDSIZE + RIGHT + BLINK + INVERS)
 	else
-		lcd.drawTimer(128, 16, ui.winTmr.value, MIDSIZE + RIGHT)
+		lcd.drawTimer(128, 16, sk.windowTimer.value, MIDSIZE + RIGHT)
 	end
 
 	lcd.drawText(72, 42, "Flt")
 
 	if sk.state == sk.STATE_TIME then
-		lcd.drawTimer(128, 38, ui.fltTmr.value, MIDSIZE + RIGHT + BLINK + INVERS)
+		lcd.drawTimer(128, 38, sk.flightTimer.value, MIDSIZE + RIGHT + BLINK + INVERS)
 	else
-		lcd.drawTimer(128, 38, ui.fltTmr.value, MIDSIZE + RIGHT)
+		lcd.drawTimer(128, 38, sk.flightTimer.value, MIDSIZE + RIGHT)
 	end
 
 	if sk.state < sk.STATE_LANDINGPTS then
@@ -56,4 +55,4 @@ function ui.Draw()
 	end
 end -- Draw()
 
-return ui
+return Draw

@@ -1,5 +1,5 @@
 -- 128x64/JF3K/SK.lua
--- Timestamp: 2019-09-29
+-- Timestamp: 2020-04-10
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -8,12 +8,6 @@ local ui = { } -- User interface functions
 -- The smaller screens can only fit 7 flights
 sk.launches = math.min(7, sk.launches)
 sk.taskScores = math.min(7, sk.taskScores)
-
--- Convert time to minutes and seconds
-local function MinSec(t)
-	local m = math.floor(t / 60)
-	return m, t - 60 * m
-end -- MinSec()
 
 function ui.Draw()
 	local y = 8
@@ -27,7 +21,7 @@ function ui.Draw()
 		lcd.drawText(7, y, ".")
 
 		if i <= #sk.scores then
-			lcd.drawText(0, y, string.format("%i. %02i:%02i", i, MinSec(sk.scores[i])))
+			lcd.drawText(0, y, string.format("%i. %s", i, soarUtil.TmrStr(sk.scores[i])))
 		else
 			lcd.drawText(0, y, string.format("%i. - - -", i))
 		end

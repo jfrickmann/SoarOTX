@@ -1,12 +1,12 @@
 -- 212x64/JF3J/SB.lua
--- Timestamp: 2019-09-29
+-- Timestamp: 2020-04-10
 -- Created by Jesper Frickmann
 
 local ui = { } -- List of shared variables
 
 function ui.Draw()
 	if #ui.lineData < 7 then
-		return soarUtil.InfoBar(" No scores recorded ")
+		return soarUtil.InfoBar("No scores recorded ")
 	end
 
 	soarUtil.InfoBar(ui.lineData[2] .. " " .. ui.lineData[3])

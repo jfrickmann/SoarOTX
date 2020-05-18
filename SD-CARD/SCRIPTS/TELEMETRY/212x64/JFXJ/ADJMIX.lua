@@ -1,11 +1,11 @@
 -- 212x64/JF/ADJMIX.lua
--- Timestamp: 2019-09-29
+-- Timestamp: 2020-04-10
 -- Created by Jesper Frickmann
 
 local gv3, gv4, gv6, gv7 = ... -- List of shared variables
 
 local	function Draw()
-	soarUtil.InfoBar(" Adjust mixes ")
+	soarUtil.InfoBar("Adjust mixes ")
 	
 	lcd.drawText(10, 14, "Rudder trim = Aile-rudder")
 	lcd.drawText(10, 26, "Aileron trim = Differential")

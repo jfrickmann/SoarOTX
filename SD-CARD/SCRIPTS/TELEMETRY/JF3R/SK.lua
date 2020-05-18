@@ -1,32 +1,26 @@
 -- JF F3RES Timing and score keeping, loadable part
--- Timestamp: 2019-10-22
+-- Timestamp: 2020-04-27
 -- Created by Jesper Frickmann
--- Telemetry script for timing and keeping scores for F3RES.
 
+local sbFile = "/SCRIPTS/TELEMETRY/JF3R/SB.lua" -- Score browser user interface file
 local sk = ...  -- List of variables shared between fixed and loadable parts
-local Draw = soarUtil.LoadWxH("JF3R/SK.lua", sk) -- Screen size specific function
+local ui = soarUtil.LoadWxH("JF3R/SK.lua", sk) -- Screen size specific function
 
 local function run(event)
-	sk.winTmr = model.getTimer(0)
-	sk.fltTmr = model.getTimer(1)
+	ui.winTmr = model.getTimer(0)
+	ui.fltTmr = model.getTimer(1)
 	
-	Draw()
+	ui.Draw()
 
-	if sk.state == sk.STATE_SETWINTMR and soarUtil.EvtEnter(event) then
-		sk.state = sk.STATE_SETFLTTMR
-	end
-	
-	if (sk.state > sk.STATE_LANDINGPTS and sk.winTmr.value > 0) or sk.state == sk.STATE_SETFLTTMR then
-		if soarUtil.EvtExit(event) then
-			-- Go back one step
-			sk.state  = sk.state  - 1
-		end
-	end
-	
 	if sk.state <= sk.STATE_SETFLTTMR  then -- Set flight time before the flight
 		local dt = 0
 		local tgt
 		
+		-- Show score browser
+		if soarUtil.EvtExit(event) then
+			sk.myFile = sbFile
+		end
+	
 		if soarUtil.EvtInc(event) then
 			dt = 60
 		end
@@ -36,7 +30,11 @@ local function run(event)
 		end
 		
 		if sk.state == sk.STATE_SETWINTMR then
-			tgt = sk.winTmr.start + dt
+			if soarUtil.EvtEnter(event) then
+				sk.state = sk.STATE_SETFLTTMR
+			end
+	
+			tgt = ui.winTmr.start + dt
 			if tgt < 60 then
 				tgt = 5940
 			elseif tgt > 5940 then
@@ -46,11 +44,15 @@ local function run(event)
 		
 			soarUtil.ShowHelp({ enter = "NEXT", ud = "SET WINDOW" })
 		else
-			tgt = sk.fltTmr.start + dt
+			if soarUtil.EvtEnter(event) then
+				sk.state = sk.STATE_SETWINTMR
+			end
+	
+			tgt = ui.fltTmr.start + dt
 			if tgt < 60 then
 				tgt = 60
-			elseif tgt > sk.winTmr.start then
-				tgt = sk.winTmr.start
+			elseif tgt > ui.winTmr.start then
+				tgt = ui.winTmr.start
 			end
 			model.setTimer(1, {start = tgt, value = tgt})
 		
@@ -87,10 +89,34 @@ local function run(event)
 		end
 		
 		if soarUtil.EvtEnter(event) then
-			sk.state = sk.STATE_SAVE
+			sk.state = sk.STATE_TIME
 		end
 		
 		soarUtil.ShowHelp({ enter = "NEXT", ud = "SET POINTS" })
+		
+	elseif sk.state == sk.STATE_TIME then -- Input flight time
+		local dt = 0
+		
+		if soarUtil.EvtInc(event) then
+			dt = 1
+		end
+		
+		if soarUtil.EvtDec(event) then
+			dt = -1
+		end
+		
+		if dt ~= 0 then
+			ui.fltTmr.value = ui.fltTmr.value + dt
+			model.setTimer(1, ui.fltTmr)
+		end
+		
+		if soarUtil.EvtEnter(event) then
+			sk.state = sk.STATE_SAVE
+		elseif soarUtil.EvtExit(event) then
+			sk.state = sk.STATE_LANDINGPTS
+		end
+		
+		soarUtil.ShowHelp({ enter = "FINISH", exit = "BACK", ud = "SET TIME" })
 		
 	elseif sk.state == sk.STATE_SAVE then
 		if soarUtil.EvtEnter(event) then -- Record scores if user pressed ENTER
@@ -102,18 +128,20 @@ local function run(event)
 				local dateStr = string.format("%04d-%02d-%02d", now.year, now.mon, now.day)
 				local timeStr = string.format("%02d:%02d", now.hour, now.min)
 
-				io.write(logFile, string.format("%s,%s,%s,%s,", nameStr, dateStr, timeStr, sk.landingPts))
-				io.write(logFile, string.format("%s,%s,%s,%s\n", sk.winTmr.start, sk.winTmr.value, sk.fltTmr.start, sk.fltTmr.value))
+				io.write(logFile, string.format("%s,%s,%s,", nameStr, dateStr, timeStr))
+				io.write(logFile, string.format("%s,%4.1f,", sk.landingPts, sk.startHeight))
+				io.write(logFile, string.format("%s,%s,%s,%s\n", ui.winTmr.start, ui.winTmr.value, ui.fltTmr.start, ui.fltTmr.value))
 
 				io.close(logFile)
 			end
 			
 			sk.state = sk.STATE_SETWINTMR
-		end
+			model.resetTimer(1)
 
-		-- Do not record scores
-		if soarUtil.EvtExit(event) then 
+		elseif soarUtil.EvtExit(event) then -- Do not record scores if user pressed EXIT
 			sk.state = sk.STATE_SETWINTMR
+			model.resetTimer(1)
+
 		end
 	end
 end  --  run()
