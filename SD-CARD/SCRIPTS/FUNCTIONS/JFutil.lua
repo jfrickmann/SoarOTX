@@ -1,9 +1,18 @@
 -- JF Utility Library
--- Timestamp: 2020-04-09
+-- Timestamp: 2020-05-06
 -- Created by Jesper Frickmann
 
 soarUtil = { } -- Global "namespace"
-soarUtil.showHelp = true -- Show help text in screens
+soarUtil.FM_ADJUST = 1 -- Adjustment flight mode
+soarUtil.FM_LAUNCH = 2 -- Launch/motor flight mode
+soarUtil.GV_BAT = 6 -- GV used for battery warning in FM_ADJUST
+
+soarUtil.showHelp = (model.getGlobalVariable(4, 1) == 1) -- Show help text in screens
+soarUtil.bat = 0 -- Battery sensor
+soarUtil.alt = 0 -- Altimeter sensor
+soarUtil.altMax = 0 -- Max. alt.
+soarUtil.altUnit = 9 -- Altitude units (m)
+soarUtil.callAlt = false -- Call altitude every 10 sec.
 
 -- For loading and unloading of programs with the small shell script
 local programs = {} -- List of loaded programs
@@ -14,6 +23,15 @@ local ST_STANDBY = 1 -- Marked programs are swept; standing by for loading
 local ST_LOADED = 2 -- Program loaded but not yet initialized
 local ST_RUNNING = 3 -- Program is loaded, initialized, and running
 local ST_MARKED = 4 -- Programs are marked inactive and swept if not running
+
+-- For telemetry
+local idBat -- Id of battery sensor
+local nextWarning = 0 -- Timer between low battery warnings
+local idAlt -- Id of altimeter sensor
+local zeroAlt = 0 -- Internal zero'ing of altimetry
+local nextCall = 0 -- Timer between altitude announcements
+local afterLaunch = 0 -- Time period after launch where battery warning threshold is lowered
+local rescan = 0 -- Rescan battery sensor, because Cels can be a little slow getting started
 
 -- Load a file chunk for Tx specific screen size
 function soarUtil.LoadWxH(file, ...)
@@ -75,9 +93,9 @@ function soarUtil.RunLoadable(file, event, ...)
 		else
 			err = string.gsub(err, file .. ":", "")
 			lcd.clear()
-			lcd.drawText(0, 0, "ERROR loading the script:", SMLSIZE)
-			lcd.drawText(0, 10, file, SMLSIZE)
-			lcd.drawText(0, 20, err, SMLSIZE)
+			lcd.drawText(0, 8, "ERROR loading the script: ", SMLSIZE)
+			lcd.drawText(0, 16, file, SMLSIZE)
+			lcd.drawText(0, 24, err, SMLSIZE)
 		end
 
 	elseif states[file] == ST_LOADED then
@@ -133,21 +151,121 @@ if not (EVT_MENU_BREAK or EVT_SHIFT_BREAK) and EVT_LEFT_BREAK then
 	EVT_MENU_BREAK = bit32.bor(EVT_LEFT_BREAK, EVT_RIGHT_BREAK)
 end
 
+-- Set timer GV
+function soarUtil.SetGVTmr(tmr)
+	model.setGlobalVariable(8, 0, tmr)
+end
+
+
 -- Show or hide help text
 function soarUtil.ToggleHelp(event)
-	if soarUtil.showHelp then
-		soarUtil.showHelp = (event ~= EVT_MENU_BREAK and event ~= EVT_SHIFT_BREAK)
-	else
-		soarUtil.showHelp = (event == EVT_MENU_BREAK or event == EVT_SHIFT_BREAK)
+	if event == EVT_MENU_BREAK or event == EVT_SHIFT_BREAK then
+		local sh = 1 - model.getGlobalVariable(4, 1)
+		model.setGlobalVariable(4, 1, sh)
+		soarUtil.showHelp = (sh == 1)
 	end
 end -- ToggleHelp()
 
--- Write the current flight mode to a telemetry sensor.
--- Create a sensor named "FM" with id 0x5050 and instance 32 in telemetry.
--- DIY DATA IDs 0x5000 - 0x52ff in opentx/radio/src/telemtry/frsky.h
+-- Return timer as text string
+function soarUtil.TmrStr(secs)
+	local m = math.floor(secs / 60)
+	local s = secs - 60 * m
+	return string.format("%02i:%02i", m, s)
+end -- TmrStr()
+
+-- Reset internal altimeter
+function soarUtil.ResetAlt()
+	zeroAlt = soarUtil.alt + zeroAlt
+	soarUtil.alt = 0
+	soarUtil.altMax = 0
+end
+
 local function run()
-	local fm = getFlightMode()
-	setTelemetryValue(0x5050, 0, 0, fm, 0, 0, "FM")
+	local now = getTime()
+	
+	-- Write the current flight mode to a telemetry sensor.
+	local flightMode = getFlightMode()
+	setTelemetryValue(0x5050, 0, 224, flightMode, 0, 0, "FM")
+	
+	-- Battery sensor
+	if now > rescan then
+		local field = getFieldInfo("Cels")
+		if not field then field = getFieldInfo("RxBt") end
+		if not field then field = getFieldInfo("A1") end
+		
+		if field then
+			idBat = field.id
+			rescan = now + 1000 -- Rescan every 10 sec.
+		end
+	end
+
+	if idBat then
+		local bat = getValue(idBat)
+		
+		if type(bat) == "table" then
+			for i = 2, #bat do
+				bat[1] = math.min(bat[1], bat[i])
+			end
+
+			soarUtil.bat = bat[1]
+		else
+			soarUtil.bat = bat
+		end
+	end
+	
+	-- Battery warnings
+	if now > nextWarning then		
+		local lowBat = 0.1 * model.getGlobalVariable(soarUtil.GV_BAT, soarUtil.FM_ADJUST)
+
+		if flightMode == soarUtil.FM_LAUNCH then
+			if soarUtil.bat == 0 then
+				-- Warning in launch mode - is the plane off?
+				playHaptic(200, 0, 1)
+				playTone(150, 400, 0 , PLAY_NOW , 4)
+				nextWarning = now + 500
+			else
+				afterLaunch = now + 300
+			end
+		end
+		
+		-- If motor draws on the same battery
+		if now < afterLaunch then
+			lowBat = 0.9 * lowBat
+		end
+
+		if soarUtil.bat > 0 and soarUtil.bat < lowBat then
+			-- Low battery warning
+			playFile("lowbat.wav")
+			playNumber(10 * soarUtil.bat + 0.5, 1, PREC1)
+			nextWarning = now + 2000
+		end
+	end
+	
+	-- Altimeter sensor
+	if not idAlt then
+		local field = getFieldInfo("Alt")
+		
+		if field then
+			idAlt = field.id
+			unitAlt = field.unit
+		end
+
+	else
+		local alt = getValue(idAlt)
+		
+		if alt then
+			soarUtil.alt = alt - zeroAlt
+			soarUtil.altMax = math.max(soarUtil.alt, soarUtil.altMax)
+		else -- The sensor was deleted?
+			idAlt = nil
+		end
+	end
+	
+	-- Altitude calls
+	if soarUtil.callAlt and now > nextCall then
+		playNumber(soarUtil.alt, soarUtil.altUnit)
+		nextCall = now + 1000
+	end
 end -- run()
 
 return {run = run}
