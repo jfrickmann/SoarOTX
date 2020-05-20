@@ -1,5 +1,5 @@
 -- JF F3RES Timing and score keeping, fixed part
--- Timestamp: 2020-05-01
+-- Timestamp: 2020-05-20
 -- Created by Jesper Frickmann
 
 local LS_ALT = getFieldInfo("ls1").id -- Input ID for allowing altitude calls
@@ -34,6 +34,9 @@ local function background()
 	triggerOld = trigger
 
 	soarUtil.callAlt = (getValue(LS_ALT10) > 0) -- Call alt every 10 sec.
+	
+	sk.windowTimer = model.getTimer(0)
+	sk.flightTimer = model.getTimer(1)
 	
 	if sk.state == sk.STATE_SETWINTMR then
 		sk.landingPts = 0
@@ -105,6 +108,9 @@ local function background()
 			playTone(1760, 100, PLAY_NOW)
 			sk.state = sk.STATE_LANDINGPTS
 			soarUtil.SetGVTmr(0)
+
+			model.setTimer(1, {value = sk.flightTimer.start - sk.flightTimer.value})
+			playDuration(sk.flightTimer.start - sk.flightTimer.value)
 		end
 	end
 	

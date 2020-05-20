@@ -1,11 +1,10 @@
 -- 212x64/JF3R/SK.lua
--- Timestamp: 2020-04-30
+-- Timestamp: 2020-05-20
 -- Created by Jesper Frickmann
 
 local sk = ... -- List of shared variables
-local ui = { } -- List of  variables shared with loadable user interface
 
-function ui.Draw()
+local function Draw()
 	local fmNbr, fmName = getFlightMode()
 	soarUtil.InfoBar(fmName)	
 
@@ -29,10 +28,10 @@ function ui.Draw()
 	lcd.drawText(0, 20, "Landing", MIDSIZE)
 
 	lcd.drawText(110, 20, "Window", MIDSIZE)
-	lcd.drawTimer(212, 16, ui.winTmr.value, DBLSIZE + RIGHT + blnkWt)
+	lcd.drawTimer(LCD_W, 16, sk.windowTimer.value, DBLSIZE + RIGHT + blnkWt)
 
 	lcd.drawText(110, 42, txtFt, MIDSIZE)
-	lcd.drawTimer(212, 38, ui.fltTmr.value, DBLSIZE + RIGHT + blnkFt)
+	lcd.drawTimer(LCD_W, 38, sk.flightTimer.value, DBLSIZE + RIGHT + blnkFt)
 
 	if sk.state < sk.STATE_LANDINGPTS then
 		lcd.drawText(95, 16, "--", DBLSIZE + RIGHT)
@@ -48,4 +47,4 @@ function ui.Draw()
 	end
 end  --  Draw()
 
-return ui
+return Draw

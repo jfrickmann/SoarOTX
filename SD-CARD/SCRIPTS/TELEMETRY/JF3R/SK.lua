@@ -1,17 +1,12 @@
 -- JF F3RES Timing and score keeping, loadable part
--- Timestamp: 2020-04-27
+-- Timestamp: 2020-05-20
 -- Created by Jesper Frickmann
 
 local sbFile = "/SCRIPTS/TELEMETRY/JF3R/SB.lua" -- Score browser user interface file
 local sk = ...  -- List of variables shared between fixed and loadable parts
-local ui = soarUtil.LoadWxH("JF3R/SK.lua", sk) -- Screen size specific function
+local Draw = soarUtil.LoadWxH("JF3R/SK.lua", sk) -- Screen size specific function
 
 local function run(event)
-	ui.winTmr = model.getTimer(0)
-	ui.fltTmr = model.getTimer(1)
-	
-	ui.Draw()
-
 	if sk.state <= sk.STATE_SETFLTTMR  then -- Set flight time before the flight
 		local dt = 0
 		local tgt
@@ -34,7 +29,7 @@ local function run(event)
 				sk.state = sk.STATE_SETFLTTMR
 			end
 	
-			tgt = ui.winTmr.start + dt
+			tgt = sk.windowTimer.start + dt
 			if tgt < 60 then
 				tgt = 5940
 			elseif tgt > 5940 then
@@ -48,11 +43,11 @@ local function run(event)
 				sk.state = sk.STATE_SETWINTMR
 			end
 	
-			tgt = ui.fltTmr.start + dt
+			tgt = sk.flightTimer.start + dt
 			if tgt < 60 then
 				tgt = 60
-			elseif tgt > ui.winTmr.start then
-				tgt = ui.winTmr.start
+			elseif tgt > sk.windowTimer.start then
+				tgt = sk.windowTimer.start
 			end
 			model.setTimer(1, {start = tgt, value = tgt})
 		
@@ -106,8 +101,8 @@ local function run(event)
 		end
 		
 		if dt ~= 0 then
-			ui.fltTmr.value = ui.fltTmr.value + dt
-			model.setTimer(1, ui.fltTmr)
+			sk.flightTimer.value = sk.flightTimer.value + dt
+			model.setTimer(1, sk.flightTimer)
 		end
 		
 		if soarUtil.EvtEnter(event) then
@@ -130,7 +125,7 @@ local function run(event)
 
 				io.write(logFile, string.format("%s,%s,%s,", nameStr, dateStr, timeStr))
 				io.write(logFile, string.format("%s,%4.1f,", sk.landingPts, sk.startHeight))
-				io.write(logFile, string.format("%s,%s,%s,%s\n", ui.winTmr.start, ui.winTmr.value, ui.fltTmr.start, ui.fltTmr.value))
+				io.write(logFile, string.format("%s,%s,%s,%s\n", sk.windowTimer.start, sk.windowTimer.value, sk.flightTimer.start, sk.flightTimer.value))
 
 				io.close(logFile)
 			end
@@ -144,6 +139,8 @@ local function run(event)
 
 		end
 	end
+	
+	Draw()
 end  --  run()
 
 return {run = run}
