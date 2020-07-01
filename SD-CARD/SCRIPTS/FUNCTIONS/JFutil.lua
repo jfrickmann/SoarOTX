@@ -1,5 +1,5 @@
 -- JF Utility Library
--- Timestamp: 2020-05-06
+-- Timestamp: 2020-07-01
 -- Created by Jesper Frickmann
 
 soarUtil = { } -- Global "namespace"
@@ -247,7 +247,7 @@ local function run()
 		
 		if field then
 			idAlt = field.id
-			unitAlt = field.unit
+			soarUtil.altUnit = field.unit
 		end
 
 	else
