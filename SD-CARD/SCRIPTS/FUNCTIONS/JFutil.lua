@@ -1,5 +1,5 @@
 -- JF Utility Library
--- Timestamp: 2020-07-01
+-- Timestamp: 2020-08-20
 -- Created by Jesper Frickmann
 
 soarUtil = { } -- Global "namespace"
@@ -221,7 +221,7 @@ local function run()
 			if soarUtil.bat == 0 then
 				-- Warning in launch mode - is the plane off?
 				playHaptic(200, 0, 1)
-				playTone(150, 400, 0 , PLAY_NOW , 4)
+				playTone(450, 160, 40 , 2 , 2)
 				nextWarning = now + 500
 			else
 				afterLaunch = now + 300
