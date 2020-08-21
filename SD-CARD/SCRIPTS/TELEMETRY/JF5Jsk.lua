@@ -1,5 +1,5 @@
 -- JF F5J Timing and score keeping, fixed part
--- Timestamp: 2020-05-14
+-- Timestamp: 2020-08-20
 -- Created by Jesper Frickmann
 
 local FM_KAPOW = 3 -- KAPOW flight mode
@@ -145,12 +145,7 @@ local function background()
 			end
 		end
 		
-		if motorOn then -- Motor restart; score a zero
-			sk.state = sk.STATE_SAVE
-			model.setTimer(0, {value = 0})
-			sk.startHeight = 0
-			
-		elseif (getValue(LS_TRIGGER) > 0 and offTime == 0) or getFlightMode() == FM_KAPOW then
+		if (getValue(LS_TRIGGER) > 0 and offTime == 0) or getFlightMode() == FM_KAPOW then
 			-- Stop timer and record scores
 			sk.state = sk.STATE_LANDINGPTS
 			soarUtil.SetGVTmr(0) -- Flight timer off
@@ -158,6 +153,13 @@ local function background()
 			model.setTimer(0, {value = sk.flightTimer.start - sk.flightTimer.value})
 			playDuration(sk.flightTimer.start - sk.flightTimer.value)
 		end
+	end
+	
+	-- Motor restart; score a zero
+	if (sk.state == sk.STATE_GLIDE or sk.state == sk.STATE_LANDINGPTS) and motorOn then
+		sk.state = sk.STATE_SAVE
+		model.setTimer(0, {value = 0})
+		sk.startHeight = 0
 	end
 end  --  background()
 
