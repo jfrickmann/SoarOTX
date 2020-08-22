@@ -1,5 +1,5 @@
 -- JF Utility Library
--- Timestamp: 2020-08-20
+-- Timestamp: 2020-08-22
 -- Created by Jesper Frickmann
 
 soarUtil = { } -- Global "namespace"
@@ -256,6 +256,7 @@ local function run()
 		if alt then
 			soarUtil.alt = alt - zeroAlt
 			soarUtil.altMax = math.max(soarUtil.alt, soarUtil.altMax)
+			setTelemetryValue(0x5051, 0, 224, soarUtil.alt, 0, 0, "Alti")
 		else -- The sensor was deleted?
 			idAlt = nil
 		end
