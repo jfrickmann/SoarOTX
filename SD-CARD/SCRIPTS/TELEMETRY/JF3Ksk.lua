@@ -1,5 +1,5 @@
 -- JF F3K Timing and score keeping, fixed part
--- Timestamp: 2020-05-01
+-- Timestamp: 2020-10-05
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 
@@ -58,6 +58,7 @@ end
 -- If input lines were not found, then default to S1 and S2
 if not sk.dial then sk.dial = getFieldInfo("s1").id end
 
+-- Make sure that timers are stopped
 soarUtil.SetGVTmr(0)
 
 -- Function initializing flight timer
@@ -206,7 +207,7 @@ local function background()
 	elseif sk.state == sk.STATE_WINDOW then
 		-- Start task window timer, but not flight timer
 		soarUtil.SetGVTmr(1)
-	else
+	elseif sk.state == sk.STATE_FLYING then
 		-- Start both timers
 		soarUtil.SetGVTmr(2)
 	end
