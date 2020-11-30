@@ -1,5 +1,5 @@
 -- User interface for several score keeper plugins
--- Timestamp: 2019-10-18
+-- Timestamp: 2019-11-24
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -55,7 +55,7 @@ local function run(event)
 		ui.Draw()
 
 		-- Show onscreen help
-		if sk.state <= sk.STATE_PAUSE then
+		if sk.state <= sk.STATE_FINISHED then
 			soarUtil.ShowHelp({ enter = "START WINDOW", exit = "LEAVE TASK", up = "QUICK RELAUNCH", down = "STOP TMR AT EoW" })
 		elseif sk.state == sk.STATE_WINDOW then
 			soarUtil.ShowHelp({ enter = "STOP WINDOW", up = "QUICK RELAUNCH", down = "STOP TMR AT EoW" })

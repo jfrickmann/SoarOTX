@@ -1,5 +1,5 @@
 -- JF F3K Timing and score keeping, fixed part
--- Timestamp: 2020-10-05
+-- Timestamp: 2020-11-24
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 
@@ -31,8 +31,8 @@ sk.selectedTask = 0 -- Selected task in menu
 
 -- Program states
 sk.STATE_IDLE = 1 -- Task window not running
-sk.STATE_FINISHED = 2 -- Task has been finished
-sk.STATE_PAUSE = 3 -- Task window paused, not flying
+sk.STATE_PAUSE = 2 -- Task window paused, not flying
+sk.STATE_FINISHED = 3 -- Task has been finished
 sk.STATE_WINDOW = 4 -- Task window started, not flying
 sk.STATE_READY = 5 -- Flight timer will be started when launch switch is released
 sk.STATE_FLYING = 6 -- Flight timer started but flight not yet committed
@@ -152,7 +152,7 @@ local function background()
 					playNumber(sk.flightTimer, 0)
 				end
 				if countIndex > 1 then countIndex = countIndex - 1 end
-			elseif math.ceil(sk.flightTimer / 60) < math.ceil(prevFt / 60) then
+			elseif sk.flightTimer > 0 and math.ceil(sk.flightTimer / 60) < math.ceil(prevFt / 60) then
 				playDuration(sk.flightTimer, 0)
 			end
 			
