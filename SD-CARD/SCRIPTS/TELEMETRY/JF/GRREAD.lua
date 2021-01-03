@@ -1,5 +1,5 @@
 -- JF Log Data Graph, loadable part for reading data
--- Timestamp: 2020-05-02
+-- Timestamp: 2020-12-13
 -- Created by Jesper Frickmann
 
 local gr = ... -- List of shared variables
@@ -230,7 +230,6 @@ if not gr.yValues then
 else -- yValues
 
 	local findLaunchAlt -- Do we want to find launch altitude?
-	local zero -- Zero value for altitude
 	local timerStart -- Time of starting flight timer
 	local indexRead -- Index of X, Y point currently being read
 	local timeStart, timeEnd -- Start and end of current flight
@@ -249,7 +248,7 @@ else -- yValues
 			y2 = 0
 		else
 			x2 = TimeSerial(lineData[2])
-			y2 = lineData[gr.plotIndex] - zero
+			y2 = lineData[gr.plotIndex]
 		end
 	end  --  ReadXY()
 
@@ -276,8 +275,6 @@ else -- yValues
 			gr.yValues[i] = 0
 		end
 
-		zero = 0
-		
 		-- Read first two lines of data
 		ReadX2Y2()
 		x1 = x2
@@ -288,10 +285,6 @@ else -- yValues
 			if gr.fmIndex then
 				findLaunchAlt = 1
 			end
-			
-			zero = math.min(y1, y2)
-			y1 = y1 - zero
-			y2 = y2 - zero
 		else
 			findLaunchAlt = 0
 		end
