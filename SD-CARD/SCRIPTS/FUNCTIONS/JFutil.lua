@@ -1,5 +1,5 @@
 -- JF Utility Library
--- Timestamp: 2020-08-22
+-- Timestamp: 2020-12-13
 -- Created by Jesper Frickmann
 
 soarUtil = { } -- Global "namespace"
@@ -27,11 +27,59 @@ local ST_MARKED = 4 -- Programs are marked inactive and swept if not running
 -- For telemetry
 local idBat -- Id of battery sensor
 local nextWarning = 0 -- Timer between low battery warnings
-local idAlt -- Id of altimeter sensor
-local zeroAlt = 0 -- Internal zero'ing of altimetry
-local nextCall = 0 -- Timer between altitude announcements
 local afterLaunch = 0 -- Time period after launch where battery warning threshold is lowered
 local rescan = 0 -- Rescan battery sensor, because Cels can be a little slow getting started
+
+local idAlt -- Id of altimeter sensor
+local nextCall = 0 -- Timer between altitude announcements
+local UpdateAlt -- Update altitude reading
+local zeroAlt = 0 -- Internal zero'ing of altimetry
+
+-- From OpenTX 2.3.11 we can reset Alt from Lua:
+do
+	local ver, radio, maj, minor, rev = getVersion() -- TODO remove legacy
+	
+	if maj >= 2 and minor >= 3 and rev >= 11 then
+		zeroAlt = nil
+		idAlt = nil
+		
+		-- Reset altimeter
+		function soarUtil.ResetAlt()
+			for i = 0, 31 do
+				if model.getSensor(i).name == "Alt" then 
+					model.resetSensor(i)
+					break
+				end
+			end
+		end
+
+		-- Read altimeter
+		UpdateAlt = function()
+			soarUtil.alt = getValue("Alt")
+			soarUtil.altMax = getValue("Alt+")
+		end
+		
+	else -- Otherwise, zero alt internally in this program
+	
+		-- Reset internal altimeter
+		function soarUtil.ResetAlt()
+			zeroAlt = soarUtil.alt + zeroAlt
+			soarUtil.alt = 0
+			soarUtil.altMax = 0
+		end
+		
+		UpdateAlt = function()
+			soarUtil.alt = getValue("Alt") - zeroAlt
+
+			if soarUtil.alt > soarUtil.altMax then
+				soarUtil.altMax = soarUtil.alt
+			end
+			
+			-- Create a zero'd Alti sensor
+			setTelemetryValue(0x5051, 0, 224, soarUtil.alt, 0, 0, "Alti") 
+		end
+	end
+end
 
 -- Load a file chunk for Tx specific screen size
 function soarUtil.LoadWxH(file, ...)
@@ -173,13 +221,6 @@ function soarUtil.TmrStr(secs)
 	return string.format("%02i:%02i", m, s)
 end -- TmrStr()
 
--- Reset internal altimeter
-function soarUtil.ResetAlt()
-	zeroAlt = soarUtil.alt + zeroAlt
-	soarUtil.alt = 0
-	soarUtil.altMax = 0
-end
-
 local function run()
 	local now = getTime()
 	
@@ -242,27 +283,8 @@ local function run()
 	end
 	
 	-- Altimeter sensor
-	if not idAlt then
-		local field = getFieldInfo("Alt")
-		
-		if field then
-			idAlt = field.id
-			soarUtil.altUnit = field.unit
-		end
-
-	else
-		local alt = getValue(idAlt)
-		
-		if alt then
-			soarUtil.alt = alt - zeroAlt
-			soarUtil.altMax = math.max(soarUtil.alt, soarUtil.altMax)
-			setTelemetryValue(0x5051, 0, 224, soarUtil.alt, 0, 0, "Alti")
-		else -- The sensor was deleted?
-			idAlt = nil
-		end
-	end
+	UpdateAlt()
 	
-	-- Altitude calls
 	if soarUtil.callAlt and now > nextCall then
 		playNumber(soarUtil.alt, soarUtil.altUnit)
 		nextCall = now + 1000
