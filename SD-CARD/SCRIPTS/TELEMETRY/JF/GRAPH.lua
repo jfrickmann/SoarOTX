@@ -1,4 +1,4 @@
--- Timestamp: 2019-10-20
+-- Timestamp: 2021-01-03
 -- Created by Jesper Frickmann
 -- Telemetry script for plotting telemetry parameters recorded in the log file.
 
@@ -43,7 +43,7 @@ local function run(event)
 	
 	if gr.viewMode == 1 then -- Normal graph view
 		-- Change view mode
-		if soarUtil.EvtExit(event) then
+		if event == EVT_VIRTUAL_EXIT then
 			gr.viewMode = 2
 			gr.run = gr.read
 		end
@@ -51,7 +51,7 @@ local function run(event)
 		soarUtil.ShowHelp({enter = "CHANGE PAR.", lr = "MOVE", exit = "SHOW STATS" })
 	elseif gr.viewMode == 2 then -- View stats
 		-- Change view mode
-		if soarUtil.EvtExit(event) then
+		if event == EVT_VIRTUAL_EXIT then
 			gr.viewMode = 3
 			gr.lftMark = math.floor(0.1 * width)
 			gr.rgtMark = math.ceil(0.9 * width)
@@ -65,7 +65,7 @@ local function run(event)
 		gr.DrawLine(gr.rgtTime, gr.yMin, gr.rgtTime , gr.yMax)
 		
 		-- Move markers
-		if soarUtil.EvtRight(event) then
+		if event == EVT_VIRTUAL_INC or event == EVT_VIRTUAL_INC_REPT then
 			if gr.selectedMark == 0 then
 				gr.lftMark = math.min(gr.rgtMark - 1, gr.lftMark + 1)
 			else
@@ -73,7 +73,7 @@ local function run(event)
 			end
 		end
 		
-		if soarUtil.EvtLeft(event) then
+		if event == EVT_VIRTUAL_DEC or event == EVT_VIRTUAL_DEC_REPT then
 			if gr.selectedMark == 0 then
 				gr.lftMark = math.max(0, gr.lftMark - 1)
 			else
@@ -82,7 +82,7 @@ local function run(event)
 		end
 		
 		-- Toggle selected marker or zoom in
-		if soarUtil.EvtEnter(event) then
+		if event == EVT_VIRTUAL_ENTER then
 			if gr.selectedMark == 0 then
 				gr.selectedMark = 1
 			else
@@ -95,7 +95,7 @@ local function run(event)
 		end
 		
 		-- Back to full graph view
-		if soarUtil.EvtExit(event) then
+		if event == EVT_VIRTUAL_EXIT then
 			gr.viewMode = 1
 			gr.run = gr.read
 		end
@@ -107,7 +107,7 @@ local function run(event)
 		end
 		
 	else -- Zoomed in
-		if soarUtil.EvtEnter(event) then
+		if event == EVT_VIRTUAL_ENTER then
 			gr.viewMode = 3
 			gr.run = gr.read
 		end
@@ -117,7 +117,7 @@ local function run(event)
 	
 	if gr.viewMode < 3 then
 		-- Read next flight
-		if soarUtil.EvtRight(event) then
+		if event == EVT_VIRTUAL_NEXT or event == EVT_VIRTUAL_NEXT_REPT then
 			gr.flightIndex = gr.flightIndex + 1
 			if gr.flightIndex > #gr.flightTable then
 				gr.flightIndex = 1
@@ -126,7 +126,7 @@ local function run(event)
 		end
 
 		-- Read previous flight
-		if soarUtil.EvtLeft(event) then
+		if event == EVT_VIRTUAL_PREV or event == EVT_VIRTUAL_PREV_REPT then
 			gr.flightIndex = gr.flightIndex - 1
 			if gr.flightIndex < 1 then
 				gr.flightIndex = #gr.flightTable
@@ -135,7 +135,7 @@ local function run(event)
 		end
 
 		-- Change plot variable
-		if soarUtil.EvtEnter(event) then
+		if event == EVT_VIRTUAL_ENTER then
 			gr.plotIndex = gr.plotIndex + 1
 			if gr.plotIndex > gr.plotIndexLast then
 				gr.plotIndex = 3

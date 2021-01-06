@@ -1,5 +1,5 @@
 -- JF F3RES mix adjustment
--- Timestamp: 2020-04-18
+-- Timestamp: 2021-01-02
 -- Created by Jesper Frickmann
 
 local cf = ...
@@ -9,7 +9,7 @@ local Draw = soarUtil.LoadWxH("JF3R/ADJMIX.lua", gv1) -- Screen size specific fu
 
 local function run(event)
 	-- Press EXIT to quit
-	if soarUtil.EvtExit(event) then
+	if event == EVT_VIRTUAL_EXIT then
 		return true
 	end
 	

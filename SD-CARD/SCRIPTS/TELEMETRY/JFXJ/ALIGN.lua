@@ -1,5 +1,5 @@
 -- JFXJ/ALIGN.lua
--- Timestamp: 2020-05-01
+-- Timestamp: 2021-01-02
 -- Created by Jesper Frickmann
 
 local N = 32 -- Highest output channel number
@@ -195,7 +195,7 @@ local function run(event)
 	cf.SetAdjust(1)
 
 	-- Handle EXIT
-	if soarUtil.EvtExit(event) then
+	if event == EVT_VIRTUAL_EXIT then
 		if reset == 1 then
 			-- Do not reset curves
 			reset = 0
@@ -206,7 +206,7 @@ local function run(event)
 	end
 	
 	-- Handle ENTER
-	if soarUtil.EvtEnter(event) then
+	if event == EVT_VIRTUAL_ENTER then
 		if reset == 0 then
 			reset = 1
 		else

@@ -1,5 +1,5 @@
 -- User interface for several score keeper plugins
--- Timestamp: 2020-05-13
+-- Timestamp: 2021-01-02
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -31,7 +31,7 @@ local function InitReview()
 end
 
 local function ReviewScores(event)
-	if soarUtil.EvtEnter(event) then
+	if event == EVT_VIRTUAL_ENTER then
 		editing = editing + 1
 		if editing == 3 then 
 			editing = 0
@@ -40,12 +40,12 @@ local function ReviewScores(event)
 	end
 	
 	if editing == 0 then
-		if soarUtil.EvtExit(event) then 
+		if event == EVT_VIRTUAL_EXIT then 
 			return true 
-		elseif soarUtil.EvtUp(event) then
+		elseif event == EVT_VIRTUAL_PREV or event == EVT_VIRTUAL_PREV_REPT then
 			selected = selected - 1
 			if selected == 0 then selected = #menu.items end
-		elseif soarUtil.EvtDown(event) then
+		elseif event == EVT_VIRTUAL_NEXT or event == EVT_VIRTUAL_NEXT_REPT then
 			selected = selected + 1
 			if selected > #menu.items then selected = 1 end
 		end
@@ -55,9 +55,9 @@ local function ReviewScores(event)
 	else
 		local score = sk.scores[selected]
 		
-		if soarUtil.EvtInc(event) then
+		if event == EVT_VIRTUAL_INC or event == EVT_VIRTUAL_INC_REPT then
 			score[editing] = score[editing] + 1
-		elseif soarUtil.EvtDec(event) then
+		elseif event == EVT_VIRTUAL_DEC or event == EVT_VIRTUAL_DEC_REPT then
 			score[editing] = score[editing] - 1
 		end
 		
@@ -72,7 +72,7 @@ local function run(event)
 		ui.PromptScores()
 
 		-- Record scores if user pressed ENTER
-		if soarUtil.EvtEnter(event) then
+		if event == EVT_VIRTUAL_ENTER then
 			local logFile = io.open("/LOGS/JF F5K Scores.csv", "a")
 			if logFile then
 				io.write(logFile, string.format("%s,%s", model.getInfo().name, sk.taskName))
@@ -91,7 +91,7 @@ local function run(event)
 				io.close(logFile)
 			end
 			sk.run = sk.menu
-		elseif soarUtil.EvtExit(event) then
+		elseif event == EVT_VIRTUAL_EXIT then
 			sk.run = sk.menu
 		end
 
@@ -124,7 +124,7 @@ local function run(event)
 			soarUtil.ShowHelp({ exit = "SCORE ZERO" })
 		end
 
-		if soarUtil.EvtEnter(event) then
+		if event == EVT_VIRTUAL_ENTER then
 			if sk.state <= sk.STATE_PAUSE then
 				-- Start task window
 				sk.state = sk.STATE_WINDOW
@@ -138,7 +138,7 @@ local function run(event)
 			playTone(1760, 100, PLAY_NOW)
 		end
 
-		if soarUtil.EvtExit(event) then
+		if event == EVT_VIRTUAL_EXIT then
 			if sk.state == sk.STATE_FLYING or sk.state == sk.STATE_FREEZE then
 				-- Record a zero score!
 				sk.flightTime = 0

@@ -1,5 +1,5 @@
 -- 128x64/JF/GRAPH.lua
--- Timestamp: 2019-10-20
+-- Timestamp: 2021-01-02
 -- Created by Jesper Frickmann
 -- Telemetry script for plotting telemetry parameters recorded in the log file.
 
@@ -20,7 +20,7 @@ local function Draw(event)
 	
 	if gr.viewMode == 1 then -- Normal graph view
 		-- Change view mode
-		if soarUtil.EvtExit(event) then
+		if event == EVT_VIRTUAL_EXIT then
 			gr.left = 45
 		end
 	elseif gr.viewMode == 2 then -- View stats
@@ -61,7 +61,7 @@ local function Draw(event)
 		lcd.drawNumber(gr.left, 50, 100 * rate, PREC2 + RIGHT)
 
 		-- Back to full graph view
-		if soarUtil.EvtExit(event) then
+		if event == EVT_VIRTUAL_EXIT then
 			gr.left = 0
 		end
 	else -- Zoomed in

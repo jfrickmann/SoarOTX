@@ -1,5 +1,5 @@
 -- TELEMETRY/JF5K/SK8.lua
--- Timestamp: 2020-05-13
+-- Timestamp: 2021-01-02
 -- Created by Jesper Frickmann
 -- Set nominal start height
 
@@ -22,7 +22,7 @@ ui.time = model.getTimer(2).start
 ui.editing = 1
 
 local function run(event)
-	if soarUtil.EvtEnter(event) then
+	if event == EVT_VIRTUAL_ENTER then
 		ui.editing = ui.editing + 1
 		if ui.editing == 3 then
 			sk.run = sk.menu
@@ -33,13 +33,13 @@ local function run(event)
 	end
 	
 	if ui.editing == 1 then
-		if soarUtil.EvtInc(event) then
+		if event == EVT_VIRTUAL_INC or event == EVT_VIRTUAL_INC_REPT then
 			if ui.cutoff >= 120 then
 				playTone(3000, 100, 0, PLAY_NOW)
 			else
 				ui.cutoff = ui.cutoff + 1
 			end
-		elseif soarUtil.EvtDec(event) then
+		elseif event == EVT_VIRTUAL_DEC or event == EVT_VIRTUAL_DEC_REPT then
 			if ui.cutoff <= 1 then
 				playTone(3000, 100, 0, PLAY_NOW)
 			else
@@ -47,13 +47,13 @@ local function run(event)
 			end
 		end
 	else
-		if soarUtil.EvtInc(event) then
+		if event == EVT_VIRTUAL_INC or event == EVT_VIRTUAL_INC_REPT then
 			if ui.time >= 30 then
 				playTone(3000, 100, 0, PLAY_NOW)
 			else
 				ui.time = ui.time + 1
 			end
-		elseif soarUtil.EvtDec(event) then
+		elseif event == EVT_VIRTUAL_DEC or event == EVT_VIRTUAL_DEC_REPT then
 			if ui.time <= 1 then
 				playTone(3000, 100, 0, PLAY_NOW)
 			else

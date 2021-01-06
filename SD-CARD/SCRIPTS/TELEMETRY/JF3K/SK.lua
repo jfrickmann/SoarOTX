@@ -1,5 +1,5 @@
 -- User interface for several score keeper plugins
--- Timestamp: 2019-11-24
+-- Timestamp: 2021-01-02
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -14,7 +14,7 @@ local function run(event)
 		ui.PromptScores()
 
 		-- Record scores if user pressed ENTER
-		if soarUtil.EvtEnter(event) then
+		if event == EVT_VIRTUAL_ENTER then
 			local logFile = io.open("/LOGS/JF F3K Scores.csv", "a")
 			if logFile then
 				io.write(logFile, string.format("%s,%s", model.getInfo().name, sk.taskName))
@@ -33,7 +33,7 @@ local function run(event)
 				io.close(logFile)
 			end
 			sk.run = sk.menu
-		elseif soarUtil.EvtExit(event) then
+		elseif event == EVT_VIRTUAL_EXIT then
 			sk.run = sk.menu
 		end
 
@@ -66,18 +66,18 @@ local function run(event)
 		end
 
 		-- Toggle quick relaunch QR
-		if soarUtil.EvtUp(event) then
+		if event == EVT_VIRTUAL_PREV or event == EVT_VIRTUAL_PREV_REPT then
 			sk.quickRelaunch = not sk.quickRelaunch
 			playTone(1760, 100, PLAY_NOW)
 		end
 		
 		-- Toggle end of window timer stop EoW
-		if soarUtil.EvtDown(event) then
+		if event == EVT_VIRTUAL_NEXT or event == EVT_VIRTUAL_NEXT_REPT then
 			sk.eowTimerStop = not sk.eowTimerStop
 			playTone(1760, 100, PLAY_NOW)
 		end
 
-		if soarUtil.EvtEnter(event) then
+		if event == EVT_VIRTUAL_ENTER then
 			if sk.state <= sk.STATE_PAUSE then
 				-- Start task window
 				sk.state = sk.STATE_WINDOW
@@ -91,7 +91,7 @@ local function run(event)
 			playTone(1760, 100, PLAY_NOW)
 		end
 
-		if soarUtil.EvtExit(event) then
+		if event == EVT_VIRTUAL_EXIT then
 			if sk.state == sk.STATE_COMMITTED or sk.state == sk.STATE_FREEZE then
 				-- Record a zero score!
 				sk.flightTime = 0

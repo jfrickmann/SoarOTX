@@ -1,5 +1,5 @@
 -- JF FXJ aileron and camber adjustment
--- Timestamp: 2020-04-17
+-- Timestamp: 2021-01-02
 -- Created by Jesper Frickmann
 
 local cf = ...
@@ -11,7 +11,7 @@ local Draw = soarUtil.LoadWxH("JFXJ/AILCMB.lua", gv1, gv2, gv5) -- Screen size s
 
 local function run(event)
 	-- Press EXIT to quit
-	if soarUtil.EvtExit(event) then
+	if event == EVT_VIRTUAL_EXIT then
 		return true
 	end
 	

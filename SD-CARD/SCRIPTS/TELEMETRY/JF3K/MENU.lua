@@ -1,5 +1,5 @@
 -- Timing and score keeping, loadable menu for selecting task
--- Timestamp: 2019-10-20
+-- Timestamp: 2021-01-03
 -- Created by Jesper Frickmann
 
 local sk = ...  -- List of variables shared between fixed and loadable parts
@@ -54,15 +54,15 @@ local function run(event)
 		menu.Draw(sk.selectedPlugin)
 		soarUtil.ShowHelp({ enter = "SELECT", ud = "MOVE" })
 
-		if soarUtil.EvtEnter(event) then
+		if event == EVT_VIRTUAL_ENTER then
 			sk.selectedTask = 1
-		elseif soarUtil.EvtUp(event) then
+		elseif event == EVT_VIRTUAL_PREV or event == EVT_VIRTUAL_PREV_REPT then
 			if sk.selectedPlugin == 1 then
 				sk.selectedPlugin = #plugins[1]
 			else
 				sk.selectedPlugin = sk.selectedPlugin - 1
 			end
-		elseif soarUtil.EvtDown(event) then
+		elseif event == EVT_VIRTUAL_NEXT or event == EVT_VIRTUAL_NEXT_REPT then
 			if sk.selectedPlugin == #plugins[1] then
 				sk.selectedPlugin = 1
 			else
@@ -76,9 +76,9 @@ local function run(event)
 		soarUtil.ShowHelp({ enter = "SELECT", ud = "MOVE", exit = "GO BACK" })
 			
 		-- If there is only one task, then start it!
-		if #menu.items == 1 then event = EVT_ENTER_BREAK end
+		if #menu.items == 1 then event = EVT_VIRTUAL_ENTER end
 
-		if soarUtil.EvtEnter(event) then
+		if event == EVT_VIRTUAL_ENTER then
 			sk.task = sk.selectedTask
 			sk.state = sk.STATE_IDLE
 			sk.run = plugins[1][sk.selectedPlugin]
@@ -86,16 +86,16 @@ local function run(event)
 
 			-- If there is only one task, go back to the Plugin menu after returning!
 			if #menu.items == 1 then sk.selectedTask = 0 end
-		elseif soarUtil.EvtExit(event) then
+		elseif event == EVT_VIRTUAL_EXIT then
 			sk.selectedTask = 0
 			menu.firstItem = 1
-		elseif soarUtil.EvtUp(event) then
+		elseif event == EVT_VIRTUAL_PREV or event == EVT_VIRTUAL_PREV_REPT then
 			if sk.selectedTask == 1 then
 				sk.selectedTask = #menu.items
 			else
 				sk.selectedTask = sk.selectedTask - 1
 			end
-		elseif soarUtil.EvtDown(event) then
+		elseif event == EVT_VIRTUAL_NEXT or event == EVT_VIRTUAL_NEXT_REPT then
 			if sk.selectedTask == #menu.items then
 				sk.selectedTask = 1
 			else

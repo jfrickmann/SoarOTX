@@ -120,7 +120,7 @@ local function run(event)
 	lastTime = thisTime
 	
 	-- Go to previous record
-	if soarUtil.EvtUp(event) then
+	if event == EVT_VIRTUAL_PREV or event == EVT_VIRTUAL_PREV_REPT then
 		index = index - 1
 		if index <= 0 then
 			index = #ui.indices - 1
@@ -134,7 +134,7 @@ local function run(event)
 	end
 
 	 -- Go to next record
-	if soarUtil.EvtDown(event) then
+	if event == EVT_VIRTUAL_NEXT or event == EVT_VIRTUAL_NEXT_REPT then
 		index = index + 1
 		if index >= #ui.indices then
 			index = 1
@@ -147,7 +147,7 @@ local function run(event)
 		killEvents(event)
 	end
 
-	if soarUtil.EvtExit(event) then
+	if event == EVT_VIRTUAL_EXIT then
 		sk.run = sk.menu
 	end
 	

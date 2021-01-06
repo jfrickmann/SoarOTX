@@ -1,5 +1,5 @@
 -- JF/BATTERY.lua
--- Timestamp: 2020-05-13
+-- Timestamp: 2021-01-03
 -- Created by Jesper Frickmann
 
 local ui = {} -- List of shared variables
@@ -8,18 +8,18 @@ ui.bat10 = model.getGlobalVariable(soarUtil.GV_BAT, soarUtil.FM_ADJUST)
 local Draw = soarUtil.LoadWxH("JF/BATTERY.lua", ui) -- Screen size specific function
 
 local function run(event)
-	-- Press ENTER to quit
-	if soarUtil.EvtEnter(event) then
+	-- Press ENTER OR EXIT to quit
+	if event == EVT_VIRTUAL_ENTER or event == EVT_VIRTUAL_EXIT then
 		return true
 	end
 
 	-- Adjust battery warning threshold
-	if soarUtil.EvtInc(event) then
+	if event == EVT_VIRTUAL_INC or event == EVT_VIRTUAL_INC_REPT then
 		ui.bat10 = math.min(100, ui.bat10 + 1)
 		model.setGlobalVariable(soarUtil.GV_BAT, soarUtil.FM_ADJUST, ui.bat10)
 	end
 	
-	if soarUtil.EvtDec(event) then
+	if event == EVT_VIRTUAL_DEC or event == EVT_VIRTUAL_DEC_REPT then
 		ui.bat10 = math.max(10, ui.bat10 - 1)
 		model.setGlobalVariable(soarUtil.GV_BAT, soarUtil.FM_ADJUST, ui.bat10)
 	end

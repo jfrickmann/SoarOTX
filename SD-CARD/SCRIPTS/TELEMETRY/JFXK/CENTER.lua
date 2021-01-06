@@ -1,5 +1,5 @@
 -- JF FxK air brake and aileron travel adjustment
--- Timestamp: 2020-05-01
+-- Timestamp: 2021-01-02
 -- Created by Jesper Frickmann
 
 local GV_AIL = 0 -- Index of global variable used for aileron travel
@@ -10,7 +10,7 @@ local Draw = soarUtil.LoadWxH("JFXK/CENTER.lua") -- Screen size specific functio
 
 local function run(event)
 	-- Press EXIT to quit
-	if soarUtil.EvtExit(event) then
+	if event == EVT_VIRTUAL_EXIT then
 		return true
 	end
 	

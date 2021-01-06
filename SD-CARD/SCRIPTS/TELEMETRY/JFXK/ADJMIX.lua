@@ -1,5 +1,5 @@
 -- JF FxK mix adjustment
--- Timestamp: 2020-04-13
+-- Timestamp: 2021-01-02
 -- Created by Jesper Frickmann
 
 local cf = ...
@@ -19,7 +19,7 @@ ui.gv6 = getFieldInfo("gvar6").id
 
 local function run(event)
 	-- Press EXIT to quit
-	if soarUtil.EvtExit(event) then
+	if event == EVT_VIRTUAL_EXIT then
 		return true
 	end
 	

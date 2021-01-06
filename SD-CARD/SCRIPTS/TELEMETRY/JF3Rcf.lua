@@ -1,5 +1,5 @@
 -- JF F3RES Configuration Menu
--- Timestamp: 2020-05-01
+-- Timestamp: 2021-01-02
 -- Created by Jesper Frickmann
 -- Depends on library functions in FUNCTIONS/JFLib.lua
 
@@ -48,7 +48,7 @@ local function run(event)
 	soarUtil.ToggleHelp(event)
 	
 	-- Trap key events
-	if soarUtil.EvtEnter(event) then
+	if event == EVT_VIRTUAL_ENTER then
 		active = true
 	end
 
@@ -61,14 +61,14 @@ local function run(event)
 		end
 	else
 		-- Handle menu key events
-		if soarUtil.EvtDown(event) then
+		if event == EVT_VIRTUAL_NEXT or event == EVT_VIRTUAL_NEXT_REPT then
 			selection = selection + 1
 			if selection > #texts then 
 				selection = 1
 			end
 		end
 		
-		if soarUtil.EvtUp(event) then
+		if event == EVT_VIRTUAL_PREV or event == EVT_VIRTUAL_PREV_REPT then
 			selection = selection - 1
 			if selection <= 0 then 
 				selection = #texts

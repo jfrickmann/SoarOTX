@@ -1,5 +1,5 @@
 -- JF Logical Switch Swap
--- Timestamp: 2018-01-22
+-- Timestamp: 2021-01-03
 -- Created by Jesper Frickmann
 
 local N = 64 -- Highest switch number to swap
@@ -335,7 +335,7 @@ local function run(event)
 			stage = 2 
 		end
 	elseif stage == 2 then
-		if event == EVT_ENTER_BREAK then
+		if event == EVT_VIRTUAL_ENTER then
 			stage = 3
 		end
 	elseif stage == 3 then
@@ -344,10 +344,10 @@ local function run(event)
 		-- Handle key events
 		if moving then
 			-- switch number edited
-			if event == EVT_ENTER_BREAK or event == EVT_EXIT_BREAK then
+			if event == EVT_VIRTUAL_ENTER or event == EVT_VIRTUAL_EXIT then
 				moving = false
 				WriteSwitches()
-			elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT then
+			elseif event == EVT_VIRTUAL_PREV or event == EVT_VIRTUAL_PREV_REPT then
 				if iLS == 1 then
 					playTone(3000, 100, 0, PLAY_NOW)
 				else
@@ -358,7 +358,7 @@ local function run(event)
 					UpdateDependents(iLS - 1)
 					UpdateDependents(iLS)
 				end
-			elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT then
+			elseif event == EVT_VIRTUAL_NEXT or event == EVT_VIRTUAL_NEXT_REPT then
 				if iLS == N then
 					playTone(3000, 100, 0, PLAY_NOW)
 				else
@@ -374,18 +374,18 @@ local function run(event)
 			UpdateActiveSwitches()
 		else
 			-- No moving; move switch selection
-			if event == EVT_EXIT_BREAK then
+			if event == EVT_VIRTUAL_EXIT then
 				-- Quit
 				return 1
-			elseif event == EVT_ENTER_BREAK then
+			elseif event == EVT_VIRTUAL_ENTER then
 				moving = true
-			elseif event == EVT_PLUS_BREAK or event == EVT_ROT_LEFT or event == EVT_PLUS_REPT then
+			elseif event == EVT_VIRTUAL_PREV or event == EVT_VIRTUAL_PREV_REPT then
 				if selection == 1 then
 					playTone(3000, 100, 0, PLAY_NOW)
 				else
 					selection = selection - 1 
 				end
-			elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT or event == EVT_MINUS_REPT then
+			elseif event == EVT_VIRTUAL_NEXT or event == EVT_VIRTUAL_NEXT_REPT then
 				if selection == #activeSwitches then
 					playTone(3000, 100, 0, PLAY_NOW)
 				else

@@ -1,5 +1,5 @@
 -- JF Utility Library
--- Timestamp: 2020-12-13
+-- Timestamp: 2021-01-03
 -- Created by Jesper Frickmann
 
 soarUtil = { } -- Global "namespace"
@@ -161,44 +161,6 @@ function soarUtil.RunLoadable(file, event, ...)
 	end
 end -- RunLoadable()
 
--- Key event handlers
-function soarUtil.EvtEnter(event)
-	return event == EVT_ENTER_BREAK
-end -- EvtEnter()
-
-function soarUtil.EvtExit(event)
-	return event == EVT_EXIT_BREAK
-end -- EvtExit()
-
-function soarUtil.EvtInc(event)
-	return event == EVT_PLUS_BREAK or event == EVT_PLUS_REPT or event == EVT_ROT_RIGHT or event == EVT_UP_BREAK
-end -- EvtInc()
-
-function soarUtil.EvtDec(event)
-	return event == EVT_MINUS_BREAK or event == EVT_MINUS_REPT or event == EVT_ROT_LEFT or event == EVT_DOWN_BREAK
-end -- EvtDec()
-
-function soarUtil.EvtRight(event)
-	return event == EVT_PLUS_BREAK or event == EVT_PLUS_REPT or event == EVT_ROT_RIGHT or event == EVT_RIGHT_BREAK
-end -- EvtRight()
-
-function soarUtil.EvtLeft(event)
-	return event == EVT_MINUS_BREAK or event == EVT_MINUS_REPT or event == EVT_ROT_LEFT or event == EVT_LEFT_BREAK
-end -- EvtLeft()
-
-function soarUtil.EvtUp(event)
-	return event == EVT_PLUS_BREAK or event == EVT_PLUS_REPT or event == EVT_ROT_LEFT or event == EVT_UP_BREAK
-end -- EvtUp()
-
-function soarUtil.EvtDown(event)
-	return event == EVT_MINUS_BREAK or event == EVT_MINUS_REPT or event == EVT_ROT_RIGHT or event == EVT_DOWN_BREAK
-end -- EvtDown()
-
--- Some radios do not have MENU and SHIFT buttons
-if not (EVT_MENU_BREAK or EVT_SHIFT_BREAK) and EVT_LEFT_BREAK then
-	EVT_MENU_BREAK = bit32.bor(EVT_LEFT_BREAK, EVT_RIGHT_BREAK)
-end
-
 -- Set timer GV
 function soarUtil.SetGVTmr(tmr)
 	model.setGlobalVariable(8, 0, tmr)
@@ -207,7 +169,7 @@ end
 
 -- Show or hide help text
 function soarUtil.ToggleHelp(event)
-	if event == EVT_MENU_BREAK or event == EVT_SHIFT_BREAK then
+	if event == EVT_VIRTUAL_MENU then
 		local sh = 1 - model.getGlobalVariable(4, 1)
 		model.setGlobalVariable(4, 1, sh)
 		soarUtil.showHelp = (sh == 1)

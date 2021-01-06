@@ -1,5 +1,5 @@
 -- JF F3J Timing and score keeping, loadable part
--- Timestamp: 2020-05-14
+-- Timestamp: 2021-01-02
 -- Created by Jesper Frickmann
 
 local sbFile = "/SCRIPTS/TELEMETRY/JF3J/SB.lua" -- Score browser user interface file
@@ -13,9 +13,9 @@ local function run(event)
 	if sk.target > 0 then
 		dt = 0
 		
-		if soarUtil.EvtInc(event) then
+		if event == EVT_VIRTUAL_INC or event == EVT_VIRTUAL_INC_REPT then
 			dt = 60
-		elseif soarUtil.EvtDec(event) then
+		elseif event == EVT_VIRTUAL_DEC or event == EVT_VIRTUAL_DEC_REPT then
 			dt = -60
 		end
 		
@@ -30,7 +30,7 @@ local function run(event)
 	
 	if sk.state == sk.STATE_INITIAL then
 		-- Show score browser
-		if soarUtil.EvtExit(event) then
+		if event == EVT_VIRTUAL_EXIT then
 			sk.myFile = sbFile
 		end
 
@@ -40,7 +40,7 @@ local function run(event)
 		soarUtil.ShowHelp({ exit = "SHOW SCORES", ud = "SET TIME" })
 
 	elseif sk.state == sk.STATE_FLYING then
-		if soarUtil.EvtEnter(event) then
+		if event == EVT_VIRTUAL_ENTER then
 			if sk.target == 0 then
 				sk.target = math.max(60, 60 * math.floor(sk.windowTimer.value / 60))
 			else
@@ -48,7 +48,7 @@ local function run(event)
 				sk.target = 0
 			end
 			
-		elseif soarUtil.EvtExit(event) then
+		elseif event == EVT_VIRTUAL_EXIT then
 			sk.target = 0
 		end
 		
@@ -61,7 +61,7 @@ local function run(event)
 	elseif sk.state == sk.STATE_LANDINGPTS then -- Landed, input landing points 
 		local dpts = 0
 		
-		if soarUtil.EvtInc(event) then
+		if event == EVT_VIRTUAL_INC or event == EVT_VIRTUAL_INC_REPT then
 			if sk.landingPts >= 90 then
 				dpts = 1
 			elseif sk.landingPts >= 30 then
@@ -71,7 +71,7 @@ local function run(event)
 			end
 		end
 		
-		if soarUtil.EvtDec(event) then
+		if event == EVT_VIRTUAL_DEC or event == EVT_VIRTUAL_DEC_REPT then
 			if sk.landingPts > 90 then
 				dpts = -1
 			elseif sk.landingPts > 30 then
@@ -88,7 +88,7 @@ local function run(event)
 			sk.landingPts = 0
 		end
 		
-		if soarUtil.EvtEnter(event) then
+		if event == EVT_VIRTUAL_ENTER then
 			sk.state = sk.STATE_TIME
 		end
 		
@@ -97,11 +97,11 @@ local function run(event)
 	elseif sk.state == sk.STATE_TIME then -- Input flight time
 		local dt = 0
 		
-		if soarUtil.EvtInc(event) then
+		if event == EVT_VIRTUAL_INC or event == EVT_VIRTUAL_INC_REPT then
 			dt = 1
 		end
 		
-		if soarUtil.EvtDec(event) then
+		if event == EVT_VIRTUAL_DEC or event == EVT_VIRTUAL_DEC_REPT then
 			dt = -1
 		end
 		
@@ -110,16 +110,16 @@ local function run(event)
 			model.setTimer(1, sk.flightTimer)
 		end
 		
-		if soarUtil.EvtEnter(event) then
+		if event == EVT_VIRTUAL_ENTER then
 			sk.state = sk.STATE_SAVE
-		elseif soarUtil.EvtExit(event) then
+		elseif event == EVT_VIRTUAL_EXIT then
 			sk.state = sk.STATE_LANDINGPTS
 		end
 		
 		soarUtil.ShowHelp({ enter = "FINISH", exit = "BACK", ud = "SET TIME" })
 		
 	elseif sk.state == sk.STATE_SAVE then
-		if soarUtil.EvtEnter(event) then -- Record scores if user pressed ENTER
+		if event == EVT_VIRTUAL_ENTER then -- Record scores if user pressed ENTER
 			local logFile = io.open("/LOGS/JF F3J Scores.csv", "a")
 			if logFile then
 				local nameStr = model.getInfo().name
@@ -138,7 +138,7 @@ local function run(event)
 			sk.state = sk.STATE_INITIAL
 			sk.target = math.max(sk.windowTimer.start)
 
-		elseif soarUtil.EvtExit(event) then -- Do not record scores if user pressed EXIT
+		elseif event == EVT_VIRTUAL_EXIT then -- Do not record scores if user pressed EXIT
 			sk.state = sk.STATE_INITIAL
 			sk.target = math.max(sk.windowTimer.start)
 			

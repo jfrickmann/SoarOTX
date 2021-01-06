@@ -1,5 +1,5 @@
 -- JFXJ/BRKCRV.lua
--- Timestamp: 2020-05-01
+-- Timestamp: 2021-01-02
 -- Created by Jesper Frickmann
 
 local GV_FLP = 1 -- Index of global variable set by throttle trim for common flap curve adjustment
@@ -49,7 +49,7 @@ end -- init()
 
 local function run(event)
 	-- Press EXIT to quit
-	if soarUtil.EvtExit(event) then
+	if event == EVT_VIRTUAL_EXIT then
 		return true
 	end
 	

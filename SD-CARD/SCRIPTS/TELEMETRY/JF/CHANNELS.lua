@@ -1,5 +1,5 @@
 -- JF Channel configuration
--- Timestamp: 2020-04-18
+-- Timestamp: 2021-01-03
 -- Created by Jesper Frickmann
 
 local N = 32 -- Highest channel number to swap
@@ -129,15 +129,6 @@ local function MoveSelected(direction)
 	end
 end -- SwapChannels()
 
--- Special key event handlers for this menu only
-local function EvtIncBig(event)
-	return event == EVT_PLUS_REPT or event == EVT_ROT_RIGHT or event == EVT_RIGHT_REPT
-end -- EvtIncBig()
-
-local function EvtDecBig(event)
-	return event == EVT_MINUS_REPT or event == EVT_ROT_LEFT or event == EVT_LEFT_REPT
-end -- EvtDecBig()
-
 local function Draw()
 	soarUtil.InfoBar(MENUTXT)
 	
@@ -262,9 +253,9 @@ local function run(event)
 	end
 
 	if stage == 1 then
-		if soarUtil.EvtEnter(event) then
+		if event == EVT_VIRTUAL_ENTER then
 			stage = 2
-		elseif soarUtil.EvtExit(event) then
+		elseif event == EVT_VIRTUAL_EXIT then
 			return true -- Quit
 		end
 	elseif stage == 2 then
@@ -279,17 +270,17 @@ local function run(event)
 		-- Handle key events
 		if editing == 0 then
 			-- No editing; move channel selection
-			if soarUtil.EvtExit(event) then
+			if event == EVT_VIRTUAL_EXIT then
 				return true -- Quit
-			elseif soarUtil.EvtEnter(event) then
+			elseif event == EVT_VIRTUAL_ENTER then
 				editing = 1
-			elseif soarUtil.EvtUp(event) then
+			elseif event == EVT_VIRTUAL_PREV or event == EVT_VIRTUAL_PREV_REPT then
 				if selection == 1 then
 					playTone(3000, 100, 0, PLAY_NOW)
 				else
 					selection = selection - 1
 				end
-			elseif soarUtil.EvtDown(event) then
+			elseif event == EVT_VIRTUAL_NEXT or event == EVT_VIRTUAL_NEXT_REPT then
 				if selection == #namedChs then
 					playTone(3000, 100, 0, PLAY_NOW)
 				else
@@ -301,14 +292,14 @@ local function run(event)
 			
 		elseif editing == 2 then
 			-- Editing direction
-			if soarUtil.EvtEnter(event) then
+			if event == EVT_VIRTUAL_ENTER then
 				out.revert = 1 - out.revert
 				model.setOutput(iCh - 1, out)
-			elseif soarUtil.EvtLeft(event) then
+			elseif event == EVT_VIRTUAL_PREV or event == EVT_VIRTUAL_PREV_REPT then
 				editing = 1
-			elseif soarUtil.EvtRight(event) then
+			elseif event == EVT_VIRTUAL_NEXT or event == EVT_VIRTUAL_NEXT_REPT then
 				editing = 3
-			elseif soarUtil.EvtExit(event) then
+			elseif event == EVT_VIRTUAL_EXIT then
 				editing = 0
 			end
 			
@@ -316,16 +307,16 @@ local function run(event)
 			
 		elseif editing <= 7 then
 			-- Item(s) selected, but not edited
-			if soarUtil.EvtEnter(event) then
+			if event == EVT_VIRTUAL_ENTER then
 				-- Start editing
 				editing = editing + 10
-			elseif soarUtil.EvtLeft(event) then
+			elseif event == EVT_VIRTUAL_PREV or event == EVT_VIRTUAL_PREV_REPT then
 				editing = editing - 1
 				if editing < 1 then editing = 7 end
-			elseif soarUtil.EvtRight(event) then
+			elseif event == EVT_VIRTUAL_NEXT or event == EVT_VIRTUAL_NEXT_REPT then
 				editing = editing + 1
 				if editing > 7 then editing = 1 end
-			elseif soarUtil.EvtExit(event) then
+			elseif event == EVT_VIRTUAL_EXIT then
 				editing = 0
 			end
 			
@@ -333,11 +324,11 @@ local function run(event)
 			
 		elseif editing == 11 then
 			-- Channel number edited
-			if soarUtil.EvtEnter(event) or soarUtil.EvtExit(event) then
+			if event == EVT_VIRTUAL_ENTER or event == EVT_VIRTUAL_EXIT then
 				editing = 1
-			elseif soarUtil.EvtUp(event) then
+			elseif event == EVT_VIRTUAL_PREV or event == EVT_VIRTUAL_PREV_REPT then
 				return MoveSelected(-1)
-			elseif soarUtil.EvtDown(event) then
+			elseif event == EVT_VIRTUAL_NEXT or event == EVT_VIRTUAL_NEXT_REPT then
 				return MoveSelected(1)
 			end
 			
@@ -346,15 +337,15 @@ local function run(event)
 		elseif editing >= 13 then
 			local delta = 0
 			
-			if soarUtil.EvtEnter(event) or soarUtil.EvtExit(event) then
+			if event == EVT_VIRTUAL_ENTER or event == EVT_VIRTUAL_EXIT then
 				editing = editing - 10
-			elseif EvtIncBig(event) then
+			elseif event == EVT_VIRTUAL_INC_REPT then
 				delta = 10
-			elseif soarUtil.EvtInc(event) then
+			elseif event == EVT_VIRTUAL_INC then
 				delta = 1
-			elseif EvtDecBig(event) then
+			elseif event == EVT_VIRTUAL_DEC_REPT  then
 				delta = -10
-			elseif soarUtil.EvtDec(event) then
+			elseif event == EVT_VIRTUAL_DEC then
 				delta = -1
 			end
 			
