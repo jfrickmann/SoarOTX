@@ -1,5 +1,5 @@
 -- JF Utility Library
--- Timestamp: 2021-01-03
+-- Timestamp: 2021-03-08
 -- Created by Jesper Frickmann
 
 soarUtil = { } -- Global "namespace"
@@ -195,6 +195,7 @@ local function run()
 		local field = getFieldInfo("Cels")
 		if not field then field = getFieldInfo("RxBt") end
 		if not field then field = getFieldInfo("A1") end
+		if not field then field = getFieldInfo("A2") end
 		
 		if field then
 			idBat = field.id
