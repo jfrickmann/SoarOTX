@@ -1,5 +1,5 @@
 -- JF/BATTERY.lua
--- Timestamp: 2021-01-03
+-- Timestamp: 2021-03-20
 -- Created by Jesper Frickmann
 
 local ui = {} -- List of shared variables
@@ -15,7 +15,7 @@ local function run(event)
 
 	-- Adjust battery warning threshold
 	if event == EVT_VIRTUAL_INC or event == EVT_VIRTUAL_INC_REPT then
-		ui.bat10 = math.min(100, ui.bat10 + 1)
+		ui.bat10 = math.min(400, ui.bat10 + 1)
 		model.setGlobalVariable(soarUtil.GV_BAT, soarUtil.FM_ADJUST, ui.bat10)
 	end
 	
