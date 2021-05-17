@@ -1,5 +1,5 @@
 -- JF F3J Timing and score keeping, fixed part
--- Timestamp: 2020-05-14
+-- Timestamp: 2021-05-17
 -- Created by Jesper Frickmann
 
 local FM_KAPOW = 3 -- KAPOW flight mode
@@ -109,7 +109,7 @@ local function background()
 		
 		prevWt = wt
 		
-		if (triggerPulled and getTime() > altTime) or getFlightMode() == FM_KAPOW then
+		if triggerPulled and getTime() > altTime then
 			-- Stop timer and record scores
 			playTone(1760, 100, PLAY_NOW)
 			sk.state = sk.STATE_LANDINGPTS
