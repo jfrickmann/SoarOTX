@@ -1,5 +1,5 @@
 -- JF F5J Timing and score keeping, fixed part
--- Timestamp: 2020-08-20
+-- Timestamp: 2021-05-16
 -- Created by Jesper Frickmann
 
 local FM_KAPOW = 3 -- KAPOW flight mode
@@ -145,7 +145,7 @@ local function background()
 			end
 		end
 		
-		if (getValue(LS_TRIGGER) > 0 and offTime == 0) or getFlightMode() == FM_KAPOW then
+		if getValue(LS_TRIGGER) > 0 and offTime == 0 then
 			-- Stop timer and record scores
 			sk.state = sk.STATE_LANDINGPTS
 			soarUtil.SetGVTmr(0) -- Flight timer off
