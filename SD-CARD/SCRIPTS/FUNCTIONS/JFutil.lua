@@ -1,5 +1,5 @@
 -- JF Utility Library
--- Timestamp: 2021-07-02
+-- Timestamp: 2021-07-05
 -- Created by Jesper Frickmann
 
 soarUtil = { } -- Global "namespace"
@@ -39,7 +39,7 @@ local zeroAlt = 0 -- Internal zero'ing of altimetry
 do
 	local ver, radio, maj, minor, rev = getVersion() -- TODO remove legacy
 	
-	if maj >= 2 and minor >= 3 and rev >= 11 then
+	if maj >= 2 and ((minor >= 3 and rev >= 11) or minor >= 4) then
 		zeroAlt = nil
 		idAlt = nil
 		
