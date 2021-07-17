@@ -27,8 +27,6 @@ local widgetSizes = {
 }
 
 local function utilities(dir)
-  local widgetRefresh
-    
   local function load4screen(file, ...)
     local filename = dir .. file .. "_" .. LCD_W .. "x" .. LCD_H .. ".lua"
     local chunk = loadScript(filename)
@@ -51,7 +49,7 @@ local function utilities(dir)
     print("----> load4zone could not find a script for: " .. dir .. file)
   end -- load4zone(...)
 
-  -- Set a widget refresh function for non-fullscreen mode
+  -- Set a widget refresh function for non-fullscreen mode for GUI to call
   local function setWidgetRefresh(f)
     widgetRefresh = f
   end -- setWidgetRefresh
@@ -63,6 +61,11 @@ local function utilities(dir)
     local focus = 1
     local edit = false
 
+    -- Set a refresh function for fullscreen mode
+    local function setFullScreenRefresh(f)
+      fullScreenRefresh = f
+    end -- setWidgetRefresh
+    
     -- Set a handler for event (if no element is being edited)
     local function setHandler(event, f)
       table.insert(handlers, {event, f} )
@@ -96,6 +99,7 @@ local function utilities(dir)
           lcd.drawText(1, 1, "No widget refresh function was loaded.")
         end
       else -- full screen mode; event is a value
+        fullScreenRefresh(event, touchState)
         for idx, element in ipairs(elements) do
           element.draw(idx)
         end
@@ -134,17 +138,16 @@ local function utilities(dir)
     end -- run(...)
 
     -- Create a button to trigger a function
-    local function button(x, y, w, h, title, callBack)
+    local function button(x, y, w, h, txt, callBack)
       local function draw(idx)
+        local att = 0
+        
+        lcd.drawFilledRectangle(x, y, w, h, FOCUS_BGCOLOR)
         if focus == idx then
-          lcd.drawFilledRectangle(x, y, w, h, FOCUS_BG_COLOR)
-          lcd.drawRectangle(x + 1, y + 1, w - 2, h - 2, FOCUS_COLOR)
-          lcd.drawText(x + w / 2, y + 2, title, CENTER + FOCUS_COLOR + BOLD)
-        else
-          lcd.drawFilledRectangle(x, y, w, h, TEXT_BG_COLOR)
-          lcd.drawRectangle(x + 1, y + 1, w - 2, h - 2, TEXT_BG_COLOR)
-          lcd.drawText(x + w / 2, y + 2, title, CENTER + TEXT_COLOR)
+          att = BOLD
+          lcd.drawRectangle(x, y, w, h, HIGHLIGHT_COLOR)
         end
+        lcd.drawText(x + w / 2, y + 2, txt, CENTER + FOCUS_COLOR + att)
       end
       
       local function run(idx, event, touchState)
@@ -153,9 +156,9 @@ local function utilities(dir)
         end
       end
       
-      local function title(str)
-        title = str
-      end -- title(...)
+      local function title(t)
+        txt = t
+      end
       
       local function covers(p, q)
         return (x <= p and p <= x + w and y <= q and q <= y + h)
@@ -165,18 +168,50 @@ local function utilities(dir)
     end -- button(...)
     
     -- Create a toggle button that turns on/off. callBack gets true/false
-    local function toggleButton(x, y, w, h, title, value, callBack)
+    local function toggleButton(x, y, w, h, txt, value, callBack)
       local function draw(idx)
+        local bg = FOCUS_BGCOLOR
+        local att = 0
+        local border
+
+        if value then bg = HIGHLIGHT_COLOR end
+        
+        if focus == idx then 
+          att = BOLD 
+          if value then
+            border = FOCUS_BGCOLOR
+          else
+            border = HIGHLIGHT_COLOR 
+          end
+        end
+        
+        lcd.drawFilledRectangle(x, y, w, h, bg)
+        lcd.drawText(x + w / 2, y + 2, txt, CENTER + FOCUS_COLOR + att)
+        if border then
+          lcd.drawRectangle(x, y, w, h, border)
+        end
       end
       
       local function run(idx, event, touchState)
+        if event == EVT_VIRTUAL_ENTER or event == EVT_TOUCH_TAP or event == EVT_TOUCH_BREAK then
+          value = not value
+          callBack(value)
+        end
+      end
+      
+      local function title(t)
+        txt = t
+      end
+      
+      local function set(v)
+        value = v
       end
       
       local function covers(p, q)
         return (x <= p and p <= x + w and y <= q and q <= y + h)
       end
       
-      return addElement( {draw = draw, run = run, covers = covers} )
+      return addElement( {draw = draw, run = run, title = title, covers = covers, set = set} )
     end -- toggleButton(...)
     
     -- Create a menu of choices. callBack gets choice #
@@ -225,6 +260,7 @@ local function utilities(dir)
     end -- number(...)
     
     return {
+      setFullScreenRefresh = setFullScreenRefresh,
       setHandler = setHandler,
       run = run,
       button = button,
@@ -238,8 +274,8 @@ local function utilities(dir)
   return {
     load4screen = load4screen,
     load4zone = load4zone,
-    GUI = GUI,
-    
+    setWidgetRefresh = setWidgetRefresh,
+    GUI = GUI
   }
 end
 
