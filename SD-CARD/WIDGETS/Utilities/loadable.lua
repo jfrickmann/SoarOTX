@@ -24,6 +24,7 @@ widget.util = util
 local gui = util.GUI()
 local border = false
 local toggle = ""
+local n
 
 local function A()
   border = true
@@ -48,12 +49,16 @@ local function drawFull()
     end
   end
 
-  lcd.drawText(65, 40, "Toggle = " .. toggle)
+  lcd.drawText(65, 37, "Toggle = " .. toggle, DEFAULT_COLOR)
 end
 
 local function drawZone()
   lcd.drawRectangle(0, 0, widget.zone.w, widget.zone.h, BATTERY_CHARGE_COLOR)
   lcd.drawText(5, 5, "GUI test")
+end
+
+local function numberChange(d)
+  n.value = n.value + d
 end
 
 do -- Initialization happens here
@@ -63,6 +68,7 @@ do -- Initialization happens here
   local a = gui.button(5, 5, 50, 25, "A", A)
   local b = gui.button(65, 5, 50, 25, "B", B)
   local t = gui.toggleButton(5, 35, 50, 25, "T", true, T)
+  n = gui.number(5, 65, 50, 25, 0, numberChange, RIGHT)
   
   a.title("ON")
   b.title("OFF")

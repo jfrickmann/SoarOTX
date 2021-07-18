@@ -61,6 +61,14 @@ local function utilities(dir)
     local focus = 1
     local edit = false
 
+    -- Draw a rectangle with pattern
+    local function drawRectangle(x, y, w, h, pat, att)
+      lcd.drawLine(x, y, x + w, y, pat, att)
+      lcd.drawLine(x + w, y, x + w, y + h, pat, att)
+      lcd.drawLine(x + w, y + h, x, y + h, pat, att)
+      lcd.drawLine(x, y + h, x, y, pat, att)
+    end
+    
     -- Set a refresh function for fullscreen mode
     local function setFullScreenRefresh(f)
       fullScreenRefresh = f
@@ -106,7 +114,7 @@ local function utilities(dir)
         -- Process event if non-zero
         if event ~= 0 then
           if edit then -- Send the event to the element being edited
-            elements[focus].run(focus, event, touchState)
+            elements[focus].run(event, touchState)
           else
             -- Is the event being "handled"?
             for idx, h in ipairs(handlers) do
@@ -130,7 +138,7 @@ local function utilities(dir)
             elseif event == EVT_VIRTUAL_PREV then
               moveFocus(-1)
             else
-              elements[focus].run(focus, event, touchState)
+              elements[focus].run(event, touchState)
             end
           end
         end
@@ -142,15 +150,15 @@ local function utilities(dir)
       local function draw(idx)
         local att = 0
         
-        lcd.drawFilledRectangle(x, y, w, h, FOCUS_BGCOLOR)
         if focus == idx then
           att = BOLD
-          lcd.drawRectangle(x, y, w, h, HIGHLIGHT_COLOR)
+          drawRectangle(x - 1, y - 1, w + 2, h + 2, DOTTED, HIGHLIGHT_COLOR)
         end
+        lcd.drawFilledRectangle(x, y, w, h, FOCUS_BGCOLOR)
         lcd.drawText(x + w / 2, y + 2, txt, CENTER + FOCUS_COLOR + att)
       end
       
-      local function run(idx, event, touchState)
+      local function run(event, touchState)
         if event == EVT_VIRTUAL_ENTER or event == EVT_TOUCH_TAP or event == EVT_TOUCH_BREAK then
           callBack()
         end
@@ -170,29 +178,24 @@ local function utilities(dir)
     -- Create a toggle button that turns on/off. callBack gets true/false
     local function toggleButton(x, y, w, h, txt, value, callBack)
       local function draw(idx)
+        local fg = FOCUS_COLOR
         local bg = FOCUS_BGCOLOR
         local att = 0
-        local border
 
-        if value then bg = HIGHLIGHT_COLOR end
+        if value then
+          fg = DEFAULT_COLOR
+          bg = HIGHLIGHT_COLOR 
+        end
         
-        if focus == idx then 
+        if focus == idx then
+          drawRectangle(x - 1, y - 1, w + 2, h + 2, DOTTED, HIGHLIGHT_COLOR)
           att = BOLD 
-          if value then
-            border = FOCUS_BGCOLOR
-          else
-            border = HIGHLIGHT_COLOR 
-          end
         end
-        
         lcd.drawFilledRectangle(x, y, w, h, bg)
-        lcd.drawText(x + w / 2, y + 2, txt, CENTER + FOCUS_COLOR + att)
-        if border then
-          lcd.drawRectangle(x, y, w, h, border)
-        end
+        lcd.drawText(x + w / 2, y + 2, txt, CENTER + fg + att)
       end
       
-      local function run(idx, event, touchState)
+      local function run(event, touchState)
         if event == EVT_VIRTUAL_ENTER or event == EVT_TOUCH_TAP or event == EVT_TOUCH_BREAK then
           value = not value
           callBack(value)
@@ -203,23 +206,86 @@ local function utilities(dir)
         txt = t
       end
       
-      local function set(v)
-        value = v
-      end
-      
       local function covers(p, q)
         return (x <= p and p <= x + w and y <= q and q <= y + h)
+      end
+      
+      local function set(v)
+        value = v
       end
       
       return addElement( {draw = draw, run = run, title = title, covers = covers, set = set} )
     end -- toggleButton(...)
     
+    -- Create a number that can be edited
+    local function number(x, y, w, h, value, callBack, att)
+      local this
+      if att == nil then att = 0 end
+  
+      local xx
+      
+      if bit32.band(att, RIGHT) ~= 0 then
+        xx = x + w - 2
+      elseif bit32.band(att, CENTER) ~= 0 then
+        xx = x + w / 2
+      else
+        xx = x + 2
+      end
+      
+      local function draw(idx)
+        local fg = DEFAULT_COLOR
+        local att2 = att
+        
+        if focus == idx then
+          drawRectangle(x - 1, y - 1, w + 2, h + 2, DOTTED, HIGHLIGHT_COLOR)
+          att2 = att2 + BOLD 
+          if edit then
+            fg = FOCUS_COLOR
+            lcd.drawFilledRectangle(x, y, w, h, FOCUS_BGCOLOR)
+          end
+        end
+        lcd.drawNumber(xx, y + 2, this.value, fg + att2)
+      end
+      
+      local function run(event, touchState)
+        local d = 0
+          
+        if event == EVT_VIRTUAL_ENTER or event == EVT_TOUCH_BREAK or event == EVT_TOUCH_TAP then
+          edit = not edit
+        elseif edit then
+          if event == EVT_VIRTUAL_EXIT then
+            edit = false
+          elseif event == EVT_VIRTUAL_INC then
+            d = 1
+          elseif event == EVT_VIRTUAL_DEC then
+            d = -1
+          elseif event == EVT_TOUCH_SLIDE then
+            d = -touchState.slideY
+          end
+        end
+        callBack(d)
+      end
+      
+      local function covers(p, q)
+        return (x <= p and p <= x + w and y <= q and q <= y + h)
+      end
+       
+      this = { value = value, draw = draw, run = run, covers = covers }
+      return addElement(this)
+    end -- number(...)
+    
     -- Create a menu of choices. callBack gets choice #
     local function menu(items, callBack)
       local function draw(idx)
+        local att = 0
+        
+        if focus == idx then
+          att = BOLD
+        else
+        end
       end
       
-      local function run(idx, event, touchState)
+      local function run(event, touchState)
       end
       
       local function covers(p, q)
@@ -232,9 +298,15 @@ local function utilities(dir)
     -- Create a display of current time on timer[tmr]
     local function timer(x, y, w, h, tmr, callBack)
       local function draw(idx)
+        local att = 0
+        
+        if focus == idx then
+          att = BOLD
+        else
+        end
       end
       
-      local function run(idx, event, touchState)
+      local function run(event, touchState)
       end
       
       local function covers(p, q)
@@ -244,30 +316,15 @@ local function utilities(dir)
       return addElement( {draw = draw, run = run, covers = covers, noFocus = true} )
     end -- timer(...)
     
-    -- Create a number that can be edited
-    local function number(x, y, value, callBack)
-      local function draw(idx)
-      end
-      
-      local function run(idx, event, touchState)
-      end
-      
-      local function covers(p, q)
-        return (x <= p and p <= x + w and y <= q and q <= y + h)
-      end
-      
-      return addElement( {draw = draw, run = run, covers = covers} )
-    end -- number(...)
-    
     return {
       setFullScreenRefresh = setFullScreenRefresh,
       setHandler = setHandler,
       run = run,
       button = button,
       toggleButton = toggleButton,
+      number = number,
       menu = menu,
-      timer = timer,
-      number, number
+      timer = timer
     }
   end -- gui(...)
   
