@@ -20,11 +20,18 @@
 ---------------------------------------------------------------------------
 local widget = ... -- The widget table is passed as an argument to chunk()
 local util = Utilities(widget.dir)
-widget.util = util
 local gui = util.GUI()
+
+util.flags = MIDSIZE
+local LEFT = 10
+local HEIGHT = 40
+local LINE = 60
+local BUTTON_W = 70
+
 local border = false
 local toggle = ""
-local n
+local a, b, t, n
+
 
 local function A()
   border = true
@@ -49,7 +56,7 @@ local function drawFull()
     end
   end
 
-  lcd.drawText(65, 37, "Toggle = " .. toggle, DEFAULT_COLOR)
+  lcd.drawText(LEFT + 2 * BUTTON_W, 12 + LINE, "Toggle = " .. toggle, bit32.bor(util.flags, DEFAULT_COLOR))
 end
 
 local function drawZone()
@@ -62,17 +69,21 @@ local function numberChange(d)
 end
 
 do -- Initialization happens here
-  util.setWidgetRefresh(drawZone)
-  gui.setFullScreenRefresh(drawFull)
+  local y = 10
   
-  local a = gui.button(5, 5, 50, 25, "A", A)
-  local b = gui.button(65, 5, 50, 25, "B", B)
-  local t = gui.toggleButton(5, 35, 50, 25, "T", true, T)
-  n = gui.number(5, 65, 50, 25, 0, numberChange, RIGHT)
+  util.widgetRefresh = drawZone
+  gui.fullScreenRefresh = drawFull
   
-  a.title("ON")
-  b.title("OFF")
-  t.title("Toggle")
+  a = gui.button(LEFT, y, BUTTON_W, HEIGHT, "A", A)
+  b = gui.button(LEFT + 1.5 * BUTTON_W, y, BUTTON_W, HEIGHT, "B", B)
+  y = y + LINE
+  t = gui.toggleButton(LEFT, y, 1.5 * BUTTON_W, HEIGHT, "T", true, T)
+  y = y + LINE
+  n = gui.number(LEFT, y, 1.5 * BUTTON_W, HEIGHT, 0, numberChange, RIGHT)
+  
+  a.title = "ON"
+  b.title = "OFF"
+  t.title = "Toggle"
 end
 
 widget.update = function(options)
