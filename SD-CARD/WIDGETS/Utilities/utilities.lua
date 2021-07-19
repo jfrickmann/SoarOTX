@@ -18,13 +18,6 @@
 -- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         --
 -- GNU General Public License for more details.                          --
 ---------------------------------------------------------------------------
-local widgetSizes = {
-  {392, 170},
-  {196, 170},
-  {196, 85},
-  {196, 42},
-  {70, 39}
-}
 
 local function utilities(dir)
   local this = { }
@@ -35,29 +28,7 @@ local function utilities(dir)
 --> widgetRefresh = function
 --> flags = lcd flags; will be used as defaults for drawing text and numbers
 
-  this.load4screen = function(file, ...)
-    local filename = this.dir .. file .. "_" .. LCD_W .. "x" .. LCD_H .. ".lua"
-    local chunk = loadScript(filename)
-    return chunk(...)
-  end -- load4screen(...)
-  
-  this.load4zone = function(file, zone, ...)
-    local w, h = zone.w, zone.h
-    
-    for i, wh in ipairs(widgetSizes) do
-      if wh[1] <= w and wh[2] <= h then
-        local filename = this.dir .. file .. "_" .. wh[1] .. "x" .. wh[2] .. ".lua"
-        local chunk = loadScript(filename)
-        if chunk then
-          return chunk(...)
-        end
-      end
-    end
-    
-    print("----> load4zone could not find a script for: " .. this.dir .. file)
-  end -- load4zone(...)
-
-  -- Return true if the first arg matches any of the following args
+-- Return true if the first arg matches any of the following args
   this.match = function(x, ...)
     for i, y in ipairs({...}) do
       if x == y then
@@ -69,7 +40,7 @@ local function utilities(dir)
   
   local match = this.match -- Easier to use locally
   
-  -- Create a new GUI object with interactive screen elements
+-- Create a new GUI object with interactive screen elements
   this.GUI = function()
     local this = { parent = this }
     local handlers = { }
@@ -77,7 +48,7 @@ local function utilities(dir)
     local focus = 0
     local edit = false
 
-    -- Draw a rectangle with pattern
+    -- Draw a rectangle with pattern lines
     local function drawRectangle(x, y, w, h, pat, flags)
       lcd.drawLine(x, y, x + w, y, pat, flags)
       lcd.drawLine(x + w, y, x + w, y + h, pat, flags)
@@ -85,8 +56,20 @@ local function utilities(dir)
       lcd.drawLine(x, y + h, x, y, pat, flags)
     end
     
+    -- Adjust text according to horizontal alignment
+    local function adjust(x, w, flags)
+      if bit32.band(flags, RIGHT) == RIGHT then
+        return x + w - 2
+      elseif bit32.band(flags, CENTER) == CENTER then
+        return x + w / 2
+      else
+        return x + 2
+      end
+    end
+    
     -- Move focus to another element
     local function moveFocus(delta)
+      local count = 0 -- Prevent infinite loop
       repeat
         focus = focus + delta
         if focus > #elements then
@@ -94,7 +77,8 @@ local function utilities(dir)
         elseif focus < 1 then
           focus = #elements
         end
-      until not elements[focus].noFocus
+        count = count + 1
+      until not elements[focus].noFocus or count > #elements
     end -- moveFocus(...)
     
     -- Add an element and return it to the client
@@ -109,10 +93,11 @@ local function utilities(dir)
       table.insert(handlers, {event, f} )
     end -- setHandler
     
---  Public interface starts here. The following variables can be set by the client.
---> fullScreenRefresh = function
+  --  Public GUI interface starts here.
+  --> fullScreenRefresh = function
+  --> element.noFocus prevents element from taking focus
     
-    -- Run an event cycle
+  -- Run an event cycle
     this.run = function(event, touchState)
       if not event then -- widget mode; event == nil
         if this.parent.widgetRefresh then
@@ -167,9 +152,9 @@ local function utilities(dir)
       end
     end -- run(...)
 
-    -- Create a button to trigger a function
+  -- Create a button to trigger a function
     this.button = function(x, y, w, h, title, callBack, flags)
-      flags = bit32.bor(flags or 0, this.parent.flags)
+      flags = bit32.bor(flags or 0, this.parent.flags, CENTER, VCENTER)
       local this = { parent = this }
       this.title = title
       
@@ -181,11 +166,11 @@ local function utilities(dir)
           drawRectangle(x - 1, y - 1, w + 2, h + 2, DOTTED, HIGHLIGHT_COLOR)
         end
         lcd.drawFilledRectangle(x, y, w, h, FOCUS_BGCOLOR)
-        lcd.drawText(x + w / 2, y + 2, this.title, bit32.bor(CENTER, FOCUS_COLOR, flags))
+        lcd.drawText(x + w / 2, y + h / 2, this.title, bit32.bor(FOCUS_COLOR, flags))
       end
       
       this.run = function(event, touchState)
-        if match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP, EVT_TOUCH_BREAK) then
+        if match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP) then
           callBack()
         end
       end
@@ -197,13 +182,13 @@ local function utilities(dir)
       return addElement(this)
     end -- button(...)
     
-    -- Create a toggle button that turns on/off. callBack gets true/false
+  -- Create a toggle button that turns on/off. callBack gets true/false
     this.toggleButton = function(x, y, w, h, title, value, callBack, flags)
-      flags = bit32.bor(flags or 0, this.parent.flags)
+      flags = bit32.bor(flags or 0, this.parent.flags, CENTER, VCENTER)
       local this = { parent = this }
       this.title = title
       this.value = value
-      
+
       this.draw = function(idx)
         local flags = flags
         local fg = FOCUS_COLOR
@@ -219,11 +204,11 @@ local function utilities(dir)
           flags = bit32.bor(flags, BOLD)
         end
         lcd.drawFilledRectangle(x, y, w, h, bg)
-        lcd.drawText(x + w / 2, y + 2, this.title, bit32.bor(CENTER, fg, flags))
+        lcd.drawText(x + w / 2, y + h / 2, this.title, bit32.bor(fg, flags))
       end
       
       this.run = function(event, touchState)
-        if match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP, EVT_TOUCH_BREAK) then
+        if match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP) then
           this.value = not this.value
           callBack(this.value)
         end
@@ -236,20 +221,11 @@ local function utilities(dir)
       return addElement(this)
     end -- toggleButton(...)
     
-    -- Create a number that can be edited
+  -- Create a number that can be edited
     this.number = function(x, y, w, h, value, callBack, flags)
-      flags = bit32.bor(flags or 0, this.parent.flags)
+      flags = bit32.bor(flags or 0, this.parent.flags, VCENTER)
       local this = { parent = this }
       this.value = value
-      local xx
-      
-      if bit32.band(flags, RIGHT) ~= 0 then
-        xx = x + w - 2
-      elseif bit32.band(flags, CENTER) ~= 0 then
-        xx = x + w / 2
-      else
-        xx = x + 2
-      end
       
       this.draw = function(idx)
         local fg = DEFAULT_COLOR
@@ -263,26 +239,25 @@ local function utilities(dir)
             lcd.drawFilledRectangle(x, y, w, h, FOCUS_BGCOLOR)
           end
         end
-        lcd.drawNumber(xx, y + 2, this.value, bit32.bor(fg, flags))
+        lcd.drawNumber(adjust(x, w, flags), y + h / 2, this.value, bit32.bor(fg, flags))
       end
       
       this.run = function(event, touchState)
-        local d = 0
-          
-        if match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_BREAK, EVT_TOUCH_TAP) then
+        d = 0
+        if match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP) then
           edit = not edit
-        elseif edit then
-          if event == EVT_VIRTUAL_EXIT then
-            edit = false
-          elseif event == EVT_VIRTUAL_INC then
-            d = 1
-          elseif event == EVT_VIRTUAL_DEC then
-            d = -1
-          elseif event == EVT_TOUCH_SLIDE then
-            d = -touchState.slideY
-          end
+        elseif event == EVT_VIRTUAL_EXIT then
+          edit = false
+        elseif event == EVT_VIRTUAL_INC then
+          d = 1
+        elseif event == EVT_VIRTUAL_DEC then
+          d = -1
+        elseif event == EVT_TOUCH_SLIDE then
+          d = -touchState.slideY
         end
-        callBack(d)
+        if d ~= 0 then
+          callBack(d)
+        end
       end
       
       this.covers = function(p, q)
@@ -292,52 +267,73 @@ local function utilities(dir)
       return addElement(this)
     end -- number(...)
     
-    -- Create a menu of choices. callBack gets choice #
-    local function menu(items, callBack, flags)
-      flags = bit32.bor(flags or 0, this.parent.flags)
+  -- Create a text label; cannot be edited
+    this.label = function(x, y, w, h, title, flags)
+      flags = bit32.bor(flags or 0, this.parent.flags, VCENTER, DEFAULT_COLOR)
       local this = { parent = this }
+      this.title = title
+      this.noFocus = true
       
       this.draw = function(idx)
-        local flags = flags
-        
-        if focus == idx then
-          flags = bit32.bor(flags, BOLD)
-        else
-        end
+        lcd.drawText(adjust(x, w, flags), y + h / 2, this.title, flags)
       end
-      
+
+      -- We should not ever run, but just in case...
       this.run = function(event, touchState)
+        this.noFocus = true
+        moveFocus(1)
       end
       
       this.covers = function(p, q)
-        return (x <= p and p <= x + w and y <= q and q <= y + h)
+        return false
       end
-      
-      return addElement( {draw = draw, run = run, covers = covers} )
-    end -- menu(...)
+       
+      return addElement(this)
+    end -- label(...)
     
-    -- Create a display of current time on timer[tmr]
+  -- Create a display of current time on timer[tmr]
+  -- Set timer.value to show a different value
     local function timer(x, y, w, h, tmr, callBack, flags)
-      flags = bit32.bor(flags or 0, this.parent.flags)
+      flags = bit32.bor(flags or 0, this.parent.flags, VCENTER)
       local this = { parent = this }
+      this.noFocus = true
 
       this.draw = function(idx)
-        local flags = 0
+        local flags = flags
+        local fg = DEFAULT_COLOR
+        -- this.value overrides the timer value
+        local value = this.value or model.getTimer(tmr).value
         
         if focus == idx then
-          flags = BOLD
-        else
+          drawRectangle(x - 1, y - 1, w + 2, h + 2, DOTTED, HIGHLIGHT_COLOR)
+          flags = bit32.bor(flags, BOLD)
+          if edit then
+            fg = FOCUS_COLOR
+            lcd.drawFilledRectangle(x, y, w, h, FOCUS_BGCOLOR)
+          end
         end
+        lcd.drawTimer(adjust(x, w, flags), y + h / 2, value, bit32.bor(fg, flags))
       end
       
       this.run = function(event, touchState)
+        local cb = edit
+        
+        if match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP) then
+          edit = not edit
+        elseif event == EVT_VIRTUAL_EXIT then
+          edit = false
+        end
+        if cb then
+          if not edit then event = EVT_VIRTUAL_EXIT end
+          -- Since there are so many possibilities, we leave it up to the callBack to take action
+          callBack(event, touchState)
+        end
       end
       
       this.covers = function(p, q)
         return (x <= p and p <= x + w and y <= q and q <= y + h)
       end
       
-      this.noFocus = true
       return addElement(this)
     end -- timer(...)
     
