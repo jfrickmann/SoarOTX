@@ -26,12 +26,13 @@ util.flags = bit32.bor(MIDSIZE)
 local LEFT = 10
 local TOP = 10
 local COL = 150
-local ROW = 60
+local ROW = 50
 local WIDTH = 120
 local HEIGHT = 40
 
+local buttonON, buttonOFF, toggleButton, number, labelToggle, lableNumber, timer, labelTimer
 local border = false
-local buttonON, buttonOFF, toggleButton, number, labelToggle, lableNumber
+local TMR = 0
 
 local function drawFull()
   if border then
@@ -63,7 +64,37 @@ local function doToggle(value)
 end
 
 local function numberChange(d)
+  -- Scale down slide input
+  if math.abs(d) > 1 then
+    d = math.floor(0.1 * d + 0.5)
+  end
   number.value = number.value + d
+end
+
+local function timerChange(event, touchState)
+  local d = 0
+
+  if not timer.value then  -- Initialize at first call
+    timer.value = model.getTimer(TMR).value
+  end
+  if util.match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP) then
+    local tmr = model.getTimer(TMR)
+    tmr.value = timer.value
+    model.setTimer(TMR, tmr)
+  elseif event == EVT_VIRTUAL_EXIT then
+    timer.value = nil
+  elseif event == EVT_VIRTUAL_INC then
+    d = 20
+  elseif event == EVT_VIRTUAL_DEC then
+    d = -20
+  elseif event == EVT_TOUCH_SLIDE then
+    d = -touchState.slideY
+  end
+  if d >= 20 then
+    timer.value = 60 * math.ceil((timer.value + 1) / 60)
+  elseif d <= -20 then
+    timer.value = 60 * math.floor((timer.value - 1) / 60)
+  end
 end
 
 do -- Initialization happens here
@@ -73,26 +104,30 @@ do -- Initialization happens here
   local x = LEFT
   local y = TOP
   
-  local function nc()
+  local function nextCol()
     x = x + COL
   end
   
-  local function nl()
+  local function nextRow()
     x = LEFT
     y = y + ROW
   end
   
   buttonON = gui.button(x, y, WIDTH, HEIGHT, "ON", turnON)
-  nc()
+  nextCol()
   buttonOFF = gui.button(x, y, WIDTH, HEIGHT, "OFF", turnOFF)
-  nl()
+  nextRow()
   toggleButton = gui.toggleButton(x, y, WIDTH, HEIGHT, "Toggle", true, doToggle)
-  nc()
+  nextCol()
   labelToggle = gui.label(x, y, WIDTH, HEIGHT, "")
-  nl()
+  nextRow()
   labelNumber = gui.label(x, y, WIDTH, HEIGHT, "Number =")
-  nc()
-  number = gui.number(x, y, WIDTH, HEIGHT, 0, numberChange, RIGHT)
+  nextCol()
+  number = gui.number(x, y, WIDTH, HEIGHT, 0, numberChange, bit32.bor(util.flags, RIGHT))
+  nextRow()
+  labelTimer = gui.label(x, y, WIDTH, HEIGHT, "Timer =")
+  nextCol()
+  timer = gui.timer(x, y, WIDTH, HEIGHT, TMR, timerChange, bit32.bor(util.flags, RIGHT))
 end
 
 widget.update = function(options)
@@ -103,6 +138,7 @@ end
 
 widget.refresh = function(event, touchState)
   gui.run(event, touchState)
+  lcd.drawCombobox(LEFT, TOP + 4 * ROW, WIDTH, {"First", "Second", "Third"}, 1)
 end
 
 return

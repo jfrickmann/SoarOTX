@@ -45,7 +45,7 @@ local function utilities(dir)
     local this = { parent = this }
     local handlers = { }
     local elements = { }
-    local focus = 0
+    local focus = 1
     local edit = false
 
     -- Draw a rectangle with pattern lines
@@ -107,20 +107,27 @@ local function utilities(dir)
           lcd.drawText(1, 25, "function was loaded.")
         end
       else -- full screen mode; event is a value
+        if elements[focus].noFocus then
+          moveFocus(1)
+        end
         if this.fullScreenRefresh then
           this.fullScreenRefresh(event, touchState)
         end
         for idx, element in ipairs(elements) do
           element.draw(idx)
         end
-        if event == 0 then
-          -- At the first cycle, find the first element that can take focus
-          -- WARNING: if no element can take focus, then it loops infinitely!
-          if focus == 0 then
-            moveFocus(1)
-          end
-        else -- non-zero event; process it
+        if event ~= 0 then -- non-zero event; process it
           if edit then -- Send the event to the element being edited
+            -- Unless the finger missed the target!
+            if match(event, EVT_TOUCH_FIRST, EVT_TOUCH_BREAK, EVT_TOUCH_TAP) then
+              if not elements[focus].covers(touchState.x, touchState.y) then
+                if event == EVT_TOUCH_TAP then
+                  event = EVT_VIRTUAL_EXIT -- Tap elsewhere to exit
+                else
+                  return
+                end
+              end
+            end
             elements[focus].run(event, touchState)
           else
             -- Is the event being "handled"?
@@ -154,7 +161,7 @@ local function utilities(dir)
 
   -- Create a button to trigger a function
     this.button = function(x, y, w, h, title, callBack, flags)
-      flags = bit32.bor(flags or 0, this.parent.flags, CENTER, VCENTER)
+      flags = bit32.bor(flags or this.parent.flags, CENTER, VCENTER)
       local this = { parent = this }
       this.title = title
       
@@ -184,7 +191,7 @@ local function utilities(dir)
     
   -- Create a toggle button that turns on/off. callBack gets true/false
     this.toggleButton = function(x, y, w, h, title, value, callBack, flags)
-      flags = bit32.bor(flags or 0, this.parent.flags, CENTER, VCENTER)
+      flags = bit32.bor(flags or this.parent.flags, CENTER, VCENTER)
       local this = { parent = this }
       this.title = title
       this.value = value
@@ -223,7 +230,7 @@ local function utilities(dir)
     
   -- Create a number that can be edited
     this.number = function(x, y, w, h, value, callBack, flags)
-      flags = bit32.bor(flags or 0, this.parent.flags, VCENTER)
+      flags = bit32.bor(flags or this.parent.flags, VCENTER)
       local this = { parent = this }
       this.value = value
       
@@ -243,7 +250,7 @@ local function utilities(dir)
       end
       
       this.run = function(event, touchState)
-        d = 0
+        local d = 0
         if match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP) then
           edit = not edit
         elseif event == EVT_VIRTUAL_EXIT then
@@ -269,7 +276,7 @@ local function utilities(dir)
     
   -- Create a text label; cannot be edited
     this.label = function(x, y, w, h, title, flags)
-      flags = bit32.bor(flags or 0, this.parent.flags, VCENTER, DEFAULT_COLOR)
+      flags = bit32.bor(flags or this.parent.flags, VCENTER, DEFAULT_COLOR)
       local this = { parent = this }
       this.title = title
       this.noFocus = true
@@ -293,10 +300,9 @@ local function utilities(dir)
     
   -- Create a display of current time on timer[tmr]
   -- Set timer.value to show a different value
-    local function timer(x, y, w, h, tmr, callBack, flags)
-      flags = bit32.bor(flags or 0, this.parent.flags, VCENTER)
+    this.timer = function(x, y, w, h, tmr, callBack, flags)
+      flags = bit32.bor(flags or this.parent.flags, VCENTER)
       local this = { parent = this }
-      this.noFocus = true
 
       this.draw = function(idx)
         local flags = flags
@@ -316,17 +322,14 @@ local function utilities(dir)
       end
       
       this.run = function(event, touchState)
-        local cb = edit
-        
-        if match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP) then
-          edit = not edit
-        elseif event == EVT_VIRTUAL_EXIT then
-          edit = false
-        end
-        if cb then
-          if not edit then event = EVT_VIRTUAL_EXIT end
+        if edit then
+          if match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP, EVT_VIRTUAL_EXIT) then
+            edit = false
+          end
           -- Since there are so many possibilities, we leave it up to the callBack to take action
           callBack(event, touchState)
+        else
+          edit = match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP)
         end
       end
       
