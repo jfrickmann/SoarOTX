@@ -19,9 +19,9 @@
 -- GNU General Public License for more details.                          --
 ---------------------------------------------------------------------------
 local widget = ... -- The widget table is passed as an argument to chunk()
-local util = Utilities(widget.dir)
-local gui = util.GUI()
-util.flags = bit32.bor(MIDSIZE)
+local libGUI = loadGUI()
+local gui = libGUI.newGUI()
+gui.flags = bit32.bor(MIDSIZE)
 
 local LEFT = 10
 local TOP = 10
@@ -77,7 +77,7 @@ local function timerChange(event, touchState)
   if not timer.value then  -- Initialize at first call
     timer.value = model.getTimer(TMR).value
   end
-  if util.match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP) then
+  if libGUI.match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP) then
     local tmr = model.getTimer(TMR)
     tmr.value = timer.value
     model.setTimer(TMR, tmr)
@@ -98,7 +98,7 @@ local function timerChange(event, touchState)
 end
 
 do -- Initialization happens here
-  util.widgetRefresh = drawZone
+  gui.widgetRefresh = drawZone
   gui.fullScreenRefresh = drawFull
   
   local x = LEFT
@@ -112,7 +112,6 @@ do -- Initialization happens here
     x = LEFT
     y = y + ROW
   end
-  
   buttonON = gui.button(x, y, WIDTH, HEIGHT, "ON", turnON)
   nextCol()
   buttonOFF = gui.button(x, y, WIDTH, HEIGHT, "OFF", turnOFF)
@@ -123,11 +122,11 @@ do -- Initialization happens here
   nextRow()
   labelNumber = gui.label(x, y, WIDTH, HEIGHT, "Number =")
   nextCol()
-  number = gui.number(x, y, WIDTH, HEIGHT, 0, numberChange, bit32.bor(util.flags, RIGHT))
+  number = gui.number(x, y, WIDTH, HEIGHT, 0, numberChange, bit32.bor(gui.flags, RIGHT))
   nextRow()
   labelTimer = gui.label(x, y, WIDTH, HEIGHT, "Timer =")
   nextCol()
-  timer = gui.timer(x, y, WIDTH, HEIGHT, TMR, timerChange, bit32.bor(util.flags, RIGHT))
+  timer = gui.timer(x, y, WIDTH, HEIGHT, TMR, timerChange, bit32.bor(gui.flags, RIGHT))
 end
 
 widget.update = function(options)
@@ -138,7 +137,6 @@ end
 
 widget.refresh = function(event, touchState)
   gui.run(event, touchState)
-  lcd.drawCombobox(LEFT, TOP + 4 * ROW, WIDTH, {"First", "Second", "Third"}, 1)
 end
 
 return

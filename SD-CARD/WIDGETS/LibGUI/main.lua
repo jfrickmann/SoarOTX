@@ -20,18 +20,18 @@
 -- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         --
 -- GNU General Public License for more details.                          --
 ---------------------------------------------------------------------------
-local dir = "/WIDGETS/Utilities/"
-local soarUtil
+local dir = "/WIDGETS/LibGUI/"
+local libGUI
 
--- Return a library instance working in the client widget's directory
-function Utilities(clientDir)
+-- Return GUI library table
+function loadGUI()
   -- Load the library on demand
-  if not soarUtil then
-  	local chunk = loadScript(dir .. "utilities.lua")
-    soarUtil = chunk()
+  if not libGUI then
+  	local chunk = loadScript(dir .. "libgui.lua")
+    libGUI = chunk()
   end
   
-  return soarUtil(clientDir)
+  return libGUI
 end
 
 -----------------------------------------------------------------------------
@@ -70,7 +70,7 @@ local function refresh(widget, event, touchState)
 end
 
 return {
-  name = "Utilities",
+  name = "LibGUI",
   options = options,
   create = create,
   update = update,
