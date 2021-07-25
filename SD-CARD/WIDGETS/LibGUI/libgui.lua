@@ -80,8 +80,16 @@ function lib.newGUI()
   end -- moveFocus(...)
   
   -- Add an element and return it to the client
-  local function addElement(element)
+  local function addElement(element, x, y, w, h)
     local idx = #elements + 1
+    
+    local function covers(p, q)
+      return (x <= p and p <= x + w and y <= q and q <= y + h)
+    end
+    
+    if not element.covers then
+      element.covers = covers
+    end
     elements[idx] = element
     return element
   end -- addElement(...)
@@ -180,11 +188,7 @@ function lib.newGUI()
       end
     end
     
-    function self.covers(p, q)
-      return (x <= p and p <= x + w and y <= q and q <= y + h)
-    end
-    
-    return addElement(self)
+    return addElement(self, x, y, w, h)
   end -- button(...)
   
 -- Create a toggle button that turns on/off. callBack gets true/false
@@ -217,11 +221,7 @@ function lib.newGUI()
       end
     end
     
-    function self.covers(p, q)
-      return (x <= p and p <= x + w and y <= q and q <= y + h)
-    end
-    
-    return addElement(self)
+    return addElement(self, x, y, w, h)
   end -- toggleButton(...)
   
 -- Create a number that can be edited
@@ -262,11 +262,7 @@ function lib.newGUI()
       end
     end
     
-    function self.covers(p, q)
-      return (x <= p and p <= x + w and y <= q and q <= y + h)
-    end
-     
-    return addElement(self)
+    return addElement(self, x, y, w, h)
   end -- number(...)
   
 -- Create a text label; cannot be edited
@@ -288,7 +284,7 @@ function lib.newGUI()
       return false
     end
      
-    return addElement(self)
+    return addElement(self, x, y, w, h)
   end -- label(...)
   
 -- Create a display of current time on timer[tmr]
@@ -326,11 +322,7 @@ function lib.newGUI()
       end
     end
     
-    function self.covers(p, q)
-      return (x <= p and p <= x + w and y <= q and q <= y + h)
-    end
-    
-    return addElement(self)
+    return addElement(self, x, y, w, h)
   end -- timer(...)
   
   return gui
