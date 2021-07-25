@@ -184,7 +184,7 @@ function lib.newGUI()
     
     function self.run(event, touchState)
       if match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP) then
-        return callBack()
+        return callBack(self)
       end
     end
     
@@ -217,7 +217,7 @@ function lib.newGUI()
     function self.run(event, touchState)
       if match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP) then
         self.value = not self.value
-        return callBack(self.value)
+        return callBack(self)
       end
     end
     
@@ -227,7 +227,7 @@ function lib.newGUI()
 -- Create a number that can be edited
   function gui.number(x, y, w, h, value, callBack, flags)
     flags = bit32.bor(flags or gui.flags, VCENTER)
-    local self = { value = value }
+    local self = { value = value, delta = 0 }
     
     function self.draw(idx)
       local fg = DEFAULT_COLOR
@@ -245,20 +245,20 @@ function lib.newGUI()
     end
     
     function self.run(event, touchState)
-      local d = 0
+      self.delta = 0
       if match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP) then
         edit = not edit
       elseif event == EVT_VIRTUAL_EXIT then
         edit = false
       elseif event == EVT_VIRTUAL_INC then
-        d = 1
+        self.delta = 1
       elseif event == EVT_VIRTUAL_DEC then
-        d = -1
+        self.delta = -1
       elseif event == EVT_TOUCH_SLIDE then
-        d = -touchState.slideY
+        self.delta = -touchState.slideY
       end
-      if d ~= 0 then
-        return callBack(d)
+      if self.delta ~= 0 then
+        return callBack(self)
       end
     end
     
@@ -316,7 +316,7 @@ function lib.newGUI()
           edit = false
         end
         -- Since there are so many possibilities, we leave it up to the callBack to take action
-        return callBack(event, touchState)
+        return callBack(self, event, touchState)
       else
         edit = match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP)
       end
@@ -342,7 +342,7 @@ return lib
       local sel = 0
       
       if event == EVT_VIRTUAL_ENTER then
-        return callBack(selected)
+        return callBack(self)
       elseif event == EVT_VIRTUAL_EXIT then
         return true -- Signal menu exit
       elseif event == EVT_VIRTUAL_NEXT then

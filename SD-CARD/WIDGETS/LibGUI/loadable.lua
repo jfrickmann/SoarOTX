@@ -15,25 +15,35 @@
 --                                                                       --
 -- This program is distributed in the hope that it will be useful        --
 -- but WITHOUT ANY WARRANTY; without even the implied warranty of        --
--- MERCHANTABILITY or FITNESS FOR turnON PARTICULAR PURPOSE.  See the         --
+-- MERCHANTABILITY or FITNESS FOR borderON PARTICULAR PURPOSE. See the   --
 -- GNU General Public License for more details.                          --
 ---------------------------------------------------------------------------
-local widget = ... -- The widget table is passed as an argument to chunk()
-local libGUI = loadGUI()
-local gui = libGUI.newGUI()
-gui.flags = bit32.bor(MIDSIZE)
 
+-- This code chunk is loaded on demand by the LibGUI widget's main script
+-- when the create(...) function is run. Hence, the body of this file is
+-- executed by the widget's create(...) function.
+
+local zone, options = ... --zone and options were passed as arguments to chunk(...).
+local widget = { } -- The widget table will be returned to the main script.
+
+-- Load the GUI library by calling the global function declared in the main script.
+-- As long as LibGUI is on the SD card, any widget can call loadGUI() because it is global.
+local libGUI = loadGUI()
+local gui = libGUI.newGUI() -- Instantiate a new GUI object.
+gui.flags = MIDSIZE -- Default flags that are used unless other flags are passed.
+
+-- Local constants and variables:
 local LEFT = 10
 local TOP = 10
 local COL = 150
 local ROW = 50
 local WIDTH = 120
 local HEIGHT = 40
-
-local buttonON, buttonOFF, toggleButton, number, labelToggle, lableNumber, timer, labelTimer
-local border = false
 local TMR = 0
+local border = false
+local labelToggle
 
+-- Called by gui in full screen mode
 local function drawFull()
   if border then
     for i = 0, 5 do
@@ -42,36 +52,43 @@ local function drawFull()
   end
 end
 
+-- Called by gui in widget zone mode
 local function drawZone()
-  lcd.drawRectangle(0, 0, widget.zone.w, widget.zone.h, BATTERY_CHARGE_COLOR)
-  lcd.drawText(5, 5, "Utilities")
+  lcd.drawRectangle(0, 0, zone.w, zone.h, BATTERY_CHARGE_COLOR)
+  lcd.drawText(5, 5, "LibGUI")
 end
 
-local function turnON()
+-- Call back for button "ON"
+local function borderON()
   border = true
 end
 
-local function turnOFF()
+-- Call back for button "OFF"
+local function borderOFF()
   border = false
 end
 
-local function doToggle(value)
-  if value then
+-- Call back for toggle button
+local function doToggle(toggleButton)
+  if toggleButton.value then
     labelToggle.title = "Toggle = ON"
   else
     labelToggle.title = "Toggle = OFF"
   end
 end
 
-local function numberChange(d)
+-- Call back for number
+local function numberChange(number)
   -- Scale down slide input
+  local d = number.delta
   if math.abs(d) > 1 then
     d = math.floor(0.1 * d + 0.5)
   end
   number.value = number.value + d
 end
 
-local function timerChange(event, touchState)
+-- Call back for timer
+local function timerChange(timer, event, touchState)
   local d = 0
 
   if not timer.value then  -- Initialize at first call
@@ -98,9 +115,6 @@ local function timerChange(event, touchState)
 end
 
 do -- Initialization happens here
-  gui.widgetRefresh = drawZone
-  gui.fullScreenRefresh = drawFull
-  
   local x = LEFT
   local y = TOP
   
@@ -112,31 +126,31 @@ do -- Initialization happens here
     x = LEFT
     y = y + ROW
   end
-  buttonON = gui.button(x, y, WIDTH, HEIGHT, "ON", turnON)
+  
+  gui.widgetRefresh = drawZone
+  gui.fullScreenRefresh = drawFull
+  
+  gui.button(x, y, WIDTH, HEIGHT, "ON", borderON)
   nextCol()
-  buttonOFF = gui.button(x, y, WIDTH, HEIGHT, "OFF", turnOFF)
+  gui.button(x, y, WIDTH, HEIGHT, "OFF", borderOFF)
   nextRow()
-  toggleButton = gui.toggleButton(x, y, WIDTH, HEIGHT, "Toggle", true, doToggle)
+  gui.toggleButton(x, y, WIDTH, HEIGHT, "Toggle", true, doToggle)
   nextCol()
   labelToggle = gui.label(x, y, WIDTH, HEIGHT, "")
   nextRow()
-  labelNumber = gui.label(x, y, WIDTH, HEIGHT, "Number =")
+  gui.label(x, y, WIDTH, HEIGHT, "Number =")
   nextCol()
-  number = gui.number(x, y, WIDTH, HEIGHT, 0, numberChange, bit32.bor(gui.flags, RIGHT))
+  gui.number(x, y, WIDTH, HEIGHT, 0, numberChange, bit32.bor(gui.flags, RIGHT))
   nextRow()
-  labelTimer = gui.label(x, y, WIDTH, HEIGHT, "Timer =")
+  gui.label(x, y, WIDTH, HEIGHT, "Timer =")
   nextCol()
-  timer = gui.timer(x, y, WIDTH, HEIGHT, TMR, timerChange, bit32.bor(gui.flags, RIGHT))
+  gui.timer(x, y, WIDTH, HEIGHT, TMR, timerChange, bit32.bor(gui.flags, RIGHT))
 end
 
-widget.update = function(options)
-end
-
-widget.background = function()
-end
-
-widget.refresh = function(event, touchState)
+-- This function is called from the refresh(...) function in the main script
+function widget.refresh(event, touchState)
   gui.run(event, touchState)
 end
 
-return
+-- Return to the create(...) function in the main script
+return widget

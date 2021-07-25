@@ -20,14 +20,14 @@
 -- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         --
 -- GNU General Public License for more details.                          --
 ---------------------------------------------------------------------------
-local dir = "/WIDGETS/LibGUI/"
+local name = "LibGUI"
 local libGUI
 
 -- Return GUI library table
 function loadGUI()
   -- Load the library on demand
   if not libGUI then
-  	local chunk = loadScript(dir .. "libgui.lua")
+  	local chunk = loadScript("/WIDGETS/" .. name .. "/libgui.lua")
     libGUI = chunk()
   end
   
@@ -38,42 +38,33 @@ end
 -- The following widget implementation demonstrates how to use the library --
 -- and how to create a dynamically loadable widget to minimize the amount  --
 -- memory consumed when the widget is not being used.                      --
+-- You do not need to run the widget to use the library.                   --
 -----------------------------------------------------------------------------
 
-local options = { 
-}
-
 local function create(zone, options)
-  local widget = {
-    zone = zone, 
-    options = options,
-    dir = dir
-  }
-  
-  -- Load the widget code. It will add functions to the widget table
-  local chunk = loadScript(dir .. "loadable.lua")
-  chunk(widget)
-
-  return widget
-end
-
-local function update(widget, options)
-  widget.update(options)
-end
-
-local function background(widget)
-  widget.background()
+  -- Load the loadable code chunk. It will return a widget table.
+  local chunk = loadScript("/WIDGETS/" .. name .. "/loadable.lua")
+  return chunk(zone, options)
 end
 
 local function refresh(widget, event, touchState)
   widget.refresh(event, touchState)
 end
 
+local function background(widget)
+end
+
+local options = { 
+}
+
+local function update(widget, options)
+end
+
 return {
-  name = "LibGUI",
-  options = options,
+  name = name,
   create = create,
-  update = update,
+  refresh = refresh,
   background = background,
-  refresh = refresh
+  options = options,
+  update = update
 }
