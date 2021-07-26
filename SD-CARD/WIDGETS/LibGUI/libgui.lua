@@ -124,17 +124,30 @@ function lib.newGUI()
         element.draw(idx)
       end
       if event ~= 0 then -- non-zero event; process it
-        if edit then -- Send the event to the element being edited
-          -- Unless the finger missed the target!
-          if match(event, EVT_TOUCH_FIRST, EVT_TOUCH_BREAK, EVT_TOUCH_TAP) then
-            if not elements[focus].covers(touchState.x, touchState.y) then
-              if event == EVT_TOUCH_TAP then
-                event = EVT_VIRTUAL_EXIT -- Tap elsewhere to exit
-              else
+        -- First filter out touch events that missed the element
+        if match(event, EVT_TOUCH_FIRST, EVT_TOUCH_BREAK, EVT_TOUCH_TAP) then
+          if not elements[focus].covers(touchState.x, touchState.y) then
+            -- Move focus if we are not editing
+            if event == EVT_TOUCH_FIRST then
+              if edit then
                 return
               end
+              for idx, element in ipairs(elements) do
+                if element.covers(touchState.x, touchState.y) then
+                  if not element.noFocus then
+                    focus = idx
+                  end
+                  return
+                end
+              end
+            else
+              -- Convert a touch off the focused element to EXIT
+              event = EVT_VIRTUAL_EXIT
             end
           end
+        end
+        -- Send the event to the element being edited
+        if edit then
           elements[focus].run(event, touchState)
         else
           -- Is the event being "handled"?
@@ -144,17 +157,7 @@ function lib.newGUI()
               return f()
             end
           end
-          -- Move focus or send event to the focused element
-          if event == EVT_TOUCH_FIRST then
-            for idx, element in ipairs(elements) do
-              if element.covers(touchState.x, touchState.y) then
-                if not element.noFocus then
-                  focus = idx
-                end
-                break
-              end
-            end
-          elseif event == EVT_VIRTUAL_NEXT then
+          if event == EVT_VIRTUAL_NEXT then
             moveFocus(1)
           elseif event == EVT_VIRTUAL_PREV then
             moveFocus(-1)
@@ -246,19 +249,21 @@ function lib.newGUI()
     
     function self.run(event, touchState)
       self.delta = 0
-      if match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP) then
+      if match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP, EVT_TOUCH_BREAK) then
         edit = not edit
       elseif event == EVT_VIRTUAL_EXIT then
         edit = false
-      elseif event == EVT_VIRTUAL_INC then
-        self.delta = 1
-      elseif event == EVT_VIRTUAL_DEC then
-        self.delta = -1
-      elseif event == EVT_TOUCH_SLIDE then
-        self.delta = -touchState.slideY
-      end
-      if self.delta ~= 0 then
-        return callBack(self)
+      elseif edit then
+        if event == EVT_VIRTUAL_INC then
+          self.delta = 1
+        elseif event == EVT_VIRTUAL_DEC then
+          self.delta = -1
+        elseif event == EVT_TOUCH_SLIDE then
+          self.delta = -touchState.slideY
+        end
+        if self.delta ~= 0 then
+          return callBack(self)
+        end
       end
     end
     
@@ -311,14 +316,12 @@ function lib.newGUI()
     end
     
     function self.run(event, touchState)
-      if edit then
-        if match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP, EVT_VIRTUAL_EXIT) then
-          edit = false
-        end
-        -- Since there are so many possibilities, we leave it up to the callBack to take action
+      if match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP, EVT_TOUCH_BREAK) then
+        edit = not edit
+      elseif event == EVT_VIRTUAL_EXIT then
+        edit = false
+      elseif edit then
         return callBack(self, event, touchState)
-      else
-        edit = match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP)
       end
     end
     
