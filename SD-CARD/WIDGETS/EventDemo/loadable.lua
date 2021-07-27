@@ -24,7 +24,7 @@
 -- when the create(...) function is run. Hence, the body of this file is
 -- executed by the widget's create(...) function.
 
-local zone, options = ... --zone and options were passed as arguments to chunk(...).
+local zone, options = ... -- zone and options were passed as arguments to chunk(...).
 local widget = { } -- The widget table will be returned to the main script.
 
 local lastEvent = 0
@@ -122,7 +122,7 @@ function widget.refresh(event, touchState)
         if event == EVT_TOUCH_FIRST then -- When the finger first hits the screen
           -- If the finger hit the square, then stick to it!
           stick = (math.abs(touchState.x - x) < 0.5 * s and math.abs(touchState.y - y) < 0.5 * s)
-          
+
         elseif event == EVT_TOUCH_BREAK then -- When the finger leaves the screen (and did not slide on it)
           if stick then
             playTone(100, 200, 100, PLAY_NOW, 10)
@@ -177,8 +177,8 @@ function widget.refresh(event, touchState)
     -- Draw the square
     lcd.drawFilledRectangle(x - 0.5 * s, y - 0.5 * s, s, s)
     
-    -- Show the last event for 2 sec. in the upper left corner
-    if getTime() - eventTime < 200 then
+    -- Show the last event for 4 sec. in the upper left corner
+    if getTime() - eventTime < 400 then
       lcd.drawText(3, 3, evt2str(lastEvent))
     end
     
