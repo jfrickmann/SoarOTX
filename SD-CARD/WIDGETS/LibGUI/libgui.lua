@@ -44,7 +44,7 @@ function lib.newGUI()
   local handlers = { }
   local elements = { }
   local focus = 1
-  local edit = false
+  local editing = false
 
   -- Draw a rectangle with pattern lines
   local function drawRectangle(x, y, w, h, pat, flags)
@@ -124,31 +124,42 @@ function lib.newGUI()
         element.draw(idx)
       end
       if event ~= 0 then -- non-zero event; process it
-        -- First filter out touch events that missed the element
-        if match(event, EVT_TOUCH_FIRST, EVT_TOUCH_BREAK, EVT_TOUCH_TAP) then
+        if event == EVT_TOUCH_FIRST then
           if not elements[focus].covers(touchState.x, touchState.y) then
-            -- Move focus if we are not editing
-            if event == EVT_TOUCH_FIRST then
-              if edit then
-                return
+            -- Did we touch another element?
+            local newFocus
+            for idx, element in ipairs(elements) do
+              if element.covers(touchState.x, touchState.y) and not element.noFocus then
+                newFocus = idx
+                break
               end
-              for idx, element in ipairs(elements) do
-                if element.covers(touchState.x, touchState.y) then
-                  if not element.noFocus then
-                    focus = idx
-                  end
-                  return
-                end
-              end
-            else
-              -- Convert a touch off the focused element to EXIT
-              event = EVT_VIRTUAL_EXIT
             end
+            -- Did we find a new element to focus on?
+            if newFocus then
+              if editing then
+                -- A goodbye EXIT before we take away focus
+                elements[focus].run(EVT_VIRTUAL_EXIT, touchState)
+                editing = false
+              end
+              focus = newFocus
+            end
+          end
+          return -- Do not continue
+        elseif match(event, EVT_TOUCH_BREAK, EVT_TOUCH_TAP) then
+          if elements[focus].covers(touchState.x, touchState.y) then
+            -- Convert to ENTER
+            event = EVT_VIRTUAL_ENTER
+          else
+            -- Convert a touch off the focused element to EXIT
+            event = EVT_VIRTUAL_EXIT
           end
         end
         -- Send the event to the element being edited
-        if edit then
+        if editing then
           elements[focus].run(event, touchState)
+          if match(event,EVT_VIRTUAL_ENTER, EVT_VIRTUAL_EXIT) then
+            editing = false
+          end
         else
           -- Is the event being "handled"?
           for i, h in ipairs(handlers) do
@@ -157,11 +168,13 @@ function lib.newGUI()
               return f()
             end
           end
-          if event == EVT_VIRTUAL_NEXT then
+          if event == EVT_VIRTUAL_ENTER and elements[focus].editable then -- Start editing
+            editing = true
+          elseif event == EVT_VIRTUAL_NEXT then -- Move focus
             moveFocus(1)
           elseif event == EVT_VIRTUAL_PREV then
             moveFocus(-1)
-          else
+          else -- Send event to the element in focus
             elements[focus].run(event, touchState)
           end
         end
@@ -186,8 +199,8 @@ function lib.newGUI()
     end
     
     function self.run(event, touchState)
-      if match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP) then
-        return callBack(self)
+      if event == EVT_VIRTUAL_ENTER then
+        return callBack(self, event, touchState)
       end
     end
     
@@ -218,9 +231,9 @@ function lib.newGUI()
     end
     
     function self.run(event, touchState)
-      if match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP) then
+      if event == EVT_VIRTUAL_ENTER then
         self.value = not self.value
-        return callBack(self)
+        return callBack(self, event, touchState)
       end
     end
     
@@ -230,7 +243,7 @@ function lib.newGUI()
 -- Create a number that can be edited
   function gui.number(x, y, w, h, value, callBack, flags)
     flags = bit32.bor(flags or gui.flags, VCENTER)
-    local self = { value = value, delta = 0 }
+    local self = { value = value, delta = 0, editable = true }
     
     function self.draw(idx)
       local fg = DEFAULT_COLOR
@@ -239,7 +252,7 @@ function lib.newGUI()
       if focus == idx then
         drawRectangle(x - 1, y - 1, w + 2, h + 2, DOTTED, HIGHLIGHT_COLOR)
         flags = bit32.bor(flags, BOLD)
-        if edit then
+        if editing then
           fg = FOCUS_COLOR
           lcd.drawFilledRectangle(x, y, w, h, FOCUS_BGCOLOR)
         end
@@ -248,12 +261,8 @@ function lib.newGUI()
     end
     
     function self.run(event, touchState)
-      self.delta = 0
-      if match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP, EVT_TOUCH_BREAK) then
-        edit = not edit
-      elseif event == EVT_VIRTUAL_EXIT then
-        edit = false
-      elseif edit then
+      if editing then
+        self.delta = 0
         if event == EVT_VIRTUAL_INC then
           self.delta = 1
         elseif event == EVT_VIRTUAL_DEC then
@@ -262,7 +271,7 @@ function lib.newGUI()
           self.delta = -touchState.slideY
         end
         if self.delta ~= 0 then
-          return callBack(self)
+          return callBack(self, event, touchState)
         end
       end
     end
@@ -296,7 +305,7 @@ function lib.newGUI()
 -- Set timer.value to show a different value
   function gui.timer(x, y, w, h, tmr, callBack, flags)
     flags = bit32.bor(flags or gui.flags, VCENTER)
-    local self = { }
+    local self = { editable = true }
 
     function self.draw(idx)
       local flags = flags
@@ -307,7 +316,7 @@ function lib.newGUI()
       if focus == idx then
         drawRectangle(x - 1, y - 1, w + 2, h + 2, DOTTED, HIGHLIGHT_COLOR)
         flags = bit32.bor(flags, BOLD)
-        if edit then
+        if editing then
           fg = FOCUS_COLOR
           lcd.drawFilledRectangle(x, y, w, h, FOCUS_BGCOLOR)
         end
@@ -316,11 +325,8 @@ function lib.newGUI()
     end
     
     function self.run(event, touchState)
-      if match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP, EVT_TOUCH_BREAK) then
-        edit = not edit
-      elseif event == EVT_VIRTUAL_EXIT then
-        edit = false
-      elseif edit then
+      -- There are so many possibilities that we leave it up to the call back to decide what to do.
+      if editing then
         return callBack(self, event, touchState)
       end
     end
