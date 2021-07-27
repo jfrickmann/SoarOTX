@@ -124,27 +124,19 @@ function lib.newGUI()
         element.draw(idx)
       end
       if event ~= 0 then -- non-zero event; process it
-        if event == EVT_TOUCH_FIRST then
-          if not elements[focus].covers(touchState.x, touchState.y) then
-            -- Did we touch another element?
-            local newFocus
-            for idx, element in ipairs(elements) do
-              if element.covers(touchState.x, touchState.y) and not element.noFocus then
-                newFocus = idx
-                break
-              end
-            end
-            -- Did we find a new element to focus on?
-            if newFocus then
+        if event == EVT_TOUCH_FIRST and not elements[focus].covers(touchState.x, touchState.y) then
+          -- Did we touch another element?
+          for idx, element in ipairs(elements) do
+            if element.covers(touchState.x, touchState.y) and not element.noFocus then
               if editing then
                 -- A goodbye EXIT before we take away focus
                 elements[focus].run(EVT_VIRTUAL_EXIT, touchState)
                 editing = false
               end
-              focus = newFocus
+              focus = idx
+              return -- Do not continue
             end
           end
-          return -- Do not continue
         elseif match(event, EVT_TOUCH_BREAK, EVT_TOUCH_TAP) then
           if elements[focus].covers(touchState.x, touchState.y) then
             -- Convert to ENTER
@@ -261,18 +253,9 @@ function lib.newGUI()
     end
     
     function self.run(event, touchState)
+      -- There are so many possibilities that we leave it up to the call back to decide what to do.
       if editing then
-        self.delta = 0
-        if event == EVT_VIRTUAL_INC then
-          self.delta = 1
-        elseif event == EVT_VIRTUAL_DEC then
-          self.delta = -1
-        elseif event == EVT_TOUCH_SLIDE then
-          self.delta = -touchState.slideY
-        end
-        if self.delta ~= 0 then
-          return callBack(self, event, touchState)
-        end
+        return callBack(self, event, touchState)
       end
     end
     

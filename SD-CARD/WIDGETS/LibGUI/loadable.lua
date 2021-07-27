@@ -42,6 +42,7 @@ local HEIGHT = 40
 local TMR = 0
 local border = false
 local labelToggle
+local startValue = 0
 
 -- Called by gui in full screen mode
 local function drawFull()
@@ -78,13 +79,16 @@ local function doToggle(toggleButton)
 end
 
 -- Call back for number
-local function numberChange(number)
-  -- Scale down slide input
-  local d = number.delta
-  if math.abs(d) > 1 then
-    d = math.floor(0.1 * d + 0.5)
+local function numberChange(number, event, touchState)
+  if event == EVT_VIRTUAL_INC then
+    number.value = number.value + 1
+  elseif event == EVT_VIRTUAL_DEC then
+    number.value = number.value - 1
+  elseif event == EVT_TOUCH_FIRST then
+    startValue = number.value
+  elseif event == EVT_TOUCH_SLIDE then
+    number.value = math.floor((touchState.startY - touchState.y) / 20 + 0.5) + startValue
   end
-  number.value = number.value + d
 end
 
 -- Call back for timer
@@ -94,23 +98,25 @@ local function timerChange(timer, event, touchState)
   if not timer.value then  -- Initialize at first call
     timer.value = model.getTimer(TMR).value
   end
-  if libGUI.match(event, EVT_VIRTUAL_ENTER, EVT_TOUCH_TAP) then
-    local tmr = model.getTimer(TMR)
-    tmr.value = timer.value
-    model.setTimer(TMR, tmr)
-  elseif event == EVT_VIRTUAL_EXIT then
-    timer.value = nil
+  if libGUI.match(event, EVT_VIRTUAL_ENTER, EVT_VIRTUAL_EXIT) then
+    if event == EVT_VIRTUAL_ENTER then
+      local tmr = model.getTimer(TMR)
+      tmr.value = timer.value
+      model.setTimer(TMR, tmr)
+    end
+    timer.value = nil -- Nil here means that the model timer's value is displayed
+    return
   elseif event == EVT_VIRTUAL_INC then
-    d = 20
+    d = 1
   elseif event == EVT_VIRTUAL_DEC then
-    d = -20
-  elseif event == EVT_TOUCH_SLIDE then
-    d = -touchState.slideY
+    d = -1
+  elseif event == EVT_TOUCH_FIRST then
+    startValue = timer.value
   end
-  if d >= 20 then
-    timer.value = 60 * math.ceil((timer.value + 1) / 60)
-  elseif d <= -20 then
-    timer.value = 60 * math.floor((timer.value - 1) / 60)
+  if event == EVT_TOUCH_SLIDE then
+    timer.value = 60 * math.floor(startValue / 60 + (touchState.startY - touchState.y) / 20 + 0.5)
+  else
+    timer.value = 60 * math.floor(timer.value / 60 + d + 0.5)
   end
 end
 
