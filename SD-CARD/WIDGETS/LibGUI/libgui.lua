@@ -38,6 +38,7 @@ lib.match = match
 --> flags = lcd flags; will be used as defaults for drawing text and numbers
 --> widgetRefresh = function drawing screen in non-fullscreen mode
 --> fullScreenRefresh = function drawing screen in fullscreen mode
+--> handle[EVT_*] = function - trap event (when not editing)
 --> element.noFocus = true prevents element from taking focus
 --> element.title can be set for button, toggleButton and label
 --> element.value can be set for toggleButton and number
@@ -45,7 +46,7 @@ lib.match = match
 function lib.newGUI()
   local gui = { }
   gui.flags = 0
-  local handlers = { }
+  local handle = { }
   local elements = { }
   local focus = 1
   local editing = false
@@ -102,11 +103,6 @@ function lib.newGUI()
     return element
   end -- addElement(...)
   
-  -- Set a handler for event (if no element is being edited)
-  gui.setHandler = function(event, f)
-    table.insert(handlers, {event, f} )
-  end -- setHandler
-  
 -- Run an event cycle
   function gui.run(event, touchState)
     if not event then -- widget mode; event == nil
@@ -159,30 +155,22 @@ function lib.newGUI()
             event = EVT_VIRTUAL_EXIT
           end
         end
-        -- Send the event to the element being edited
-        if editing then
+        
+        if editing then -- Send the event to the element being edited
           elements[focus].run(event, touchState)
           if match(event,EVT_VIRTUAL_ENTER, EVT_VIRTUAL_EXIT) then
             editing = false
           end
-        else
-          -- Is the event being "handled"?
-          for i, h in ipairs(handlers) do
-            local evt, f = h[1], h[2]
-            if event == evt then
-              return f()
-            end
-          end
-          -- Navigation key events
-          if event == EVT_VIRTUAL_ENTER and elements[focus].editable then -- Start editing
-            editing = true
-          elseif event == EVT_VIRTUAL_NEXT then -- Move focus
-            moveFocus(1)
-          elseif event == EVT_VIRTUAL_PREV then
-            moveFocus(-1)
-          else -- Send event to the element in focus
-            elements[focus].run(event, touchState)
-          end
+        elseif handle[event] then -- Is the event being "handled"?
+          handle[event](event, touchState)
+        elseif event == EVT_VIRTUAL_ENTER and elements[focus].editable then -- Start editing
+          editing = true
+        elseif event == EVT_VIRTUAL_NEXT then -- Move focus
+          moveFocus(1)
+        elseif event == EVT_VIRTUAL_PREV then
+          moveFocus(-1)
+        else -- Send event to the element in focus
+          elements[focus].run(event, touchState)
         end
       end
     end
