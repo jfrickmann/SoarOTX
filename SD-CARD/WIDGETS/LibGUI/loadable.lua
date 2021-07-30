@@ -33,9 +33,9 @@ local gui = libGUI.newGUI() -- Instantiate a new GUI object.
 gui.flags = MIDSIZE -- Default flags that are used unless other flags are passed.
 
 -- Local constants and variables:
-local LEFT = 10
+local LEFT = 20
 local TOP = 10
-local COL = 150
+local COL = 160
 local ROW = 50
 local WIDTH = 120
 local HEIGHT = 40
@@ -43,6 +43,18 @@ local TMR = 0
 local border = false
 local labelToggle
 local startValue = 0
+local menuItems = {
+  "First",
+  "Second",
+  "Third",
+  "Fourth",
+  "Fifth",
+  "Sixth",
+  "Seventh",
+  "Eighth",
+  "Ninth",
+  "Tenth"
+}
 
 -- Called by gui in full screen mode
 local function drawFull()
@@ -120,6 +132,10 @@ local function timerChange(timer, event, touchState)
   end
 end
 
+local function menuSelect(item, event, touchState)
+  playNumber(item.idx, 0)
+end
+
 do -- Initialization happens here
   local x = LEFT
   local y = TOP
@@ -151,6 +167,11 @@ do -- Initialization happens here
   gui.label(x, y, WIDTH, HEIGHT, "Timer =")
   nextCol()
   gui.timer(x, y, WIDTH, HEIGHT, TMR, timerChange, bit32.bor(gui.flags, RIGHT))
+  nextCol()
+  y = TOP
+  gui.label(x, y, WIDTH, HEIGHT, "Menu", bit32.bor(BOLD, DBLSIZE))
+  y = y + 1.5 * ROW
+  gui.menu(x, y, 5, menuItems, menuSelect)
 end
 
 -- This function is called from the refresh(...) function in the main script

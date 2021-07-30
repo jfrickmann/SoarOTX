@@ -35,8 +35,12 @@ lib.match = match
 
 -- Create a new GUI object with interactive screen elements
 -- The following variables can be set by the client:
---> widgetRefresh = function; refresh screen in non-fullscreen mode
 --> flags = lcd flags; will be used as defaults for drawing text and numbers
+--> widgetRefresh = function drawing screen in non-fullscreen mode
+--> fullScreenRefresh = function drawing screen in fullscreen mode
+--> element.noFocus = true prevents element from taking focus
+--> element.title can be set for button, toggleButton and label
+--> element.value can be set for toggleButton and number
 
 function lib.newGUI()
   local gui = { }
@@ -45,7 +49,12 @@ function lib.newGUI()
   local elements = { }
   local focus = 1
   local editing = false
+  local scrolling = false
 
+  -- The default callBack
+  local function doNothing()
+  end
+  
   -- Draw a rectangle with pattern lines
   local function drawRectangle(x, y, w, h, pat, flags)
     lcd.drawLine(x, y, x + w, y, pat, flags)
@@ -82,14 +91,13 @@ function lib.newGUI()
   -- Add an element and return it to the client
   local function addElement(element, x, y, w, h)
     local idx = #elements + 1
-    
-    local function covers(p, q)
-      return (x <= p and p <= x + w and y <= q and q <= y + h)
-    end
-    
+
     if not element.covers then
-      element.covers = covers
+      function element.covers(p, q)
+        return (x <= p and p <= x + w and y <= q and q <= y + h)
+      end
     end
+    
     elements[idx] = element
     return element
   end -- addElement(...)
@@ -98,10 +106,6 @@ function lib.newGUI()
   gui.setHandler = function(event, f)
     table.insert(handlers, {event, f} )
   end -- setHandler
-  
---  Public GUI interface starts here.
---> fullScreenRefresh = function
---> element.noFocus prevents element from taking focus
   
 -- Run an event cycle
   function gui.run(event, touchState)
@@ -124,25 +128,34 @@ function lib.newGUI()
         element.draw(idx)
       end
       if event ~= 0 then -- non-zero event; process it
-        if event == EVT_TOUCH_FIRST and not elements[focus].covers(touchState.x, touchState.y) then
-          -- Did we touch another element?
-          for idx, element in ipairs(elements) do
-            if element.covers(touchState.x, touchState.y) and not element.noFocus then
-              if editing then
-                -- A goodbye EXIT before we take away focus
-                elements[focus].run(EVT_VIRTUAL_EXIT, touchState)
-                editing = false
+        -- If we put a finger down on a menu item and immediately slide, then we can scroll
+        if event ~= EVT_TOUCH_SLIDE then
+          scrolling = false
+        end
+        if event == EVT_TOUCH_FIRST then
+          if elements[focus].covers(touchState.x, touchState.y) then
+            scrolling = true
+          else
+            -- Did we touch another element?
+            for idx, element in ipairs(elements) do
+              if element.covers(touchState.x, touchState.y) and not element.noFocus then
+                if editing then
+                  -- A goodbye EXIT before we take away focus
+                  elements[focus].run(EVT_VIRTUAL_EXIT, touchState)
+                  editing = false
+                end
+                focus = idx
+                scrolling = true
+                return -- Do not continue this cycle
               end
-              focus = idx
-              return -- Do not continue
             end
           end
-        elseif match(event, EVT_TOUCH_BREAK, EVT_TOUCH_TAP) then
+        elseif event == EVT_TOUCH_TAP then
           if elements[focus].covers(touchState.x, touchState.y) then
             -- Convert to ENTER
             event = EVT_VIRTUAL_ENTER
           else
-            -- Convert a touch off the focused element to EXIT
+            -- Convert a tap off the focused element to EXIT
             event = EVT_VIRTUAL_EXIT
           end
         end
@@ -160,6 +173,7 @@ function lib.newGUI()
               return f()
             end
           end
+          -- Navigation key events
           if event == EVT_VIRTUAL_ENTER and elements[focus].editable then -- Start editing
             editing = true
           elseif event == EVT_VIRTUAL_NEXT then -- Move focus
@@ -176,6 +190,7 @@ function lib.newGUI()
 
 -- Create a button to trigger a function
   function gui.button (x, y, w, h, title, callBack, flags)
+    callBack = callBack or doNothing
     flags = bit32.bor(flags or gui.flags, CENTER, VCENTER)
     local self = { title = title }
     
@@ -201,6 +216,7 @@ function lib.newGUI()
   
 -- Create a toggle button that turns on/off. callBack gets true/false
   function gui.toggleButton(x, y, w, h, title, value, callBack, flags)
+    callBack = callBack or doNothing
     flags = bit32.bor(flags or gui.flags, CENTER, VCENTER)
     local self = { title = title, value = value }
 
@@ -234,8 +250,9 @@ function lib.newGUI()
   
 -- Create a number that can be edited
   function gui.number(x, y, w, h, value, callBack, flags)
+    callBack = callBack or doNothing
     flags = bit32.bor(flags or gui.flags, VCENTER)
-    local self = { value = value, delta = 0, editable = true }
+    local self = { value = value, editable = true }
     
     function self.draw(idx)
       local fg = DEFAULT_COLOR
@@ -287,6 +304,7 @@ function lib.newGUI()
 -- Create a display of current time on timer[tmr]
 -- Set timer.value to show a different value
   function gui.timer(x, y, w, h, tmr, callBack, flags)
+    callBack = callBack or doNothing
     flags = bit32.bor(flags or gui.flags, VCENTER)
     local self = { editable = true }
 
@@ -317,59 +335,86 @@ function lib.newGUI()
     return addElement(self, x, y, w, h)
   end -- timer(...)
   
+  function gui.menu(x, y, visibleCount, items, callBack, flags)
+    items = items or { "No items!" }
+    callBack = callBack or doNothing
+    flags = bit32.bor(flags or gui.flags, DEFAULT_COLOR, VCENTER)
+    local h = select(2, lcd.sizeText("X", flags))
+    local H = select(2, lcd.sizeText("X", bit32.bor(flags, BOLD)))
+    local firstVisible = 1
+    local startFirst = 1
+    local idx0 = #elements
+    local idxN = idx0 + #items
+    y = y - H / 2
+    
+    -- Add line items as GUI elements
+    for i, item in ipairs(items) do
+      local self = { idx = i }
+      local txt = i .. ". " .. item
+      local w = lcd.sizeText(txt, flags) + 4
+      local W = lcd.sizeText(txt, bit32.bor(flags, BOLD)) + 4
+      
+      function self.draw(idx)
+        local flags = flags
+        
+        -- Do we need to adjust scroll?
+        if self.idx == 1 and focus > idx0 and focus <= idxN then
+          local selected = focus - idx0
+          if selected < firstVisible then
+            firstVisible = selected
+          elseif selected - firstVisible >= visibleCount then
+            firstVisible = selected - visibleCount + 1
+          end
+        end
+        
+        -- Is this line item visible?
+        if self.idx < firstVisible or self.idx >= firstVisible + visibleCount then
+          return
+        end
+        
+        -- OK, time to draw the line item
+        local yy = y + H * (self.idx - firstVisible)
+        if focus == idx then
+          flags = bit32.bor(flags, BOLD)
+          lcd.drawRectangle(x - 2, yy - H / 2, W, H, HIGHLIGHT_COLOR)
+        end
+        
+        lcd.drawText(x, yy, txt, flags)
+      end -- draw(...)
+      
+      function self.run(event, touchState)
+        if event == EVT_VIRTUAL_ENTER then
+          return callBack(self, event, touchState)
+        elseif scrolling then
+          -- Finger scrolling
+          firstVisible = math.floor(self.idx - (touchState.y - y) / H + 0.5)
+          firstVisible = math.min(firstVisible, idxN - idx0 - visibleCount + 1, self.idx)
+          firstVisible = math.max(firstVisible, 1, self.idx - visibleCount + 1)
+        end
+      end
+      
+      function self.covers(p, q)
+        if self.idx < firstVisible or self.idx >= firstVisible + visibleCount then
+          return false
+        else
+          local ww, hh
+          local yy = y + H * (self.idx - firstVisible)
+
+          if focus == idx0 + self.idx then
+            ww, hh = W, H
+          else
+            ww, hh = w, h
+          end
+
+          return (x <= p and p <= x + ww and yy <= q and q <= yy + hh)
+        end
+      end
+      
+      addElement(self)
+    end -- Loop adding menu items
+  end -- menu(...)
+  
   return gui
 end -- gui(...)
 
 return lib
-
---[[
-    function gui.menu(left, top, rowHeight, rowCount, items, callBack, flags)
-    items = items or { "EMPTY" }
-    flags = bit32.bor(flags or gui.flags, DEFAULT_COLOR)
-    local self = { }
-    local firstItem = 1 -- Item on first visible line
-    local selected = 1
-
-    function self.run(event, touchState)
-      local sel = 0
-      
-      if event == EVT_VIRTUAL_ENTER then
-        return callBack(self)
-      elseif event == EVT_VIRTUAL_EXIT then
-        return true -- Signal menu exit
-      elseif event == EVT_VIRTUAL_NEXT then
-        selected = selected + 1
-        if selected > #items then
-          selected = 1
-        end
-      elseif event == EVT_VIRTUAL_PREV then
-        selected = selected - 1
-        if selected < 1 then
-          selected = #items
-        end
-      elseif event == EVT_TOUCH_SLIDE then
-        local scroll = math.floor(-touchState.slideY / rowHeight + 0.5)
-        -- Husk startpunkt!
-      elseif event == EVT_TOUCH_TAP then
-        -- Hvis tap på selected så callback, ellers select
-      end
-      
-      -- Scroll if necessary
-      if selected < firstItem then
-        firstItem = selected
-      elseif selected - firstItem >= rowCount then
-        firstItem = selected - rowCount + 1
-      end
-      -- Draw
-      for line = 1, math.min(rowCount, #items - firstItem + 1) do
-        local item = line + firstItem - 1
-        local y = top + rowheight * (line - 1)
-        local flags = flags
-
-        if item == selected then
-          flags = bit32.bor(flags, INVERS)
-        end
-        lcd.drawText(left, y, items[item], flags)
-      end
-    end -- run(...)
-]]--

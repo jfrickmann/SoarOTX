@@ -23,9 +23,8 @@
 local name = "EventDemo"
 
 local function create(zone, options)
-  -- Load the loadable code chunk. It will return a widget table.
-  local chunk = loadScript("/WIDGETS/" .. name .. "/loadable.lua")
-  return chunk(zone, options)
+  -- Loadable code chunk is called immediately and returns a widget table
+  return loadScript("/WIDGETS/" .. name .. "/loadable.lua")(zone, options)
 end
 
 local function refresh(widget, event, touchState)
