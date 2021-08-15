@@ -33,12 +33,12 @@ function loadGUI()
   return libGUI
 end
 
------------------------------------------------------------------------------
--- The following widget implementation demonstrates how to use the library --
--- and how to create a dynamically loadable widget to minimize the amount  --
--- memory consumed when the widget is not being used.                      --
--- You do not need to run the widget to use the library.                   --
------------------------------------------------------------------------------
+---------------------------------------------------------------------------
+-- The following widget implementation demonstrates how to use the       --
+-- library and how to create a dynamically loadable widget to minimize   --
+-- the amount of memory consumed when the widget is not being used.      --
+-- You do not need to run the widget to use the library.                 --
+---------------------------------------------------------------------------
 
 local function create(zone, options)
   -- Loadable code chunk is called immediately and returns a widget table

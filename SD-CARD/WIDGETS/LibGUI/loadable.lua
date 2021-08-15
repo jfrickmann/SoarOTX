@@ -31,6 +31,7 @@ local widget = { } -- The widget table will be returned to the main script.
 local libGUI = loadGUI()
 local gui = libGUI.newGUI() -- Instantiate a new GUI object.
 gui.flags = MIDSIZE -- Default flags that are used unless other flags are passed.
+local menuLabel
 
 -- Local constants and variables:
 local LEFT = 20
@@ -60,7 +61,7 @@ local menuItems = {
 local function drawFull()
   if border then
     for i = 0, 5 do
-      lcd.drawRectangle(i, i, LCD_W - 2 * i, LCD_H - 2 * i, BATTERY_CHARGE_COLOR)
+      lcd.drawRectangle(i, i, LCD_W - 2 * i, LCD_H - 2 * i, COLOR_THEME_EDIT)
     end
   end
 end
@@ -85,8 +86,12 @@ end
 local function doToggle(toggleButton)
   if toggleButton.value then
     labelToggle.title = "Toggle = ON"
+    menuLabel.invers = true
+    menuLabel.blink = true
   else
     labelToggle.title = "Toggle = OFF"
+    menuLabel.invers = false
+    menuLabel.blink = false
   end
 end
 
@@ -132,6 +137,7 @@ local function timerChange(timer, event, touchState)
   end
 end
 
+-- Call back for menu
 local function menuSelect(item, event, touchState)
   playNumber(item.idx, 0)
 end
@@ -169,7 +175,7 @@ do -- Initialization happens here
   gui.timer(x, y, WIDTH, HEIGHT, TMR, timerChange, bit32.bor(gui.flags, RIGHT))
   nextCol()
   y = TOP
-  gui.label(x, y, WIDTH, HEIGHT, "Menu", bit32.bor(BOLD, DBLSIZE))
+  menuLabel = gui.label(x, y, WIDTH, HEIGHT, "Menu", bit32.bor(BOLD, DBLSIZE))
   y = y + 1.5 * ROW
   gui.menu(x, y, 5, menuItems, menuSelect)
 end

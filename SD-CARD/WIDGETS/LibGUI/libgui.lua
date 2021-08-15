@@ -51,6 +51,14 @@ function lib.newGUI()
   local focus = 1
   local editing = false
   local scrolling = false
+  
+  -- Default colors, can be changed by client
+  gui.colors = {
+    text = COLOR_THEME_PRIMARY3,
+    button = COLOR_THEME_FOCUS,
+    buttonText = COLOR_THEME_PRIMARY2,
+    active = COLOR_THEME_ACTIVE
+  }
 
   -- The default callBack
   local function doNothing()
@@ -102,6 +110,13 @@ function lib.newGUI()
     elements[idx] = element
     return element
   end -- addElement(...)
+  
+  -- Add temporary BLINK or INVERS flags
+  local function tempFlags(self, flags)
+    if self.blink then flags = bit32.bor(flags or 0, BLINK) end
+    if self.invers then flags = bit32.bor(flags or 0, INVERS) end
+    return flags
+  end
   
 -- Run an event cycle
   function gui.run(event, touchState)
@@ -183,14 +198,14 @@ function lib.newGUI()
     local self = { title = title }
     
     function self.draw(idx)
-      local flags = flags
+      local flags = tempFlags(self, flags)
       
       if focus == idx then
         flags = bit32.bor(flags, BOLD)
-        drawRectangle(x - 1, y - 1, w + 2, h + 2, DOTTED, HIGHLIGHT_COLOR)
+        drawRectangle(x - 1, y - 1, w + 2, h + 2, DOTTED, gui.colors.active)
       end
-      lcd.drawFilledRectangle(x, y, w, h, FOCUS_BGCOLOR)
-      lcd.drawText(x + w / 2, y + h / 2, self.title, bit32.bor(FOCUS_COLOR, flags))
+      lcd.drawFilledRectangle(x, y, w, h, gui.colors.button)
+      lcd.drawText(x + w / 2, y + h / 2, self.title, bit32.bor(gui.colors.buttonText, flags))
     end
     
     function self.run(event, touchState)
@@ -209,17 +224,17 @@ function lib.newGUI()
     local self = { title = title, value = value }
 
     function self.draw(idx)
-      local flags = flags
-      local fg = FOCUS_COLOR
-      local bg = FOCUS_BGCOLOR
+      local flags = tempFlags(self, flags)
+      local fg = gui.colors.buttonText
+      local bg = gui.colors.button
 
       if self.value then
-        fg = DEFAULT_COLOR
-        bg = HIGHLIGHT_COLOR 
+        fg = gui.colors.text
+        bg = gui.colors.active 
       end
       
       if focus == idx then
-        drawRectangle(x - 1, y - 1, w + 2, h + 2, DOTTED, HIGHLIGHT_COLOR)
+        drawRectangle(x - 1, y - 1, w + 2, h + 2, DOTTED, gui.colors.active)
         flags = bit32.bor(flags, BOLD)
       end
       lcd.drawFilledRectangle(x, y, w, h, bg)
@@ -243,15 +258,15 @@ function lib.newGUI()
     local self = { value = value, editable = true }
     
     function self.draw(idx)
-      local fg = DEFAULT_COLOR
-      local flags = flags
+      local flags = tempFlags(self, flags)
+      local fg = gui.colors.text
       
       if focus == idx then
-        drawRectangle(x - 1, y - 1, w + 2, h + 2, DOTTED, HIGHLIGHT_COLOR)
+        drawRectangle(x - 1, y - 1, w + 2, h + 2, DOTTED, gui.colors.active)
         flags = bit32.bor(flags, BOLD)
         if editing then
-          fg = FOCUS_COLOR
-          lcd.drawFilledRectangle(x, y, w, h, FOCUS_BGCOLOR)
+          fg = gui.colors.buttonText
+          lcd.drawFilledRectangle(x, y, w, h, gui.colors.button)
         end
       end
       lcd.drawNumber(align(x, w, flags), y + h / 2, self.value, bit32.bor(fg, flags))
@@ -269,10 +284,11 @@ function lib.newGUI()
   
 -- Create a text label; cannot be edited
   function gui.label(x, y, w, h, title, flags)
-    flags = bit32.bor(flags or gui.flags, VCENTER, DEFAULT_COLOR)
+    flags = bit32.bor(flags or gui.flags, VCENTER, gui.colors.text)
     local self = { title = title, noFocus = true }
     
     function self.draw(idx)
+      local flags = tempFlags(self, flags)
       lcd.drawText(align(x, w, flags), y + h / 2, self.title, flags)
     end
 
@@ -297,17 +313,17 @@ function lib.newGUI()
     local self = { editable = true }
 
     function self.draw(idx)
-      local flags = flags
-      local fg = DEFAULT_COLOR
+      local flags = tempFlags(self, flags)
+      local fg = gui.colors.text
       -- self.value overrides the timer value
       local value = self.value or model.getTimer(tmr).value
       
       if focus == idx then
-        drawRectangle(x - 1, y - 1, w + 2, h + 2, DOTTED, HIGHLIGHT_COLOR)
+        drawRectangle(x - 1, y - 1, w + 2, h + 2, DOTTED, gui.colors.active)
         flags = bit32.bor(flags, BOLD)
         if editing then
-          fg = FOCUS_COLOR
-          lcd.drawFilledRectangle(x, y, w, h, FOCUS_BGCOLOR)
+          fg = gui.colors.buttonText
+          lcd.drawFilledRectangle(x, y, w, h, gui.colors.button)
         end
       end
       lcd.drawTimer(align(x, w, flags), y + h / 2, value, bit32.bor(fg, flags))
@@ -326,7 +342,7 @@ function lib.newGUI()
   function gui.menu(x, y, visibleCount, items, callBack, flags)
     items = items or { "No items!" }
     callBack = callBack or doNothing
-    flags = bit32.bor(flags or gui.flags, DEFAULT_COLOR, VCENTER)
+    flags = bit32.bor(flags or gui.flags, gui.colors.text, VCENTER)
     local h = select(2, lcd.sizeText("X", flags))
     local H = select(2, lcd.sizeText("X", bit32.bor(flags, BOLD)))
     local firstVisible = 1
@@ -343,7 +359,7 @@ function lib.newGUI()
       local W = lcd.sizeText(txt, bit32.bor(flags, BOLD)) + 4
       
       function self.draw(idx)
-        local flags = flags
+        local flags = tempFlags(self, flags)
         
         -- Do we need to adjust scroll?
         if self.idx == 1 and focus > idx0 and focus <= idxN then
@@ -364,7 +380,7 @@ function lib.newGUI()
         local yy = y + H * (self.idx - firstVisible)
         if focus == idx then
           flags = bit32.bor(flags, BOLD)
-          lcd.drawRectangle(x - 2, yy - H / 2, W, H, HIGHLIGHT_COLOR)
+          lcd.drawRectangle(x - 2, yy - H / 2, W, H, gui.colors.active)
         end
         
         lcd.drawText(x, yy, txt, flags)
