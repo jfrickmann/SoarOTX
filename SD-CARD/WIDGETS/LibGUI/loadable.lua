@@ -68,7 +68,7 @@ end
 
 -- Called by gui in widget zone mode
 local function drawZone()
-  lcd.drawRectangle(0, 0, zone.w, zone.h, BATTERY_CHARGE_COLOR)
+  lcd.drawRectangle(0, 0, zone.w, zone.h, COLOR_THEME_EDIT)
   lcd.drawText(5, 5, "LibGUI")
 end
 
@@ -97,6 +97,10 @@ end
 
 -- Call back for number
 local function numberChange(number, event, touchState)
+  if number.value == "--" then
+    number.value = 0
+  end
+
   if event == EVT_VIRTUAL_INC then
     number.value = number.value + 1
   elseif event == EVT_VIRTUAL_DEC then
@@ -106,12 +110,20 @@ local function numberChange(number, event, touchState)
   elseif event == EVT_TOUCH_SLIDE then
     number.value = math.floor((touchState.startY - touchState.y) / 20 + 0.5) + startValue
   end
+
+  if number.value == 0 then
+    number.value = "--"
+  end
 end
 
 -- Call back for timer
 local function timerChange(timer, event, touchState)
   local d = 0
 
+  if timer.value == "- - -" then
+    timer.value = 0
+  end
+  
   if not timer.value then  -- Initialize at first call
     timer.value = model.getTimer(TMR).value
   end
@@ -168,11 +180,12 @@ do -- Initialization happens here
   nextRow()
   gui.label(x, y, WIDTH, HEIGHT, "Number =")
   nextCol()
-  gui.number(x, y, WIDTH, HEIGHT, 0, numberChange, bit32.bor(gui.flags, RIGHT))
+  gui.number(x, y, WIDTH, HEIGHT, "--", numberChange, bit32.bor(gui.flags, RIGHT))
   nextRow()
   gui.label(x, y, WIDTH, HEIGHT, "Timer =")
   nextCol()
-  gui.timer(x, y, WIDTH, HEIGHT, TMR, timerChange, bit32.bor(gui.flags, RIGHT))
+  local timer = gui.timer(x, y, WIDTH, HEIGHT, TMR, timerChange, bit32.bor(gui.flags, RIGHT))
+  timer.value = "- - -"
   nextCol()
   y = TOP
   menuLabel = gui.label(x, y, WIDTH, HEIGHT, "Menu", bit32.bor(BOLD, DBLSIZE))

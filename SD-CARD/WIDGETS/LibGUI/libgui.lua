@@ -55,8 +55,8 @@ function lib.newGUI()
   -- Default colors, can be changed by client
   gui.colors = {
     text = COLOR_THEME_PRIMARY3,
-    button = COLOR_THEME_FOCUS,
-    buttonText = COLOR_THEME_PRIMARY2,
+    focusText = COLOR_THEME_PRIMARY2,
+    focusBackground = COLOR_THEME_FOCUS,
     active = COLOR_THEME_ACTIVE
   }
 
@@ -204,8 +204,8 @@ function lib.newGUI()
         flags = bit32.bor(flags, BOLD)
         drawRectangle(x - 1, y - 1, w + 2, h + 2, DOTTED, gui.colors.active)
       end
-      lcd.drawFilledRectangle(x, y, w, h, gui.colors.button)
-      lcd.drawText(x + w / 2, y + h / 2, self.title, bit32.bor(gui.colors.buttonText, flags))
+      lcd.drawFilledRectangle(x, y, w, h, gui.colors.focusBackground)
+      lcd.drawText(x + w / 2, y + h / 2, self.title, bit32.bor(gui.colors.focusText, flags))
     end
     
     function self.run(event, touchState)
@@ -225,8 +225,8 @@ function lib.newGUI()
 
     function self.draw(idx)
       local flags = tempFlags(self, flags)
-      local fg = gui.colors.buttonText
-      local bg = gui.colors.button
+      local fg = gui.colors.focusText
+      local bg = gui.colors.focusBackground
 
       if self.value then
         fg = gui.colors.text
@@ -265,11 +265,15 @@ function lib.newGUI()
         drawRectangle(x - 1, y - 1, w + 2, h + 2, DOTTED, gui.colors.active)
         flags = bit32.bor(flags, BOLD)
         if editing then
-          fg = gui.colors.buttonText
-          lcd.drawFilledRectangle(x, y, w, h, gui.colors.button)
+          fg = gui.colors.focusText
+          lcd.drawFilledRectangle(x, y, w, h, gui.colors.focusBackground)
         end
       end
-      lcd.drawNumber(align(x, w, flags), y + h / 2, self.value, bit32.bor(fg, flags))
+      if type(self.value) == "string" then
+        lcd.drawText(align(x, w, flags), y + h / 2, self.value, bit32.bor(fg, flags))
+      else
+        lcd.drawNumber(align(x, w, flags), y + h / 2, self.value, bit32.bor(fg, flags))
+      end
     end
     
     function self.run(event, touchState)
@@ -322,11 +326,15 @@ function lib.newGUI()
         drawRectangle(x - 1, y - 1, w + 2, h + 2, DOTTED, gui.colors.active)
         flags = bit32.bor(flags, BOLD)
         if editing then
-          fg = gui.colors.buttonText
-          lcd.drawFilledRectangle(x, y, w, h, gui.colors.button)
+          fg = gui.colors.focusText
+          lcd.drawFilledRectangle(x, y, w, h, gui.colors.focusBackground)
         end
       end
-      lcd.drawTimer(align(x, w, flags), y + h / 2, value, bit32.bor(fg, flags))
+      if type(value) == "string" then
+        lcd.drawText(align(x, w, flags), y + h / 2, value, bit32.bor(fg, flags))
+      else
+        lcd.drawTimer(align(x, w, flags), y + h / 2, value, bit32.bor(fg, flags))
+      end
     end
     
     function self.run(event, touchState)
