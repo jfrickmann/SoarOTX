@@ -29,8 +29,8 @@ local widget = { } -- The widget table will be returned to the main script.
 -- Load the GUI library by calling the global function declared in the main script.
 -- As long as LibGUI is on the SD card, any widget can call loadGUI() because it is global.
 local libGUI = loadGUI()
+libGUI.flags = MIDSIZE -- Default flags that are used unless other flags are passed.
 local gui = libGUI.newGUI() -- Instantiate a new GUI object.
-gui.flags = MIDSIZE -- Default flags that are used unless other flags are passed.
 local menuLabel
 
 -- Local constants and variables:
@@ -180,11 +180,11 @@ do -- Initialization happens here
   nextRow()
   gui.label(x, y, WIDTH, HEIGHT, "Number =")
   nextCol()
-  gui.number(x, y, WIDTH, HEIGHT, "--", numberChange, bit32.bor(gui.flags, RIGHT))
+  gui.number(x, y, WIDTH, HEIGHT, "--", numberChange, bit32.bor(libGUI.flags, RIGHT))
   nextRow()
   gui.label(x, y, WIDTH, HEIGHT, "Timer =")
   nextCol()
-  local timer = gui.timer(x, y, WIDTH, HEIGHT, TMR, timerChange, bit32.bor(gui.flags, RIGHT))
+  local timer = gui.timer(x, y, WIDTH, HEIGHT, TMR, timerChange, bit32.bor(libGUI.flags, RIGHT))
   timer.value = "- - -"
   nextCol()
   y = TOP

@@ -30,7 +30,7 @@ function loadGUI()
   	libGUI = loadScript("/WIDGETS/" .. name .. "/libgui.lua")()
   end
   
-  return libGUI
+  return libGUI()
 end
 
 ---------------------------------------------------------------------------
