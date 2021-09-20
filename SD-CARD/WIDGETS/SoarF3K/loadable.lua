@@ -23,7 +23,6 @@ local zone, options = ... -- zone and options were passed as arguments to chunk(
 local widget = { }        -- The widget table will be returned to the main script.
 local libGUI = loadGUI()  -- GUI library
 libGUI.flags = MIDSIZE    -- Default drawing flags
-local gui                 -- The current GUI being shown on the screen
 
 -- GUIs for the different screens
 local menuMain
@@ -321,7 +320,7 @@ local function setupTask(taskData)
     counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45}
   end
 
-  gui = taskF3K
+  widget.refresh = taskF3K
 end -- setupTask(...)
 
 -- Draw a list of score times
@@ -367,15 +366,57 @@ local function drawZone()
   end
 end -- drawZone()
 
+-- Draw trims and flight mode etc.
+local trimSources = { getFieldInfo("trim-ail").id, getFieldInfo("trim-rud").id, getFieldInfo("trim-ele").id, getFieldInfo("trim-thr").id }
+local function Decorate()
+  -- Top bar
+  lcd.drawFilledRectangle(0, 0, LCD_W, 45, COLOR_THEME_SECONDARY1)
+
+  -- Draw trims
+  -- Drawing parameters
+  local p = {
+  --{ x, y, h, w }
+    { LCD_W - 191, LCD_H - 15, 177, 8 },
+    { 14, LCD_H - 15, 177, 8 },
+    { LCD_W - 15, 68, 8, 177 },
+    { 8, 68, 8, 177 },
+  }
+  
+  for i = 1, 4 do
+    local q = p[i]
+    local value = getValue(trimSources[i]) / 10.24
+    local x, y
+    if q[3] > q[4] then
+      x = q[1] + q[3] * (value + 100) / 200
+      y = q[2] + q[4] / 2
+    else
+      x = q[1] + q[3] / 2
+      y = q[2] + q[4] * (100 - value) / 200
+    end
+    
+    lcd.drawFilledRectangle(q[1], q[2], q[3], q[4], COLOR_THEME_SECONDARY1)
+    lcd.drawFilledRectangle(x - 7, y - 7, 15, 15, COLOR_THEME_PRIMARY1)
+    lcd.drawFilledRectangle(x - 8, y - 8, 15, 15, COLOR_THEME_FOCUS)
+    lcd.drawNumber(x, y, value, SMLSIZE + VCENTER + CENTER + COLOR_THEME_PRIMARY2)
+  end
+  
+  -- Flight mode
+  lcd.drawText(LCD_W / 2, LCD_H - 22, select(2, getFlightMode()), CENTER + COLOR_THEME_SECONDARY1)
+  
+  -- Date
+  local now = getDateTime()
+	local str = string.format("%02i:%02i", now.hour, now.min)
+  lcd.drawText(LCD_W - 10, 7, str, RIGHT + BOLD + COLOR_THEME_PRIMARY2)
+end -- Decorate
+
 local function drawMainMenuBg()
-  lcd.drawFilledRectangle(0, 0, LCD_W, 32, libGUI.colors.buttonBackground)
-  lcd.drawText(0, 0, "F3K  Main  Menu", bit32.bor(BOLD, DBLSIZE, libGUI.colors.focusText))
-  lcd.drawText(LCD_W, LCD_H - 30, "SoarETX", bit32.bor(RIGHT, BOLD, DBLSIZE, libGUI.colors.active))
+  Decorate()
+  lcd.drawText(10, 7, "Soar ETX", bit32.bor(BOLD, DBLSIZE, libGUI.colors.focusText))
 end
 
 do -- Main menu for selecting task packages
   menuMain = libGUI.newGUI()
-  gui = menuMain -- Initial screen
+  widget.refresh = menuMain.run -- Initial screen
 
   local items = {
     "F3K tasks",
@@ -392,12 +433,12 @@ do -- Main menu for selecting task packages
   
   -- Call back function running when an item was selected
   local function callBack(item, event, touchState)
-    gui = subMenus[item]
+    widget.refresh = subMenus[item]
   end
 
   menuMain.widgetRefresh = drawZone
   menuMain.fullScreenRefresh = drawMainMenuBg
-  menuMain.menu(0, 40, 8, items, callBack)
+  menuMain.menu(40, 60, 5, items, callBack)
 end
 
 do -- Main menu for selecting task packages
@@ -459,7 +500,7 @@ do -- Prompt asking to save scores
   promptSaveScores = libGUI.newGUI()
 
   function promptSaveScores.Show()
-    gui.prompt = promptSaveScores
+    widget.refresh.prompt = promptSaveScores
   end
 end
 
@@ -480,7 +521,7 @@ do -- Notify that timer must be stopped
     dismissTime = getTime() + 100
     tx = (LCD_W - tw) / 2
     ty = (LCD_H - th) / 2
-    gui.prompt = notify
+    widget.refresh.prompt = notify
   end
   
   function notify.run()
@@ -489,22 +530,9 @@ do -- Notify that timer must be stopped
     lcd.drawText(tx, ty, message, flags)
     
     if getTime() > dismissTime then
-      gui.prompt = nil
+      widget.refresh.prompt = nil
     end
   end  
-end
-
-function widget.update(opt)
-  options = opt
-  libGUI.colors.text = opt.Text
-  libGUI.colors.focusText = opt.FocusText
-  libGUI.colors.buttonBackground = opt.ButtonBg
-  libGUI.colors.editBackground = opt.EditBg
-  libGUI.colors.active = opt.Active
-end
-
-function widget.refresh(event, touchState)
-  gui.run(event, touchState)
 end
 
 function widget.background()
@@ -666,4 +694,14 @@ function widget.background()
 	end
 end -- background()
 
+function widget.update(opt)
+  options = opt
+  libGUI.colors.text = opt.Text
+  libGUI.colors.focusText = opt.FocusText
+  libGUI.colors.buttonBackground = opt.ButtonBg
+  libGUI.colors.editBackground = opt.EditBg
+  libGUI.colors.active = opt.Active
+end
+
+widget.update(options)
 return widget
