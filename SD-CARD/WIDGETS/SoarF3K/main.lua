@@ -22,11 +22,6 @@
 local name = "SoarF3K"
 
 local options = {
-  { "Text", COLOR, COLOR_THEME_PRIMARY3 },
-  { "FocusText", COLOR, COLOR_THEME_PRIMARY2 },
-  { "ButtonBg", COLOR, COLOR_THEME_FOCUS },
-  { "EditBg", COLOR, COLOR_THEME_EDIT },
-  { "Active", COLOR, COLOR_THEME_ACTIVE },
 }
 
 local function update(widget, options)
@@ -39,7 +34,8 @@ local function create(zone, options)
 end
 
 local function refresh(widget, event, touchState)
-  widget.refresh(event, touchState)
+  widget.background()
+  widget.gui.run(event, touchState)
 end
 
 local function background(widget)

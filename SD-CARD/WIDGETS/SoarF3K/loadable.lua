@@ -19,20 +19,18 @@
 -- GNU General Public License for more details.                          --
 ---------------------------------------------------------------------------
 
-local zone, options = ... -- zone and options were passed as arguments to chunk(...).
-local widget = { }        -- The widget table will be returned to the main script.
-local libGUI = loadGUI()  -- GUI library
-libGUI.flags = MIDSIZE    -- Default drawing flags
-
--- GUIs for the different screens
-local menuMain
-local menuF3K
-local menuPractice
-local viewScores
-local taskF3K
-local taskAltimeter
-local promptSaveScores
-local notify
+local zone, options = ...     -- zone and options were passed as arguments to chunk(...).
+local widget = { }            -- The widget table will be returned to the main script.
+local libGUI = loadGUI()      -- GUI library
+libGUI.flags = MIDSIZE        -- Default drawing flags
+local colors = libGUI.colors  -- Short cut
+local trimSources = {         -- Input sources for the trim buttons
+  getFieldInfo("trim-ail").id,
+  getFieldInfo("trim-rud").id,
+  getFieldInfo("trim-ele").id,
+  getFieldInfo("trim-thr").id
+}
+local rxBatSrc                -- Receiver battery source
 
 -- Constants
 local LS_ALT = getFieldInfo("ls1").id   -- Input ID for allowing altitude calls
@@ -80,6 +78,282 @@ local pokerCalled     -- Lock in time in Poker task
 local lastInput = 0   -- For announcing changes in PokerCall
 local lastChange = 0  -- Same
 local tblStep = { {30, 5}, {60, 10}, {120, 15}, {210, 30}, {420, 60}, {taskWindow + 60} } -- Step sizes for input of call time
+
+-- Draw zone area when not in fullscreen mode
+local function drawZone()
+  if zone.w >= 392 and zone.h >= 170 then
+    drawZone = function()
+      lcd.drawText(zone.w / 2, zone.h / 2, string.format("TODO: drawZone(392, 170)"), CENTER + VCENTER)
+    end
+  elseif zone.w >= 196 and zone.h >= 170 then
+    drawZone = function()
+      lcd.drawText(zone.w / 2, zone.h / 2, string.format("TODO: drawZone(196, 170)"), CENTER + VCENTER)
+    end
+  elseif zone.w >= 196 and zone.h >= 85 then
+    drawZone = function()
+      lcd.drawText(zone.w / 2, zone.h / 2, string.format("TODO: drawZone(196, 85)"), CENTER + VCENTER)
+    end
+  else -- 196 x 42
+    drawZone = function()
+      lcd.drawText(zone.w / 2, zone.h / 2, string.format("TODO: drawZone(196, 42)"), CENTER + VCENTER)
+    end
+  end
+end -- drawZone()
+
+-- Push new GUI as sub screen
+local function PushGUI(gui)
+  gui.parent = widget.gui
+  widget.gui = gui
+end
+
+-- Pop GUI to return to previous screen
+local function PopGUI()
+  if widget.gui.parent then
+    widget.gui = widget.gui.parent
+  end
+end
+
+-- Draw screen with title, trims, flight mode etc.
+local function NewScreen(title)
+  local gui = libGUI.newGUI()
+  gui.widgetRefresh = drawZone
+  gui.title = title
+  
+  gui.fullScreenRefresh = function()
+    local color
+    local bat
+
+    -- Top bar
+    lcd.drawFilledRectangle(0, 0, LCD_W, 40, COLOR_THEME_SECONDARY1)
+    lcd.drawText(10, 3, gui.title, bit32.bor(BOLD, DBLSIZE, colors.focusText))
+
+    -- Date
+    local now = getDateTime()
+    local str = string.format("%02i:%02i", now.hour, now.min)
+    lcd.drawText(LCD_W - 90, 3, str, RIGHT + BOLD + colors.focusText)    
+
+    -- Receiver battery
+    if not rxBatSrc then rxBatSrc = getFieldInfo("Cels") end
+		if not rxBatSrc then rxBatSrc = getFieldInfo("RxBt") end
+		if not rxBatSrc then rxBatSrc = getFieldInfo("A1") end
+		if not rxBatSrc then rxBatSrc = getFieldInfo("A2") end
+		
+    if rxBatSrc then
+      bat = getValue(rxBatSrc.id)
+      
+      if type(bat) == "table" then
+        for i = 2, #bat do
+          bat[1] = math.min(bat[1], bat[i])
+        end
+        bat = bat[1]
+      end
+    end
+
+    if bat then
+      color = colors.focusText
+    else
+      color = COLOR_THEME_DISABLED
+      bat = 0
+    end
+    
+    str = string.format("%1.1fV", bat)
+    lcd.drawText(LCD_W - 90, 21, str, RIGHT + BOLD + color)
+    
+    -- Draw trims
+    -- Drawing parameters
+    local p = {
+    --{ x, y, h, w }
+      { LCD_W - 191, LCD_H - 15, 177, 8 },
+      { 14, LCD_H - 15, 177, 8 },
+      { LCD_W - 15, 68, 8, 177 },
+      { 8, 68, 8, 177 },
+    }
+    
+    for i = 1, 4 do
+      local q = p[i]
+      local value = getValue(trimSources[i]) / 10.24
+      local x, y
+      if q[3] > q[4] then
+        x = q[1] + q[3] * (value + 100) / 200
+        y = q[2] + q[4] / 2
+      else
+        x = q[1] + q[3] / 2
+        y = q[2] + q[4] * (100 - value) / 200
+      end
+      
+      lcd.drawFilledRectangle(q[1], q[2], q[3], q[4], COLOR_THEME_SECONDARY1)
+      lcd.drawFilledRectangle(x - 7, y - 7, 15, 15, COLOR_THEME_PRIMARY1)
+      lcd.drawFilledRectangle(x - 8, y - 8, 15, 15, colors.buttonBackground)
+      lcd.drawNumber(x, y, value, SMLSIZE + VCENTER + CENTER + colors.focusText)
+    end
+    
+    -- Flight mode
+    lcd.drawText(LCD_W / 2, LCD_H - 22, select(2, getFlightMode()), CENTER + COLOR_THEME_SECONDARY1)    
+  end -- fullScreenRefresh()
+  
+  -- Return button
+  local buttonRet = gui.button(LCD_W - 74, 6, 28, 28, "", PopGUI)
+
+  -- Paint another face on it
+  local drawRet = buttonRet.draw
+  function buttonRet.draw(idx)
+    if gui.parent then
+      color = colors.focusText
+      buttonRet.noFocus = nil
+    else
+      color = COLOR_THEME_DISABLED
+      buttonRet.noFocus = true
+    end
+    
+    drawRet(idx)
+    lcd.drawFilledRectangle(LCD_W - 74, 6, 28, 28, COLOR_THEME_SECONDARY1)
+    lcd.drawRectangle(LCD_W - 74, 6, 28, 28, color)
+    for i = -1, 1 do
+      lcd.drawLine(LCD_W - 60 + i, 12, LCD_W - 60 + i, 30, SOLID, color)
+    end
+    for i = 0, 3 do
+      lcd.drawLine(LCD_W - 60 , 10 + i, LCD_W - 50 - i, 20, SOLID, color)
+      lcd.drawLine(LCD_W - 60 , 10 + i, LCD_W - 70 + i, 20, SOLID, color)
+    end
+  end
+
+  -- Minimize button
+  buttonMin = gui.button(LCD_W - 34, 6, 28, 28, "", function() lcd.exitFullScreen() end)
+
+  -- Paint another face on it
+  local drawMin = buttonMin.draw
+  function buttonMin.draw(idx)
+    drawMin(idx)
+    lcd.drawFilledRectangle(LCD_W - 34, 6, 28, 28, COLOR_THEME_SECONDARY1)
+    lcd.drawRectangle(LCD_W - 34, 6, 28, 28, colors.focusText)
+    for y = 19, 21 do
+      lcd.drawLine(LCD_W - 30, y, LCD_W - 10, y, SOLID, colors.focusText)
+    end
+  end
+  
+  return gui
+end -- NewScreen
+
+-- GUIs for the different screens
+local menuMain = NewScreen("SoarETX  F3K")
+local menuF3K = NewScreen("Select  F3K  Task")
+local menuPractice = NewScreen("Select  Practice  Task")
+local menuScores = NewScreen("Select  F3K  Task")
+local taskF3K = NewScreen("")
+local promptSaveScores
+local notify
+
+-- Setup main menu
+do
+  local items = {
+    "1. F3K tasks",
+    "2. Practice tasks",
+    "3. View saved scores"
+  }
+  
+  local subMenus = {
+    menuF3K,
+    menuPractice,
+    menuScores
+  }
+  
+  -- Call back function running when a menu item was selected
+  local function callBack(item, event, touchState)
+    PushGUI(subMenus[item.idx])
+  end
+
+  menuMain.menu(40, 55, 5, items, callBack)
+  widget.gui = menuMain
+end
+
+-- Setup F3K task menu
+do
+	local tasks = {
+		"A. Last flight",
+		"B. Two last flights 3:00",
+		"B. Two last flights 4:00",
+		"C. All up last down",
+		"D. Two flights only",
+		"E. Poker 10 min.",
+		"E. Poker 15 min.",
+		"F. Three best out of six",
+		"G. Five best flights",
+		"H. 1-2-3-4 in any order",
+		"I. Three best flights",
+		"J. Three last flights",
+		"K. Big Ladder",
+		"L. One flight only",
+		"M. Huge Ladder"
+	}
+  
+  local taskData = {
+    { 420, -1, 1, false, 300, 2, false },   -- A. Last flight
+    { 420, -1, 2, false, 180, 2, false },   -- B. Two last 3:00
+    { 600, -1, 2, false, 240, 2, false },   -- B. Two last 4:00
+    { 0, 8, 8, true, 180, 2, false },       -- C. AULD
+    { 600, 2, 2, true, 300, 2, true },      -- D. Two flights only
+    { 600, -1, 3, true, 2, 3, true },       -- E. Poker 10 min.
+    { 900, -1, 3, true, 2, 3, true },       -- E. Poker 15 min.
+    { 600, 6, 3, false, 180, 1, false },    -- F. 3 best of 6
+    { 600, -1, 5, false, 120, 1, true },    -- G. 5 x 2:00
+    { 600, -1, 4, false, 3, 1, true },      -- H. 1234
+    { 600, -1, 3, false, 200, 1, true },    -- I. 3 Best
+    { 600, -1, 3, false, 180, 2, false },   -- J. 3 last
+    { 600, 5, 5, true, 4, 2, true },        -- K. Big ladder
+    { 600, 1, 1, true, 599, 2, false },     -- L. One flight only
+    { 900, 3, 3, true, 1, 2, true }         -- M. Huge Ladder
+  }
+
+  -- Call back function running when an item was selected
+  local function callBack(item, event, touchState)
+    SetupTask(taskData[item])
+  end
+
+  menuF3K.menu(40, 55, 5, tasks, callBack)
+end
+
+do -- Score keeper screen for F3K and Practice tasks
+  
+end
+
+do -- Prompt asking to save scores
+  promptSaveScores = libGUI.newGUI()
+
+  function promptSaveScores.Show()
+    widget.refresh.prompt = promptSaveScores
+  end
+end
+
+do -- Notify that timer must be stopped
+  notify = { }
+
+  local message, dismissTime, tx, ty
+  local w = 0.75 * LCD_W
+  local h = 0.75 * LCD_H
+  local x = (LCD_W - w) / 2
+  local y = (LCD_H - h) / 2
+  local flags = bit32.bor(libGUI.flags or 0, BOLD, CENTER, VCENTER, COLOR_NOTIFY_TEXT)
+  
+  function notify.Show(msg)
+    local tw, th = lcd.sizeText(msg, flags)
+    
+    message = msg
+    dismissTime = getTime() + 100
+    tx = (LCD_W - tw) / 2
+    ty = (LCD_H - th) / 2
+    widget.refresh.prompt = notify
+  end
+  
+  function notify.run()
+    lcd.drawFilledRectangle(x, y, w, h, COLOR_NOTIFY_BG, 4)
+    lcd.drawRectangle(x, y, w, h, COLOR_NOTIFY_TEXT, 2)
+    lcd.drawText(tx, ty, message, flags)
+    
+    if getTime() > dismissTime then
+      widget.refresh.prompt = nil
+    end
+  end  
+end
 
 -- Set GV for controlling timers
 local function SetGVTmr(tmr)
@@ -304,7 +578,7 @@ local function Score()
 end -- Score()
 	
 -- Function for setting up a task
-local function setupTask(taskData)
+local function SetupTask(taskData)
   taskWindow = taskData[1]
   launches = taskData[2]
   taskScores = taskData[3]
@@ -321,7 +595,7 @@ local function setupTask(taskData)
   end
 
   widget.refresh = taskF3K
-end -- setupTask(...)
+end -- SetupTask(...)
 
 -- Draw a list of score times
 local function drawScores(x, y, w, h, flags)
@@ -344,196 +618,6 @@ local function drawScores(x, y, w, h, flags)
 		end
 	end
 end -- drawScores(...)
-
--- Draw zone area when not in fullscreen mode
-local function drawZone()
-  if zone.w >= 392 and zone.h >= 170 then
-    drawZone = function()
-      lcd.drawText(zone.w / 2, zone.h / 2, string.format("TODO: drawZone(392, 170)"), CENTER + VCENTER)
-    end
-  elseif zone.w >= 196 and zone.h >= 170 then
-    drawZone = function()
-      lcd.drawText(zone.w / 2, zone.h / 2, string.format("TODO: drawZone(196, 170)"), CENTER + VCENTER)
-    end
-  elseif zone.w >= 196 and zone.h >= 85 then
-    drawZone = function()
-      lcd.drawText(zone.w / 2, zone.h / 2, string.format("TODO: drawZone(196, 85)"), CENTER + VCENTER)
-    end
-  else -- 196 x 42
-    drawZone = function()
-      lcd.drawText(zone.w / 2, zone.h / 2, string.format("TODO: drawZone(196, 42)"), CENTER + VCENTER)
-    end
-  end
-end -- drawZone()
-
--- Draw trims and flight mode etc.
-local trimSources = { getFieldInfo("trim-ail").id, getFieldInfo("trim-rud").id, getFieldInfo("trim-ele").id, getFieldInfo("trim-thr").id }
-local function Decorate()
-  -- Top bar
-  lcd.drawFilledRectangle(0, 0, LCD_W, 45, COLOR_THEME_SECONDARY1)
-
-  -- Draw trims
-  -- Drawing parameters
-  local p = {
-  --{ x, y, h, w }
-    { LCD_W - 191, LCD_H - 15, 177, 8 },
-    { 14, LCD_H - 15, 177, 8 },
-    { LCD_W - 15, 68, 8, 177 },
-    { 8, 68, 8, 177 },
-  }
-  
-  for i = 1, 4 do
-    local q = p[i]
-    local value = getValue(trimSources[i]) / 10.24
-    local x, y
-    if q[3] > q[4] then
-      x = q[1] + q[3] * (value + 100) / 200
-      y = q[2] + q[4] / 2
-    else
-      x = q[1] + q[3] / 2
-      y = q[2] + q[4] * (100 - value) / 200
-    end
-    
-    lcd.drawFilledRectangle(q[1], q[2], q[3], q[4], COLOR_THEME_SECONDARY1)
-    lcd.drawFilledRectangle(x - 7, y - 7, 15, 15, COLOR_THEME_PRIMARY1)
-    lcd.drawFilledRectangle(x - 8, y - 8, 15, 15, COLOR_THEME_FOCUS)
-    lcd.drawNumber(x, y, value, SMLSIZE + VCENTER + CENTER + COLOR_THEME_PRIMARY2)
-  end
-  
-  -- Flight mode
-  lcd.drawText(LCD_W / 2, LCD_H - 22, select(2, getFlightMode()), CENTER + COLOR_THEME_SECONDARY1)
-  
-  -- Date
-  local now = getDateTime()
-	local str = string.format("%02i:%02i", now.hour, now.min)
-  lcd.drawText(LCD_W - 10, 7, str, RIGHT + BOLD + COLOR_THEME_PRIMARY2)
-end -- Decorate
-
-local function drawMainMenuBg()
-  Decorate()
-  lcd.drawText(10, 7, "Soar ETX", bit32.bor(BOLD, DBLSIZE, libGUI.colors.focusText))
-end
-
-do -- Main menu for selecting task packages
-  menuMain = libGUI.newGUI()
-  widget.refresh = menuMain.run -- Initial screen
-
-  local items = {
-    "F3K tasks",
-    "Practice tasks",
-    "View saved scores"
-  }
-  
-  local subMenus = {
-    menuF3K,
-    menuPractice,
-    menuAltimeter,
-    viewScores
-  }
-  
-  -- Call back function running when an item was selected
-  local function callBack(item, event, touchState)
-    widget.refresh = subMenus[item]
-  end
-
-  menuMain.widgetRefresh = drawZone
-  menuMain.fullScreenRefresh = drawMainMenuBg
-  menuMain.menu(40, 60, 5, items, callBack)
-end
-
-do -- Main menu for selecting task packages
-  menuF3K = libGUI.newGUI()
-
-	local tasks = {
-		"A. Last flight",
-		"B. Two last flights 3:00",
-		"B. Two last flights 4:00",
-		"C. All up last down",
-		"D. Two flights only",
-		"E. Poker 10 min.",
-		"E. Poker 15 min.",
-		"F. Three best out of six",
-		"G. Five best flights",
-		"H. 1-2-3-4 in any order",
-		"I. Three best flights",
-		"J. Three last flights",
-		"K. Big Ladder",
-		"L. One flight only",
-		"M. Huge Ladder"
-	}
-  
-  local taskData = {
-    { 420, -1, 1, false, 300, 2, false },   -- A. Last flight
-    { 420, -1, 2, false, 180, 2, false },   -- B. Two last 3:00
-    { 600, -1, 2, false, 240, 2, false },   -- B. Two last 4:00
-    { 0, 8, 8, true, 180, 2, false },       -- C. AULD
-    { 600, 2, 2, true, 300, 2, true },      -- D. Two flights only
-    { 600, -1, 3, true, 2, 3, true },       -- E. Poker 10 min.
-    { 900, -1, 3, true, 2, 3, true },       -- E. Poker 15 min.
-    { 600, 6, 3, false, 180, 1, false },    -- F. 3 best of 6
-    { 600, -1, 5, false, 120, 1, true },    -- G. 5 x 2:00
-    { 600, -1, 4, false, 3, 1, true },      -- H. 1234
-    { 600, -1, 3, false, 200, 1, true },    -- I. 3 Best
-    { 600, -1, 3, false, 180, 2, false },   -- J. 3 last
-    { 600, 5, 5, true, 4, 2, true },        -- K. Big ladder
-    { 600, 1, 1, true, 599, 2, false },     -- L. One flight only
-    { 900, 3, 3, true, 1, 2, true }         -- M. Huge Ladder
-  }
-
-  -- Call back function running when an item was selected
-  local function callBack(item, event, touchState)
-    setupTask(taskData[item])
-  end
-
-  menuF3K.widgetRefresh = drawZone
-  menuF3K.label(0, 0, LCD_W, 30, "Select F3K task", bit32.bor(BOLD, DBLSIZE))
-  menuF3K.menu(0, 30, 8, tasks, callBack)
-end
-
-do -- Score keeper screen for F3K and Practice tasks
-  taskF3K = libGUI.newGUI()
-  taskF3K.widgetRefresh = drawZone
-  
-end
-
-do -- Prompt asking to save scores
-  promptSaveScores = libGUI.newGUI()
-
-  function promptSaveScores.Show()
-    widget.refresh.prompt = promptSaveScores
-  end
-end
-
-do -- Notify that timer must be stopped
-  notify = { }
-
-  local message, dismissTime, tx, ty
-  local w = 0.75 * LCD_W
-  local h = 0.75 * LCD_H
-  local x = (LCD_W - w) / 2
-  local y = (LCD_H - h) / 2
-  local flags = bit32.bor(libGUI.flags or 0, BOLD, CENTER, VCENTER, COLOR_NOTIFY_TEXT)
-  
-  function notify.Show(msg)
-    local tw, th = lcd.sizeText(msg, flags)
-    
-    message = msg
-    dismissTime = getTime() + 100
-    tx = (LCD_W - tw) / 2
-    ty = (LCD_H - th) / 2
-    widget.refresh.prompt = notify
-  end
-  
-  function notify.run()
-    lcd.drawFilledRectangle(x, y, w, h, COLOR_NOTIFY_BG, 4)
-    lcd.drawRectangle(x, y, w, h, COLOR_NOTIFY_TEXT, 2)
-    lcd.drawText(tx, ty, message, flags)
-    
-    if getTime() > dismissTime then
-      widget.refresh.prompt = nil
-    end
-  end  
-end
 
 function widget.background()
 	local flightMode = getFlightMode()
@@ -696,11 +780,6 @@ end -- background()
 
 function widget.update(opt)
   options = opt
-  libGUI.colors.text = opt.Text
-  libGUI.colors.focusText = opt.FocusText
-  libGUI.colors.buttonBackground = opt.ButtonBg
-  libGUI.colors.editBackground = opt.EditBg
-  libGUI.colors.active = opt.Active
 end
 
 widget.update(options)
