@@ -69,8 +69,6 @@ local prevFt                    -- Previous value of flight timer
 -- Other common variables
 local counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45} -- Flight timer countdown
 local countIndex            -- Index of timer count
-local eowTimerStop = true   -- Freeze timer automatically at the end of the window
-local quickRelaunch = false -- Restart timer immediately
 local nextCall = 0          -- Call out altitude every 10 sec.
 
 -- Variables used for Poker task
@@ -106,10 +104,16 @@ local function PushGUI(gui)
   widget.gui = gui
 end
 
+-- Are we allowed to pop screen?
+local function CanPopGUI()
+  return widget.gui.parent and not widget.gui.editing and not widget.gui.locked
+end
+
 -- Pop GUI to return to previous screen
 local function PopGUI()
-  if widget.gui.parent then
+  if CanPopGUI() then
     widget.gui = widget.gui.parent
+    return true
   end
 end
 
@@ -119,7 +123,7 @@ local function NewScreen(title)
   gui.widgetRefresh = drawZone
   gui.title = title
   
-  gui.fullScreenRefresh = function()
+  function gui.fullScreenRefresh()
     local color
     local bat
 
@@ -197,7 +201,9 @@ local function NewScreen(title)
   -- Paint another face on it
   local drawRet = buttonRet.draw
   function buttonRet.draw(idx)
-    if gui.parent then
+    drawRet(idx)
+
+    if CanPopGUI() then
       color = colors.focusText
       buttonRet.noFocus = nil
     else
@@ -205,7 +211,6 @@ local function NewScreen(title)
       buttonRet.noFocus = true
     end
     
-    drawRet(idx)
     lcd.drawFilledRectangle(LCD_W - 74, 6, 28, 28, COLOR_THEME_SECONDARY1)
     lcd.drawRectangle(LCD_W - 74, 6, 28, 28, color)
     for i = -1, 1 do
@@ -224,6 +229,7 @@ local function NewScreen(title)
   local drawMin = buttonMin.draw
   function buttonMin.draw(idx)
     drawMin(idx)
+    
     lcd.drawFilledRectangle(LCD_W - 34, 6, 28, 28, COLOR_THEME_SECONDARY1)
     lcd.drawRectangle(LCD_W - 34, 6, 28, 28, colors.focusText)
     for y = 19, 21 do
@@ -231,17 +237,49 @@ local function NewScreen(title)
     end
   end
   
+  -- Short press EXIT to return to previous screen
+  local function HandleEXIT(event, touchState)
+    if PopGUI() then
+      return false
+    else
+      return event
+    end
+  end
+  gui.SetEventHandler(EVT_VIRTUAL_EXIT, HandleEXIT)
+  
   return gui
 end -- NewScreen
 
--- GUIs for the different screens
+-- GUIs for the different screens and popups
 local menuMain = NewScreen("SoarETX  F3K")
 local menuF3K = NewScreen("Select  F3K  Task")
 local menuPractice = NewScreen("Select  Practice  Task")
 local menuScores = NewScreen("Select  F3K  Task")
-local taskF3K = NewScreen("")
-local promptSaveScores
-local notify
+local screenTask = NewScreen("")
+local promptSaveScores = libGUI.newGUI()
+local notify = { }
+
+-- Function for setting up a task
+local function SetupTask(taskName, taskData)
+  screenTask.title = taskName
+  
+  taskWindow = taskData[1]
+  launches = taskData[2]
+  taskScores = taskData[3]
+  finalScores = taskData[4]
+  targetType = taskData[5]
+  scoreType = taskData[6]
+  screenTask.buttonQR.value = taskData[7]
+  
+  -- A few extra counts in 1234
+  if targetType == 3 then
+		counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45, 65, 70, 75, 125, 130, 135, 185, 190, 195}
+  else
+    counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45}
+  end
+
+  PushGUI(screenTask)
+end -- SetupTask(...)
 
 -- Setup main menu
 do
@@ -306,27 +344,40 @@ do
 
   -- Call back function running when an item was selected
   local function callBack(item, event, touchState)
-    SetupTask(taskData[item])
+    SetupTask(tasks[item.idx], taskData[item.idx])
   end
 
   menuF3K.menu(40, 55, 5, tasks, callBack)
 end
 
-do -- Score keeper screen for F3K and Practice tasks
+-- Setup score keeper screen for F3K and Practice tasks
+do
+  -- Add score times
+  local fullScreenRefresh = gui.fullScreenRefresh
+  function gui.fullScreenRefresh()
+    fullScreenRefresh()
+    
+    local x = 25
+    local y = 60
+    for i = 1, taskScores do
+    
+    
+      y = y + 45
+    end
+  end
   
+  screenTask.buttonQR = screenTask.toggleButton(LCD_W / 2 - 38, 60, 76, 32, "QR", false, nil, BOLD + MIDSIZE)
+  screenTask.buttonEoW = screenTask.toggleButton(LCD_W / 2 - 38, 105, 76, 32, "EoW", true, nil, BOLD + MIDSIZE)
+  screenTask.buttonStartStop = screenTask.button(LCD_W / 2 - 38, 150, 76, 32, "Start", nil, BOLD + MIDSIZE)
 end
 
 do -- Prompt asking to save scores
-  promptSaveScores = libGUI.newGUI()
-
   function promptSaveScores.Show()
     widget.refresh.prompt = promptSaveScores
   end
 end
 
 do -- Notify that timer must be stopped
-  notify = { }
-
   local message, dismissTime, tx, ty
   local w = 0.75 * LCD_W
   local h = 0.75 * LCD_H
@@ -576,26 +627,6 @@ local function Score()
     totalScore = totalScore + math.min(MaxScore(i), scores[i])
   end
 end -- Score()
-	
--- Function for setting up a task
-local function SetupTask(taskData)
-  taskWindow = taskData[1]
-  launches = taskData[2]
-  taskScores = taskData[3]
-  finalScores = taskData[4]
-  targetType = taskData[5]
-  scoreType = taskData[6]
-  quickRelaunch = taskData[7]
-
-  -- A few extra counts in 1234
-  if targetType == 3 then
-		counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45, 65, 70, 75, 125, 130, 135, 185, 190, 195}
-  else
-    counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45}
-  end
-
-  widget.refresh = taskF3K
-end -- SetupTask(...)
 
 -- Draw a list of score times
 local function drawScores(x, y, w, h, flags)
@@ -667,7 +698,7 @@ function widget.background()
 
 			if state < STATE_FLYING then
 				state = STATE_FINISHED
-			elseif eowTimerStop then
+			elseif screenTask.buttonEoW.value then
 				state = STATE_FREEZE
 			end
 		end
@@ -739,7 +770,7 @@ function widget.background()
 				or (taskWindow > 0 and winTimer <= 0) then
 					playTone(880, 1000, 0)
 					state = STATE_FINISHED
-				elseif quickRelaunch then
+				elseif screenTask.buttonQR.value then
 					state = STATE_READY
 				else
 					state = STATE_WINDOW
