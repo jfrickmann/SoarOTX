@@ -24,6 +24,24 @@ local widget = { }            -- The widget table will be returned to the main s
 local libGUI = loadGUI()      -- GUI library
 libGUI.flags = MIDSIZE        -- Default drawing flags
 local colors = libGUI.colors  -- Short cut
+
+-- GUIs for the different screens and popups
+local menuMain = libGUI.newGUI()
+local menuF3K = libGUI.newGUI()
+local menuPractice = libGUI.newGUI()
+local menuScores = libGUI.newGUI()
+local screenTask = libGUI.newGUI()
+local promptSaveScores = libGUI.newGUI()
+local notify = { }
+
+-- Screen drawing constants
+local LEFT =    30
+local RGT =     LCD_W - 30
+local TOP =     60
+local LINE =    50
+local HEIGHT =  38
+local BWIDTH =  90
+
 local trimSources = {         -- Input sources for the trim buttons
   getFieldInfo("trim-ail").id,
   getFieldInfo("trim-rud").id,
@@ -51,7 +69,7 @@ local STATE_READY = 5     -- Flight timer will be started when launch switch is 
 local STATE_FLYING = 6    -- Flight timer started but flight not yet committed
 local STATE_COMMITTED = 7 -- Flight timer started, and flight committed
 local STATE_FREEZE = 8    -- Still committed, but freeze  the flight timer
-local state = STATE_IDLE  -- Current program state
+local state               -- Current program state
 
 -- Common variables for score keeping
 local scores = { }              -- List of saved scores
@@ -117,15 +135,17 @@ local function PopGUI()
   end
 end
 
--- Draw screen with title, trims, flight mode etc.
-local function NewScreen(title)
-  local gui = libGUI.newGUI()
+-- Setup screen with title, trims, flight mode etc.
+local function SetupScreen(gui, title)
   gui.widgetRefresh = drawZone
   gui.title = title
   
   function gui.fullScreenRefresh()
     local color
     local bat
+
+    -- Bleed out background to make all of the screen readable
+    lcd.drawFilledRectangle(0, 0, LCD_W, LCD_H, WHITE, 8)
 
     -- Top bar
     lcd.drawFilledRectangle(0, 0, LCD_W, 40, COLOR_THEME_SECONDARY1)
@@ -205,10 +225,10 @@ local function NewScreen(title)
 
     if CanPopGUI() then
       color = colors.focusText
-      buttonRet.noFocus = nil
+      buttonRet.disabled = nil
     else
       color = COLOR_THEME_DISABLED
-      buttonRet.noFocus = true
+      buttonRet.disabled = true
     end
     
     lcd.drawFilledRectangle(LCD_W - 74, 6, 28, 28, COLOR_THEME_SECONDARY1)
@@ -250,15 +270,6 @@ local function NewScreen(title)
   return gui
 end -- NewScreen
 
--- GUIs for the different screens and popups
-local menuMain = NewScreen("SoarETX  F3K")
-local menuF3K = NewScreen("Select  F3K  Task")
-local menuPractice = NewScreen("Select  Practice  Task")
-local menuScores = NewScreen("Select  F3K  Task")
-local screenTask = NewScreen("")
-local promptSaveScores = libGUI.newGUI()
-local notify = { }
-
 -- Function for setting up a task
 local function SetupTask(taskName, taskData)
   screenTask.title = taskName
@@ -271,6 +282,17 @@ local function SetupTask(taskName, taskData)
   scoreType = taskData[6]
   screenTask.buttonQR.value = taskData[7]
   
+  -- Setup scores
+  for i = 1, 8 do
+    if i > taskScores then
+      screenTask.scoreLabels[i].hidden = true
+      screenTask.scores[i].hidden = true
+    else
+      screenTask.scoreLabels[i].hidden = false
+      screenTask.scores[i].hidden = false
+    end
+  end
+  
   -- A few extra counts in 1234
   if targetType == 3 then
 		counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45, 65, 70, 75, 125, 130, 135, 185, 190, 195}
@@ -281,8 +303,156 @@ local function SetupTask(taskName, taskData)
   PushGUI(screenTask)
 end -- SetupTask(...)
 
+-- Set GV for controlling timers
+local function SetGVTmr(tmr)
+	model.setGlobalVariable(8, 0, tmr)
+end
+
+-- Handle transitions between program states
+local function GotoState(newState)
+  state = newState
+  
+	if state < STATE_WINDOW or state == STATE_FREEZE then
+		-- Stop both timers
+		SetGVTmr(0)
+    screenTask.labelTimer0.title = "Target:"
+    screenTask.locked = false
+
+  elseif state == STATE_WINDOW then
+		-- Start task window timer, but not flight timer
+		SetGVTmr(1)
+    screenTask.labelTimer0.title = "Target:"
+    screenTask.locked = true
+	
+  elseif state == STATE_FLYING then
+		-- Start both timers
+		SetGVTmr(2)
+    screenTask.labelTimer0.title = "Flight:"
+    screenTask.locked = true
+    
+    if model.getTimer(0).start > 0 then
+      -- Report the target time
+      playDuration(model.getTimer(0).start, 0)
+    else
+      -- ... or beep
+      playTone(1760, 100, PLAY_NOW)
+    end
+  
+  elseif state == STATE_COMMITTED then
+    -- Call launch height
+    if getValue(LS_ALT) > 0 then
+      playNumber(getValue("Alt+"), ALT_UNIT)
+    end
+    
+    if launches > 0 then 
+      launches = launches - 1
+    end
+  
+  elseif state == STATE_FINISHED then
+    playTone(880, 1000, 0)
+  end
+  
+  -- Configure "button3"
+  screenTask.button3.disabled = false
+  if state <= STATE_PAUSE then
+    screenTask.button3.title = "Start"    
+  elseif state == STATE_WINDOW then
+    screenTask.button3.title = "Pause"
+  elseif state >= STATE_COMMITTED then
+    screenTask.button3.title = "Zero"
+  else
+    screenTask.button3.disabled = true  
+  end
+
+end -- GotoState()
+
+-- Keep the best scores
+local function RecordBest(scores, newScore)
+  local n = #scores
+  local i = 1
+  local j = 0
+
+  -- Find the position where the new score is going to be inserted
+  if n == 0 then
+    j = 1
+  else
+    -- Find the first position where existing score is smaller than the new score
+    while i <= n and j == 0 do
+      if newScore > scores[i] then j = i end
+      i = i + 1
+    end
+    
+    if j == 0 then j = i end -- New score is smallest; end of the list
+  end
+
+  -- If the list is not yet full; let it grow
+  if n < taskScores then n = n + 1 end
+
+  -- Insert the new score and move the following scores down the list
+  for i = j, n do
+    newScore, scores[i] = scores[i], newScore
+  end
+end  --  RecordBest (...)
+
+-- Used for calculating the total score and sometimes target time
+local function MaxScore(iFlight)
+  if targetType == 1 then -- Huge ladder
+    return 60 + 120 * iFlight
+  elseif targetType == 2 then -- Poker
+    return 9999
+  elseif targetType == 3 then -- 1234
+    return 300 - 60 * iFlight
+  elseif targetType == 4 then -- Big ladder
+    return 30 + 30 * iFlight
+  else -- MaxScore = targetType
+    return targetType
+  end
+end
+
+-- Record scores
+local function Score()
+	if scoreType == 1 then -- Best scores
+    RecordBest(scores, flightTime)
+
+  elseif scoreType == 2 then -- Last scores
+    local n = #scores
+    if n >= taskScores then
+      -- List is full; move other scores one up to make room for the latest at the end
+      for j = 1, n - 1 do
+        scores[j] = scores[j + 1]
+      end
+    else
+      -- List can grow; add to the end of the list
+      n = n + 1
+    end
+    scores[n] = flightTime
+
+  else -- Must make time to get score
+    local score = flightTime
+    -- Did we make time?
+    if flightTimer > 0 then
+      return
+    else
+      -- In Poker, only score the call
+      if pokerCalled then
+        score = model.getTimer(0).start
+        pokerCalled = false
+      end
+    end
+    scores[#scores + 1] = score
+
+	end
+
+  totalScore = 0  
+  for i = 1, #scores do
+    totalScore = totalScore + math.min(MaxScore(i), scores[i])
+  end
+end -- Score()
+
 -- Setup main menu
 do
+  SetupScreen(menuMain, "SoarETX  F3K")
+
   local items = {
     "1. F3K tasks",
     "2. Practice tasks",
@@ -300,12 +470,14 @@ do
     PushGUI(subMenus[item.idx])
   end
 
-  menuMain.menu(40, 55, 5, items, callBack)
+  menuMain.menu(LEFT, TOP, 5, items, callBack)
   widget.gui = menuMain
 end
 
--- Setup F3K task menu
-do
+
+do -- Setup F3K task menu
+  SetupScreen(menuF3K, "Select  F3K  Task")
+
 	local tasks = {
 		"A. Last flight",
 		"B. Two last flights 3:00",
@@ -342,33 +514,119 @@ do
     { 900, 3, 3, true, 1, 2, true }         -- M. Huge Ladder
   }
 
-  -- Call back function running when an item was selected
+  -- Call back function running when a menu item is selected
   local function callBack(item, event, touchState)
     SetupTask(tasks[item.idx], taskData[item.idx])
   end
 
-  menuF3K.menu(40, 55, 5, tasks, callBack)
+  menuF3K.menu(LEFT, TOP, 5, tasks, callBack)
 end
 
--- Setup score keeper screen for F3K and Practice tasks
-do
+
+do -- Setup score browser screen
+  SetupScreen(menuPractice, "Select  Practice  Task")
+  
+	local tasks = {
+		"Just Fly!",
+		"Quick Relaunch!",
+		"Deuces"
+	}
+
+  local taskData = {
+    { 0, -1, 8, false, 0, 2, false }, -- Just fly
+    { 0, -1, 8, false, 1, 2, true },  -- QR
+    { 600, 2, 2, true, 2, 2, false }  -- Deuces
+  }
+  
+  -- Call back function running when a menu item is selected
+  local function callBack(item)
+    SetupTask(tasks[item.idx], taskData[item.idx])
+  end
+
+  menuPractice.menu(LEFT, TOP, 5, tasks, callBack)
+end
+
+
+do -- Setup score keeper screen for F3K and Practice tasks
+  SetupScreen(screenTask, "")
+  
   -- Add score times
-  local fullScreenRefresh = gui.fullScreenRefresh
-  function gui.fullScreenRefresh()
-    fullScreenRefresh()
+  local x = LEFT
+  local y = TOP
+  
+  screenTask.scoreLabels = { }
+  screenTask.scores = { }
+
+  for i = 1, 8 do
+    screenTask.scoreLabels[i] = screenTask.label(x, y, 20, HEIGHT, string.format("%i.", i))
     
-    local x = 25
-    local y = 60
-    for i = 1, taskScores do
+    local s = screenTask.timer(x + 20, y, 60, HEIGHT)
+    s.disabled = true
+    s.value = "- - -"
+    screenTask.scores[i] = s
+
+    -- Modify timer's draw function to insert score value
+    local draw = s.draw
+    function s.draw(idx)
+      if i > #scores then 
+        screenTask.scores[i].value = " -   -   -"
+      else
+        screenTask.scores[i].value = scores[i]
+      end
+      
+      draw(idx)
+    end
     
-    
-      y = y + 45
+    if i == 4 then
+      y = TOP
+      x = x + 85
+    else
+      y = y + LINE
     end
   end
   
-  screenTask.buttonQR = screenTask.toggleButton(LCD_W / 2 - 38, 60, 76, 32, "QR", false, nil, BOLD + MIDSIZE)
-  screenTask.buttonEoW = screenTask.toggleButton(LCD_W / 2 - 38, 105, 76, 32, "EoW", true, nil, BOLD + MIDSIZE)
-  screenTask.buttonStartStop = screenTask.button(LCD_W / 2 - 38, 150, 76, 32, "Start", nil, BOLD + MIDSIZE)
+  -- Add center buttons
+  local x = (LCD_W - BWIDTH) / 2
+  local y = TOP
+  screenTask.buttonQR = screenTask.toggleButton(x, y, BWIDTH, HEIGHT, "QR", false, nil, BOLD + MIDSIZE)
+  y = y + LINE
+  screenTask.buttonEoW = screenTask.toggleButton(x, y, BWIDTH, HEIGHT, "EoW", true, nil, BOLD + MIDSIZE)
+  
+  local function callBack(button)
+    if state <= STATE_PAUSE then
+      GotoState(STATE_WINDOW)
+    
+    elseif state == STATE_WINDOW then
+      GotoState(STATE_PAUSE)
+    
+    elseif state >= STATE_COMMITTED then
+      -- Record a zero score!
+      flightTime = 0
+      Score()
+      
+      -- Change state
+      if winTimer <= 0 or (finalScores and #scores == taskScores) or launches == 0 then
+        GotoState(STATE_FINISHED)
+      else
+        playTone(440, 333, PLAY_NOW)
+        GotoState(STATE_WINDOW)
+      end
+    end
+  end
+  
+  y = y + LINE
+  screenTask.button3 = screenTask.button(x, y, BWIDTH, HEIGHT, "Start", callBack, BOLD + MIDSIZE)
+  
+  -- Add timers
+  y = TOP
+  screenTask.labelTimer0 = screenTask.label(RGT - 160, y, 50, HEIGHT, "Target:")
+  local tmr = screenTask.timer(RGT - 100, y, 100, HEIGHT, 0, nil, DBLSIZE + RIGHT)
+  tmr.disabled = true
+  
+  y = y + LINE
+  screenTask.label(RGT - 160, y, 50, HEIGHT, "Task:")
+  tmr = screenTask.timer(RGT - 100, y, 100, HEIGHT, 1, nil, DBLSIZE + RIGHT)
+  tmr.disabled = true
 end
 
 do -- Prompt asking to save scores
@@ -406,9 +664,8 @@ do -- Notify that timer must be stopped
   end  
 end
 
--- Set GV for controlling timers
-local function SetGVTmr(tmr)
-	model.setGlobalVariable(8, 0, tmr)
+do -- Setup score browser screen
+  SetupScreen(menuScores, "TODO browse scores")
 end
 
 -- Make sure that timers are stopped
@@ -423,117 +680,6 @@ local function ResetAlt()
     end
   end
 end
-
--- Used for calculating the total score and sometimes target time
-local function MaxScore(iFlight)
-  if targetType == 1 then -- Huge ladder
-    return 60 + 120 * iFlight
-  elseif targetType == 2 then -- Poker
-    return 9999
-  elseif targetType == 3 then -- 1234
-    return 300 - 60 * iFlight
-  elseif targetType == 4 then -- Big ladder
-    return 30 + 30 * iFlight
-  else -- MaxScore = targetType
-    return targetType
-  end
-end
-
-local function TargetTime()
-	if targetType == 2 then -- Poker
-    if pokerCalled then
-      return model.getTimer(0).start
-    else
-      return PokerCall()
-    end
-	elseif targetType == 3 then -- 1234
-    return Best1234Target(winTimer, scores, 4)
-	else -- All other tasks
-    return MaxScore(#scores + 1)
-	end
-end -- TargetTime()
-	
--- Initialize variables before flight
-local function InitializeFlight()
-	local targetTime = TargetTime()
-	
-	-- Get ready to count down
-	countIndex = #counts
-	while countIndex > 1 and counts[countIndex] >= targetTime do
-		countIndex = countIndex - 1
-	end
-
-	-- Set flight timer
-	model.setTimer(0, { start = targetTime, value = targetTime })
-	flightTimer = targetTime
-	prevFt = targetTime
-end  --  InitializeFlight()
-
--- Keep the best scores
-local function RecordBest(scores, newScore)
-  local n = #scores
-  local i = 1
-  local j = 0
-
-  -- Find the position where the new score is going to be inserted
-  if n == 0 then
-    j = 1
-  else
-    -- Find the first position where existing score is smaller than the new score
-    while i <= n and j == 0 do
-      if newScore > scores[i] then j = i end
-      i = i + 1
-    end
-    
-    if j == 0 then j = i end -- New score is smallest; end of the list
-  end
-
-  -- If the list is not yet full; let it grow
-  if n < taskScores then n = n + 1 end
-
-  -- Insert the new score and move the following scores down the list
-  for i = j, n do
-    newScore, scores[i] = scores[i], newScore
-  end
-end  --  RecordBest (...)
-
--- Get called time from user in Poker
-local function PokerCall()
-  local dial
-  
-  -- Find dials for setting target time in Poker and height ceilings etc.
-  for input = 0, 31 do
-    local tbl = model.getInput(input, 0)
-    
-    if tbl and tbl.name == "Dial" then
-      dial = tbl.source
-    end
-  end
-
-  -- If input lines were not found, then default to S1 and S2
-  if not dial then dial = getFieldInfo("s1").id end
-
-  local input = getValue(dial)
-  local i, x = math.modf(1 + (#tblStep - 1) * (math.min(1023, input) + 1024) / 2048)
-  local t1 = tblStep[i][1]
-  local t2 = tblStep[i + 1][1]
-  local dt = tblStep[i][2]
-  
-  local result = math.min(winTimer - 1, t1 + dt * math.floor(x * (t2 - t1) /dt))
-  
-  if math.abs(input - lastInput) >= 20 then
-    lastInput = input
-    lastChange = getTime()
-  end
-  
-  if lastChange > 0 and getTime() - lastChange > 100 then
-    playTone(3000, 100, PLAY_NOW)
-    playDuration(result)
-    lastChange = 0
-  end
-  
-  return result
-end -- PokerCall()
 
 -- Find the best target time, given what has already been scored, as well as the remaining time of the window.
 -- Note: maxTarget ensures that recursive calls to this function only test shorter target times. That way, we start with
@@ -588,67 +734,73 @@ local function Best1234Target(timeLeft, scores, maxTarget)
   return bestTarget, bestTotal
 end  --  Best1234Target(..)
 
--- Record scores
-local function Score()
-	if scoreType == 1 then -- Best scores
-    RecordBest(scores, flightTime)
-
-  elseif scoreType == 2 then -- Last scores
-    local n = #scores
-    if n >= taskScores then
-      -- List is full; move other scores one up to make room for the latest at the end
-      for j = 1, n - 1 do
-        scores[j] = scores[j + 1]
-      end
-    else
-      -- List can grow; add to the end of the list
-      n = n + 1
+-- Get called time from user in Poker
+local function PokerCall()
+  local dial
+  
+  -- Find dials for setting target time in Poker and height ceilings etc.
+  for input = 0, 31 do
+    local tbl = model.getInput(input, 0)
+    
+    if tbl and tbl.name == "Dial" then
+      dial = tbl.source
     end
-    scores[n] = flightTime
-
-  else -- Must make time to get score
-    local score = flightTime
-    -- Did we make time?
-    if flightTimer > 0 then
-      return
-    else
-      -- In Poker, only score the call
-      if pokerCalled then
-        score = model.getTimer(0).start
-        pokerCalled = false
-      end
-    end
-    scores[#scores + 1] = score
-
-	end
-
-  totalScore = 0  
-  for i = 1, #scores do
-    totalScore = totalScore + math.min(MaxScore(i), scores[i])
   end
-end -- Score()
 
--- Draw a list of score times
-local function drawScores(x, y, w, h, flags)
-  local lineHeight = select(2, lcd.sizeText("", flags))
-  local yy = y
+  -- If input lines were not found, then default to S1 and S2
+  if not dial then dial = getFieldInfo("s1").id end
 
-	for i = 1, taskScores do
-		if i <= #scores then
-      local m = math.floor(scores[i] / 60)
-      local s = scores[i] - 60 * m
-			lcd.drawText(x, yy, string.format("%i. %02i:%02i", i, m, s), flags)
-		else
-			lcd.drawText(x, yy, string.format("%i. --:--", i), flags)
-		end
+  local input = getValue(dial)
+  local i, x = math.modf(1 + (#tblStep - 1) * (math.min(1023, input) + 1024) / 2048)
+  local t1 = tblStep[i][1]
+  local t2 = tblStep[i + 1][1]
+  local dt = tblStep[i][2]
+  
+  local result = math.min(winTimer - 1, t1 + dt * math.floor(x * (t2 - t1) /dt))
+  
+  if math.abs(input - lastInput) >= 20 then
+    lastInput = input
+    lastChange = getTime()
+  end
+  
+  if lastChange > 0 and getTime() - lastChange > 100 then
+    playTone(3000, 100, PLAY_NOW)
+    playDuration(result)
+    lastChange = 0
+  end
+  
+  return result
+end -- PokerCall()
 
-		yy = yy + math.floor(1.2 * lineHeight)
-		if yy - y + lineHeight > h then
-			x = x + w
-			yy = y
-		end
+local function TargetTime()
+	if targetType == 2 then -- Poker
+    if pokerCalled then
+      return model.getTimer(0).start
+    else
+      return PokerCall()
+    end
+	elseif targetType == 3 then -- 1234
+    return Best1234Target(winTimer, scores, 4)
+	else -- All other tasks
+    return MaxScore(#scores + 1)
 	end
-end -- drawScores(...)
+end -- TargetTime()
+	
+-- Initialize variables before flight
+local function InitializeFlight()
+	local targetTime = TargetTime()
+	
+	-- Get ready to count down
+	countIndex = #counts
+	while countIndex > 1 and counts[countIndex] >= targetTime do
+		countIndex = countIndex - 1
+	end
+
+	-- Set flight timer
+	model.setTimer(0, { start = targetTime, value = targetTime })
+	flightTimer = targetTime
+	prevFt = targetTime
+end  --  InitializeFlight()
 
 function widget.background()
 	local flightMode = getFlightMode()
@@ -687,7 +839,7 @@ function widget.background()
 
 			-- Automatically start window and flight if launch switch is released
 			if launchPulled then
-				state = STATE_READY
+				GotoState(STATE_READY)
 			end
 		end
 
@@ -697,15 +849,15 @@ function widget.background()
 			playTone(880, 1000, 0)
 
 			if state < STATE_FLYING then
-				state = STATE_FINISHED
+				GotoState(STATE_FINISHED)
 			elseif screenTask.buttonEoW.value then
-				state = STATE_FREEZE
+				GotoState(STATE_FREEZE)
 			end
 		end
 
 		if state == STATE_WINDOW then
 			if launchPulled then
-				state = STATE_READY
+				GotoState(STATE_READY)
 			elseif launchReleased then
 				-- Play tone to warn that timer is NOT running
 				playTone(1760, 200, 0, PLAY_NOW)
@@ -713,15 +865,7 @@ function widget.background()
 			
 		elseif state == STATE_READY then
 			if launchReleased then
-				state = STATE_FLYING
-
-				if model.getTimer(0).start > 0 then
-					-- Report the target time
-					playDuration(model.getTimer(0).start, 0)
-				else
-					-- ... or beep
-					playTone(1760, 100, PLAY_NOW)
-				end
+				GotoState(STATE_FLYING)
 			end
 
 		elseif state >= STATE_FLYING then
@@ -740,21 +884,12 @@ function widget.background()
 			if state == STATE_FLYING then
 				-- Within 10 sec. "grace period", cancel the flight
 				if launchPulled then
-					state = STATE_WINDOW
+					GotoState(STATE_WINDOW)
 				end
 
-				-- After 5 seconds, commit flight
+				-- After 10 seconds, commit flight
 				if flightTime >= 10 then
-					state = STATE_COMMITTED
-
-					-- Call launch height
-					if getValue(LS_ALT) > 0 then
-						playNumber(getValue("Alt+"), ALT_UNIT)
-					end
-					
-					if launches > 0 then 
-						launches = launches - 1
-					end
+					GotoState(STATE_COMMITTED)
 				end
 				
 			elseif launchPulled then
@@ -766,45 +901,30 @@ function widget.background()
 				Score()
 				
 				-- Change state
-				if (finalScores and #scores == taskScores) or launches == 0
-				or (taskWindow > 0 and winTimer <= 0) then
-					playTone(880, 1000, 0)
-					state = STATE_FINISHED
+				if (finalScores and #scores == taskScores) or launches == 0 or (taskWindow > 0 and winTimer <= 0) then
+					GotoState(STATE_FINISHED)
 				elseif screenTask.buttonQR.value then
-					state = STATE_READY
+					GotoState(STATE_READY)
 				else
-					state = STATE_WINDOW
+					GotoState(STATE_WINDOW)
 				end
-			end			
+			end
 		end
 		
 		prevWt = winTimer
 		prevFt = flightTimer
 	end
 
-	if state < STATE_WINDOW or state == STATE_FREEZE then
-		-- Stop both timers
-		SetGVTmr(0)
-	elseif state == STATE_WINDOW then
-		-- Start task window timer, but not flight timer
-		SetGVTmr(1)
-	elseif state == STATE_FLYING then
-		-- Start both timers
-		SetGVTmr(2)
-	end
-
   -- Are we done?
 	if targetType == 2 then -- Poker
     if state < STATE_FLYING and state ~= STATE_FINISHED and winTimer < TargetTime() then
-      playTone(880, 1000, 0)
-      state = STATE_FINISHED
+      GotoState(STATE_FINISHED)
     elseif state == STATE_COMMITTED then
       pokerCalled = true
     end
 	elseif scoreType == 3 then -- Other "must make time" tasks
     if state < STATE_FLYING and state ~= STATE_FINISHED and winTimer < TargetTime() then
-      playTone(880, 1000, 0)
-      state = STATE_FINISHED
+      GotoState(STATE_FINISHED)
     end
 	end
 end -- background()
@@ -813,5 +933,7 @@ function widget.update(opt)
   options = opt
 end
 
+GotoState(STATE_IDLE)
 widget.update(options)
+
 return widget
