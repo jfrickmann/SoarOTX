@@ -2,10 +2,10 @@
 -- SoarETX F3K score keeper widget                                       --
 --                                                                       --
 -- Author:  Jesper Frickmann                                             --
--- Date:    2021-XX-XX                                                   --
+-- Date:    2021-09-24                                                   --
 -- Version: 0.9                                                          --
 --                                                                       --
--- Copyright (C) EdgeTX                                                  --
+-- Copyright (C) Jesper Frickmann                                        --
 --                                                                       --
 -- License GPLv2: http://www.gnu.org/licenses/gpl-2.0.html               --
 --                                                                       --

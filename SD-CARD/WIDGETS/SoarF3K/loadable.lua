@@ -2,10 +2,10 @@
 -- SoarETX F3K score keeper widget, loadable part                        --
 --                                                                       --
 -- Author:  Jesper Frickmann                                             --
--- Date:    2021-XX-XX                                                   --
+-- Date:    2021-09-24                                                   --
 -- Version: 0.9                                                          --
 --                                                                       --
--- Copyright (C) EdgeTX                                                  --
+-- Copyright (C) Jesper Frickmann                                        --
 --                                                                       --
 -- License GPLv2: http://www.gnu.org/licenses/gpl-2.0.html               --
 --                                                                       --
@@ -32,15 +32,17 @@ local menuPractice = libGUI.newGUI()
 local menuScores = libGUI.newGUI()
 local screenTask = libGUI.newGUI()
 local promptSaveScores = libGUI.newGUI()
-local notify = { }
 
 -- Screen drawing constants
-local LEFT =    30
-local RGT =     LCD_W - 30
-local TOP =     60
-local LINE =    50
-local HEIGHT =  38
-local BWIDTH =  90
+local LEFT =     30
+local RGT =      LCD_W - 30
+local TOP =      60
+local LINE =     50
+local HEIGHT =   38
+local BUTTON_W = 90
+local PROMPT_W = 300
+local PROMPT_H = 170
+local PROMPT_M = 30
 
 local trimSources = {         -- Input sources for the trim buttons
   getFieldInfo("trim-ail").id,
@@ -216,19 +218,19 @@ local function SetupScreen(gui, title)
   end -- fullScreenRefresh()
   
   -- Return button
-  local buttonRet = gui.button(LCD_W - 74, 6, 28, 28, "", PopGUI)
+  gui.buttonRet = gui.button(LCD_W - 74, 6, 28, 28, "", PopGUI)
 
   -- Paint another face on it
-  local drawRet = buttonRet.draw
-  function buttonRet.draw(idx)
+  local drawRet = gui.buttonRet.draw
+  function gui.buttonRet.draw(idx)
     drawRet(idx)
 
     if CanPopGUI() then
       color = colors.focusText
-      buttonRet.disabled = nil
+      gui.buttonRet.disabled = nil
     else
       color = COLOR_THEME_DISABLED
-      buttonRet.disabled = true
+      gui.buttonRet.disabled = true
     end
     
     lcd.drawFilledRectangle(LCD_W - 74, 6, 28, 28, COLOR_THEME_SECONDARY1)
@@ -280,8 +282,9 @@ local function SetupTask(taskName, taskData)
   finalScores = taskData[4]
   targetType = taskData[5]
   scoreType = taskData[6]
-  screenTask.buttonQR.value = taskData[7]
-  
+  screenTask.buttonQR.value = taskData[7]  
+  state = STATE_IDLE
+
   -- Setup scores
   for i = 1, 8 do
     if i > taskScores then
@@ -550,6 +553,11 @@ end
 do -- Setup score keeper screen for F3K and Practice tasks
   SetupScreen(screenTask, "")
   
+  -- Return button shows prompt to save scores instead of popping right away
+  function screenTask.buttonRet.callBack()
+    screenTask.prompt = promptSaveScores
+  end
+  
   -- Add score times
   local x = LEFT
   local y = TOP
@@ -586,11 +594,11 @@ do -- Setup score keeper screen for F3K and Practice tasks
   end
   
   -- Add center buttons
-  local x = (LCD_W - BWIDTH) / 2
+  local x = (LCD_W - BUTTON_W) / 2
   local y = TOP
-  screenTask.buttonQR = screenTask.toggleButton(x, y, BWIDTH, HEIGHT, "QR", false, nil, BOLD + MIDSIZE)
+  screenTask.buttonQR = screenTask.toggleButton(x, y, BUTTON_W, HEIGHT, "QR", false, nil, BOLD + MIDSIZE)
   y = y + LINE
-  screenTask.buttonEoW = screenTask.toggleButton(x, y, BWIDTH, HEIGHT, "EoW", true, nil, BOLD + MIDSIZE)
+  screenTask.buttonEoW = screenTask.toggleButton(x, y, BUTTON_W, HEIGHT, "EoW", true, nil, BOLD + MIDSIZE)
   
   local function callBack(button)
     if state <= STATE_PAUSE then
@@ -615,7 +623,7 @@ do -- Setup score keeper screen for F3K and Practice tasks
   end
   
   y = y + LINE
-  screenTask.button3 = screenTask.button(x, y, BWIDTH, HEIGHT, "Start", callBack, BOLD + MIDSIZE)
+  screenTask.button3 = screenTask.button(x, y, BUTTON_W, HEIGHT, "Start", callBack, BOLD + MIDSIZE)
   
   -- Add timers
   y = TOP
@@ -629,47 +637,67 @@ do -- Setup score keeper screen for F3K and Practice tasks
   tmr.disabled = true
 end
 
-do -- Prompt asking to save scores
-  function promptSaveScores.Show()
-    widget.refresh.prompt = promptSaveScores
+do -- Prompt asking to save scores and exit task window
+  local x0 = (LCD_W - PROMPT_W) / 2
+  local y0 = (LCD_H - PROMPT_H) / 2
+  local LEFT = x0 + PROMPT_M
+  local RGT = x0 + PROMPT_W - PROMPT_M
+  local TOP = y0 + PROMPT_M
+  local BOTTOM = y0 + PROMPT_H - PROMPT_M
+  
+  function promptSaveScores.fullScreenRefresh()
+    lcd.drawFilledRectangle(x0, y0, PROMPT_W, PROMPT_H, COLOR_THEME_PRIMARY2, 2)
+    lcd.drawRectangle(x0, y0, PROMPT_W, PROMPT_H, COLOR_THEME_PRIMARY1, 3)
   end
-end
 
-do -- Notify that timer must be stopped
-  local message, dismissTime, tx, ty
-  local w = 0.75 * LCD_W
-  local h = 0.75 * LCD_H
-  local x = (LCD_W - w) / 2
-  local y = (LCD_H - h) / 2
-  local flags = bit32.bor(libGUI.flags or 0, BOLD, CENTER, VCENTER, COLOR_NOTIFY_TEXT)
-  
-  function notify.Show(msg)
-    local tw, th = lcd.sizeText(msg, flags)
-    
-    message = msg
-    dismissTime = getTime() + 100
-    tx = (LCD_W - tw) / 2
-    ty = (LCD_H - th) / 2
-    widget.refresh.prompt = notify
-  end
-  
-  function notify.run()
-    lcd.drawFilledRectangle(x, y, w, h, COLOR_NOTIFY_BG, 4)
-    lcd.drawRectangle(x, y, w, h, COLOR_NOTIFY_TEXT, 2)
-    lcd.drawText(tx, ty, message, flags)
-    
-    if getTime() > dismissTime then
-      widget.refresh.prompt = nil
+  promptSaveScores.label(x0, TOP, PROMPT_W, HEIGHT, "Save scores?", DBLSIZE + CENTER)
+
+  local function callBack(button)
+    if button == promptSaveScores.buttonYes then
+      local logFile = io.open("/LOGS/JF F3K Scores.csv", "a")
+      if logFile then
+        io.write(logFile, string.format("%s,%s", model.getInfo().name, screenTask.title))
+
+        local now = getDateTime()				
+        io.write(logFile, string.format(",%04i-%02i-%02i", now.year, now.mon, now.day))
+        io.write(logFile, string.format(",%02i:%02i", now.hour, now.min))				
+        io.write(logFile, string.format(",s,%i", taskScores))
+        io.write(logFile, string.format(",%i", totalScore))
+        
+        for i = 1, #scores do
+          io.write(logFile, string.format(",%i", scores[i]))
+        end
+        
+        io.write(logFile, "\n")
+        io.close(logFile)
+      end
     end
-  end  
+    
+    -- Reset shared variables
+    scores = { } -- List of saved scores
+    counts = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 45} -- Flight timer countdown
+    state = STATE_IDLE
+
+    -- Set up a task that does not record scores
+    task = 0
+    taskWindow = 0
+    launches = -1
+    taskScores = 0
+    finalScores = false
+
+    -- Dismiss prompt and return to menu
+    screenTask.prompt = nil
+    PopGUI()
+  end -- callBack(...)
+
+  promptSaveScores.buttonYes = promptSaveScores.button(LEFT, BOTTOM - HEIGHT, BUTTON_W, HEIGHT, "Yes", callBack, libGUI.flags + BOLD)
+  promptSaveScores.button(RGT - BUTTON_W, BOTTOM - HEIGHT, BUTTON_W, HEIGHT, "No", callBack, libGUI.flags + BOLD)
+
 end
 
 do -- Setup score browser screen
   SetupScreen(menuScores, "TODO browse scores")
 end
-
--- Make sure that timers are stopped
-SetGVTmr(0)
 
 -- Reset altimeter
 local function ResetAlt()
@@ -933,6 +961,8 @@ function widget.update(opt)
   options = opt
 end
 
+-- Initialize stuff
+SetGVTmr(0)
 GotoState(STATE_IDLE)
 widget.update(options)
 
