@@ -579,27 +579,6 @@ function widget.update(opt)
   options = opt
 end
 
--- Draw zone area when not in fullscreen mode
-local function drawZone()
-  if zone.w >= 392 and zone.h >= 170 then
-    drawZone = function()
-      lcd.drawText(zone.w / 2, zone.h / 2, string.format("TODO: drawZone(392, 170)"), CENTER + VCENTER)
-    end
-  elseif zone.w >= 196 and zone.h >= 170 then
-    drawZone = function()
-      lcd.drawText(zone.w / 2, zone.h / 2, string.format("TODO: drawZone(196, 170)"), CENTER + VCENTER)
-    end
-  elseif zone.w >= 196 and zone.h >= 85 then
-    drawZone = function()
-      lcd.drawText(zone.w / 2, zone.h / 2, string.format("TODO: drawZone(196, 85)"), CENTER + VCENTER)
-    end
-  else -- 196 x 42
-    drawZone = function()
-      lcd.drawText(zone.w / 2, zone.h / 2, string.format("TODO: drawZone(196, 42)"), CENTER + VCENTER)
-    end
-  end
-end -- drawZone()
-
 -- Push new GUI as sub screen
 local function PushGUI(gui)
   gui.parent = widget.gui
@@ -618,6 +597,49 @@ local function PopGUI()
     return true
   end
 end
+
+-- Draw zone area when not in fullscreen mode
+local function drawZone()
+  lcd.drawFilledRectangle(0, 0, zone.w, zone.h, options.BgColor, options.BgOpacity)
+  
+  -- Draw timers
+  local blink = 0
+  local x = 5
+  local tmr = model.getTimer(0).value
+  if tmr < 0 then 
+    blink = BLINK
+  end
+
+  lcd.drawText(x, 0, screenTask.labelTimer0.title, libGUI.colors.text)
+  lcd.drawTimer(x, 18, tmr, libGUI.colors.text + DBLSIZE + blink)
+  
+  tmr = model.getTimer(1).value
+  x = zone.w / 2 + 5
+
+  lcd.drawText(x, 0, "Window:", libGUI.colors.text)
+  lcd.drawTimer(x, 18, tmr, libGUI.colors.text + DBLSIZE + blink)
+  
+  -- Draw scores
+  x = 5
+  local y = 55
+  local dy = (zone.h - y - select(2, lcd.sizeText("X", MIDSIZE))) / 3
+  for i = 1, taskScores do
+    lcd.drawText(x, y, string.format("%i.", i), libGUI.colors.text + MIDSIZE)
+    if i > #scores then
+      lcd.drawText(x + 20, y, " -  -  -", libGUI.colors.text + MIDSIZE)
+    else
+      lcd.drawTimer(x + 20, y, scores[i], libGUI.colors.text + MIDSIZE)
+    end
+    
+    if i == 4 then
+      x = zone.w / 2 + 5
+      y = 55
+    else
+      y = y + dy
+    end
+  end
+end -- drawZone()
+
 
 -- Setup screen with title, trims, flight mode etc.
 local function SetupScreen(gui, title)
