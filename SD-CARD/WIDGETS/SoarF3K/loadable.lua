@@ -617,7 +617,7 @@ local function drawZone()
   x = zone.w / 2 + 5
 
   lcd.drawText(x, 0, "Window:", libGUI.colors.text)
-  lcd.drawTimer(x, 18, tmr, libGUI.colors.text + DBLSIZE + blink)
+  lcd.drawTimer(x, 18, tmr, libGUI.colors.text + DBLSIZE)
   
   -- Draw scores
   x = 5
