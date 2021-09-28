@@ -37,8 +37,8 @@ local promptSaveScores = libGUI.newGUI()
 local HEADER =   40
 local LEFT =     25
 local RGT =      LCD_W - 15
-local TOP =      60
-local LINE =     50
+local TOP =      50
+local LINE =     52
 local LINE2 =    22 
 local HEIGHT =   38
 local HEIGHT2 =  18
@@ -798,7 +798,7 @@ do
     PushGUI(subMenus[item.idx])
   end
 
-  menuMain.menu(LEFT, TOP, 5, items, callBack)
+  menuMain.menu(LEFT, TOP, 7, items, callBack)
   widget.gui = menuMain
 end
 
@@ -849,7 +849,7 @@ do -- Setup F3K tasks menu
     PushGUI(screenTask)
   end
 
-  menuF3K.menu(LEFT, TOP, 5, tasks, callBack)
+  menuF3K.menu(LEFT, TOP, 7, tasks, callBack)
 end
 
 do -- Setup practice tasks menu
@@ -874,7 +874,7 @@ do -- Setup practice tasks menu
     PushGUI(screenTask)
   end
 
-  menuPractice.menu(LEFT, TOP, 5, tasks, callBack)
+  menuPractice.menu(LEFT, TOP, 7, tasks, callBack)
 end
 
 
