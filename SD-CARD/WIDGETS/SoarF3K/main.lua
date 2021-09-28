@@ -2,7 +2,7 @@
 -- SoarETX F3K score keeper widget                                       --
 --                                                                       --
 -- Author:  Jesper Frickmann                                             --
--- Date:    2021-09-24                                                   --
+-- Date:    2021-09-27                                                   --
 -- Version: 0.9                                                          --
 --                                                                       --
 -- Copyright (C) Jesper Frickmann                                        --
@@ -22,6 +22,8 @@
 local name = "SoarF3K"
 
 local options = {
+  { "BgColor", COLOR, WHITE },
+  { "BgOpacity", VALUE, 11, 0, 15 }
 }
 
 local function update(widget, options)

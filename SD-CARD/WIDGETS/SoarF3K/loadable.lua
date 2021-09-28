@@ -34,6 +34,7 @@ local screenTask = libGUI.newGUI()
 local promptSaveScores = libGUI.newGUI()
 
 -- Screen drawing constants
+local HEADER =   40
 local LEFT =     25
 local RGT =      LCD_W - 15
 local TOP =      60
@@ -110,8 +111,11 @@ end
 -- Handle transitions between program states
 local function GotoState(newState)
   state = newState
-  
-	if state < STATE_WINDOW or state == STATE_FREEZE then
+ 
+  -- Stop blinking
+    screenTask.timer0.blink = false
+
+    if state < STATE_WINDOW or state == STATE_FREEZE then
 		-- Stop both timers
 		SetGVTmr(0)
     screenTask.labelTimer0.title = "Target:"
@@ -147,7 +151,9 @@ local function GotoState(newState)
       launches = launches - 1
     end
   
-  elseif state == STATE_FINISHED then
+    lastChange = 0
+ 
+ elseif state == STATE_FINISHED then
     playTone(880, 1000, 0)
   end
   
@@ -394,7 +400,7 @@ local function PokerCall()
     lastChange = getTime()
   end
   
-  if lastChange > 0 and getTime() - lastChange > 100 and state > STATE_IDLE then
+  if state == STATE_COMMITTED and lastChange > 0 and getTime() - lastChange > 100 then
     playTone(3000, 100, PLAY_NOW)
     playDuration(result)
     lastChange = 0
@@ -512,6 +518,11 @@ function widget.background()
 				playDuration(flightTimer, 0)
 			end
 			
+      -- Blink when flight ttimer is negative
+      if flightTimer < 0 then
+        screenTask.timer0.blink = true
+      end
+      
 			if state == STATE_FLYING then
 				-- Within 10 sec. "grace period", cancel the flight
 				if launchPulled then
@@ -618,11 +629,11 @@ local function SetupScreen(gui, title)
     local bat
 
     -- Bleed out background to make all of the screen readable
-    lcd.drawFilledRectangle(0, 0, LCD_W, LCD_H, WHITE, 8)
+    lcd.drawFilledRectangle(0, HEADER, LCD_W, LCD_H - HEADER, options.BgColor, options.BgOpacity)
 
     -- Top bar
-    lcd.drawFilledRectangle(0, 0, LCD_W, 40, COLOR_THEME_SECONDARY1)
-    lcd.drawText(10, 3, gui.title, bit32.bor(BOLD, DBLSIZE, colors.focusText))
+    lcd.drawFilledRectangle(0, 0, LCD_W, HEADER, COLOR_THEME_SECONDARY1)
+    lcd.drawText(10, 3, gui.title, bit32.bor(DBLSIZE, colors.focusText))
 
     -- Date
     local now = getDateTime()
@@ -895,9 +906,9 @@ do -- Setup score keeper screen for F3K and Practice tasks
   -- Add center buttons
   local x = (LCD_W - BUTTON_W) / 2
   local y = TOP
-  screenTask.buttonQR = screenTask.toggleButton(x, y, BUTTON_W, HEIGHT, "QR", false, nil, BOLD + MIDSIZE)
+  screenTask.buttonQR = screenTask.toggleButton(x, y, BUTTON_W, HEIGHT, "QR", false, nil, DBLSIZE)
   y = y + LINE
-  screenTask.buttonEoW = screenTask.toggleButton(x, y, BUTTON_W, HEIGHT, "EoW", true, nil, BOLD + MIDSIZE)
+  screenTask.buttonEoW = screenTask.toggleButton(x, y, BUTTON_W, HEIGHT, "EoW", true, nil, DBLSIZE)
   
   local function callBack(button)
     if state <= STATE_PAUSE then
@@ -922,23 +933,23 @@ do -- Setup score keeper screen for F3K and Practice tasks
   end
   
   y = y + LINE
-  screenTask.button3 = screenTask.button(x, y, BUTTON_W, HEIGHT, "Start", callBack, BOLD + MIDSIZE)
+  screenTask.button3 = screenTask.button(x, y, BUTTON_W, HEIGHT, "Start", callBack, DBLSIZE)
   
   -- Info text label
   y = y + LINE
-  screenTask.labelInfo = screenTask.label(RGT - 250, y, 250, HEIGHT, "", libGUI.flags + RIGHT + BOLD)
+  screenTask.labelInfo = screenTask.label(RGT - 250, y, 250, HEIGHT, "", DBLSIZE + RIGHT)
   
   -- Add timers
   y = TOP
   screenTask.labelTimer0 = screenTask.label(RGT - 160, y, 50, HEIGHT2, "Target:", 0)
   y = y + LINE2
-  local tmr = screenTask.timer(RGT - 160, y, 160, HEIGHT, 0, nil, DBLSIZE + BOLD + RIGHT)
-  tmr.disabled = true
+  screenTask.timer0 = screenTask.timer(RGT - 160, y, 160, HEIGHT, 0, nil, XXLSIZE + RIGHT)
+  screenTask.timer0.disabled = true
   
   y = y + LINE
   screenTask.label(RGT - 160, y, 50, HEIGHT2, "Task:", 0)
   y = y + LINE2
-  tmr = screenTask.timer(RGT - 160, y, 160, HEIGHT, 1, nil, DBLSIZE + BOLD + RIGHT)
+  local tmr = screenTask.timer(RGT - 160, y, 160, HEIGHT, 1, nil, XXLSIZE + RIGHT)
   tmr.disabled = true
 end
 
@@ -985,8 +996,8 @@ do -- Prompt asking to save scores and exit task window
     PopGUI()
   end -- callBack(...)
 
-  promptSaveScores.buttonYes = promptSaveScores.button(LEFT, BOTTOM - HEIGHT, BUTTON_W, HEIGHT, "Yes", callBack, libGUI.flags + BOLD)
-  promptSaveScores.button(RGT - BUTTON_W, BOTTOM - HEIGHT, BUTTON_W, HEIGHT, "No", callBack, libGUI.flags + BOLD)
+  promptSaveScores.buttonYes = promptSaveScores.button(LEFT, BOTTOM - HEIGHT, BUTTON_W, HEIGHT, "Yes", callBack, DBLSIZE)
+  promptSaveScores.button(RGT - BUTTON_W, BOTTOM - HEIGHT, BUTTON_W, HEIGHT, "No", callBack, DBLSIZE)
 
 end
 
