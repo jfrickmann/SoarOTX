@@ -606,7 +606,7 @@ local function drawZone()
   local blink = 0
   local x = 5
   local tmr = model.getTimer(0).value
-  if tmr < 0 then 
+  if tmr < 0 and state == STATE_COMMITTED then 
     blink = BLINK
   end
 
