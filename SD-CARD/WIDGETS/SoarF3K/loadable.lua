@@ -2,8 +2,8 @@
 -- SoarETX F3K score keeper widget, loadable part                        --
 --                                                                       --
 -- Author:  Jesper Frickmann                                             --
--- Date:    2021-09-24                                                   --
--- Version: 0.9                                                          --
+-- Date:    2021-10-02                                                   --
+-- Version: 0.99                                                         --
 --                                                                       --
 -- Copyright (C) Jesper Frickmann                                        --
 --                                                                       --
@@ -53,7 +53,11 @@ local trimSources = {         -- Input sources for the trim buttons
   getFieldInfo("trim-ele").id,
   getFieldInfo("trim-thr").id
 }
+
+-- Battery
+local rxBatV = 0              -- Receiver battery V
 local rxBatSrc                -- Receiver battery source
+local rxBatNxtWarn = 0        -- Time for next battery warning call
 
 -- Constants
 local LS_ALT = getFieldInfo("ls1").id   -- Input ID for allowing altitude calls
@@ -440,6 +444,7 @@ local function InitializeFlight()
 end  --  InitializeFlight()
 
 function widget.background()
+  local now = getTime()
 	local flightMode = getFlightMode()
 	local launchPulled = (flightMode == FM_LAUNCH and prevFM ~= flightMode)
 	local launchReleased = (flightMode ~= prevFM and prevFM == FM_LAUNCH)
@@ -451,9 +456,9 @@ function widget.background()
 	end
 	
   -- Call altitude every 10 sec.
-	if getValue(LS_ALT10) > 0 and getTime() > nextCall then
+	if getValue(LS_ALT10) > 0 and now > nextCall then
 		playNumber(getValue("Alt"), ALT_UNIT)
-		nextCall = getTime() + 1000
+		nextCall = now + 1000
 	end
 
 	-- Write the current flight mode to a telemetry sensor.
@@ -573,6 +578,36 @@ function widget.background()
       GotoState(STATE_FINISHED)
     end
 	end
+  
+  -- Receiver battery
+  if not rxBatSrc then 
+    rxBatSrc = getFieldInfo("Cels")
+    if not rxBatSrc then rxBatSrc = getFieldInfo("RxBt") end
+    if not rxBatSrc then rxBatSrc = getFieldInfo("A1") end
+    if not rxBatSrc then rxBatSrc = getFieldInfo("A2") end
+  end
+  
+  if rxBatSrc then
+    rxBatV = getValue(rxBatSrc.id)
+    
+    if type(rxBatV) == "table" then
+      for i = 2, #rxBatV do
+        rxBatV[1] = math.min(rxBatV[1], rxBatV[i])
+      end
+      rxBatV = rxBatV[1]
+    end
+  end
+
+  if not rxBatV then
+    rxBatV = 0
+  end
+  
+  -- Warn about low receiver battery
+  if now > rxBatNxtWarn and rxBatV < 0.1 * options.Battery then
+    playHaptic(200, 0, 1)
+    playFile("lowbat.wav")
+    rxBatNxtWarn = now + 1500
+  end
 end -- background()
 
 function widget.update(opt)
@@ -593,6 +628,9 @@ end
 -- Pop GUI to return to previous screen
 local function PopGUI()
   if CanPopGUI() then
+    if widget.gui.onPop then
+      widget.gui.onPop()
+    end
     widget.gui = widget.gui.parent
     return true
   end
@@ -648,7 +686,6 @@ local function SetupScreen(gui, title)
   
   function gui.fullScreenRefresh()
     local color
-    local bat
 
     -- Bleed out background to make all of the screen readable
     lcd.drawFilledRectangle(0, HEADER, LCD_W, LCD_H - HEADER, options.BgColor, options.BgOpacity)
@@ -662,31 +699,13 @@ local function SetupScreen(gui, title)
     local str = string.format("%02i:%02i", now.hour, now.min)
     lcd.drawText(LCD_W - 90, 3, str, RIGHT + BOLD + colors.focusText)    
 
-    -- Receiver battery
-    if not rxBatSrc then rxBatSrc = getFieldInfo("Cels") end
-		if not rxBatSrc then rxBatSrc = getFieldInfo("RxBt") end
-		if not rxBatSrc then rxBatSrc = getFieldInfo("A1") end
-		if not rxBatSrc then rxBatSrc = getFieldInfo("A2") end
-		
-    if rxBatSrc then
-      bat = getValue(rxBatSrc.id)
-      
-      if type(bat) == "table" then
-        for i = 2, #bat do
-          bat[1] = math.min(bat[1], bat[i])
-        end
-        bat = bat[1]
-      end
-    end
-
-    if bat then
-      color = colors.focusText
-    else
+    if rxBatV == 0 then
       color = COLOR_THEME_DISABLED
-      bat = 0
+    else
+      color = colors.focusText
     end
     
-    str = string.format("%1.1fV", bat)
+    str = string.format("%1.1fV", rxBatV)
     lcd.drawText(LCD_W - 90, 21, str, RIGHT + BOLD + color)
     
     -- Draw trims
@@ -973,6 +992,11 @@ do -- Setup score keeper screen for F3K and Practice tasks
   y = y + LINE2
   local tmr = screenTask.timer(RGT - 160, y, 160, HEIGHT, 1, nil, XXLSIZE + RIGHT)
   tmr.disabled = true
+  
+  -- Restore default task when leaving
+  function screenTask.onPop()
+    SetupTask("Just Fly!", { 0, -1, 8, false, 0, 2, false })
+  end
 end
 
 do -- Prompt asking to save scores and exit task window
@@ -1010,8 +1034,6 @@ do -- Prompt asking to save scores and exit task window
         io.close(logFile)
       end
     end
-    
-    SetupTask("Just Fly!", { 0, -1, 8, false, 0, 2, false })
     
     -- Dismiss prompt and return to menu
     screenTask.prompt = nil

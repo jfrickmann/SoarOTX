@@ -23,7 +23,8 @@ local name = "SoarF3K"
 
 local options = {
   { "BgColor", COLOR, WHITE },
-  { "BgOpacity", VALUE, 11, 0, 15 }
+  { "BgOpacity", VALUE, 8, 0, 15 },
+  { "Battery", VALUE, 70, 0, 105 }
 }
 
 local function update(widget, options)
