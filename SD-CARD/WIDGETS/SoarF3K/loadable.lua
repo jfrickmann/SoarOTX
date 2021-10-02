@@ -602,11 +602,22 @@ function widget.background()
     rxBatV = 0
   end
   
-  -- Warn about low receiver battery
-  if now > rxBatNxtWarn and rxBatV < 0.1 * options.Battery then
-    playHaptic(200, 0, 1)
-    playFile("lowbat.wav")
-    rxBatNxtWarn = now + 1500
+  -- Warn about low receiver battery or Rx off
+  if now > rxBatNxtWarn then
+    if rxBatV == 0 then
+      if flightMode == FM_LAUNCH then
+        playHaptic(200, 0, 1)
+        playFile("lowbat.wav")
+        rxBatNxtWarn = now + 200
+      end
+    else
+      if rxBatV < 0.1 * options.Battery then
+        playHaptic(200, 0, 1)
+        playFile("lowbat.wav")
+        playNumber(10 * rxBatV + 0.5, 1, PREC1)
+        rxBatNxtWarn = now + 2000
+      end
+    end
   end
 end -- background()
 
