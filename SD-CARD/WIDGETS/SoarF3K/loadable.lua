@@ -22,7 +22,7 @@
 local zone, options = ...     -- zone and options were passed as arguments to chunk(...).
 local widget = { }            -- The widget table will be returned to the main script.
 local libGUI = loadGUI()      -- GUI library
-libGUI.flags = MIDSIZE        -- Default drawing flags
+libGUI.flags = DBLSIZE        -- Default drawing flags
 local colors = libGUI.colors  -- Short cut
 
 -- GUIs for the different screens and popups
@@ -46,6 +46,7 @@ local BUTTON_W = 90
 local PROMPT_W = 260
 local PROMPT_H = 170
 local PROMPT_M = 30
+local N_LINES =   5
 
 local trimSources = {         -- Input sources for the trim buttons
   getFieldInfo("trim-ail").id,
@@ -205,7 +206,7 @@ local function SetupTask(taskName, taskData)
   pokerCalled = false
   
   -- Setup scores
-  for i = 1, 8 do
+  for i = 1, N_LINES do
     if i > taskScores then
       screenTask.scoreLabels[i].hidden = true
       screenTask.scores[i].hidden = true
@@ -657,7 +658,7 @@ local function drawZone()
   end
 
   lcd.drawText(x, 0, screenTask.labelTimer0.title, libGUI.colors.text)
-  lcd.drawTimer(x, 18, tmr, libGUI.colors.text + DBLSIZE + blink)
+  lcd.drawTimer(x, 18, tmr, libGUI.colors.text + blink + DBLSIZE)
   
   tmr = model.getTimer(1).value
   x = zone.w / 2 + 5
@@ -824,7 +825,7 @@ do
     PushGUI(subMenus[item.idx])
   end
 
-  menuMain.menu(LEFT, TOP, 7, items, callBack)
+  menuMain.menu(LEFT, TOP, N_LINES, items, callBack)
   widget.gui = menuMain
 end
 
@@ -855,7 +856,7 @@ do -- Setup F3K tasks menu
     { 420, -1, 1, false, 300, 2, false },   -- A. Last flight
     { 420, -1, 2, false, 180, 2, false },   -- B. Two last 3:00
     { 600, -1, 2, false, 240, 2, false },   -- B. Two last 4:00
-    { 0, 8, 8, true, 180, 2, false },       -- C. AULD
+    { 0, 5, 5, true, 180, 2, false },       -- C. AULD
     { 600, 2, 2, true, 300, 2, true },      -- D. Two flights only
     { 600, -1, 3, true, 2, 3, true },       -- E. Poker 10 min.
     { 900, -1, 3, true, 2, 3, true },       -- E. Poker 15 min.
@@ -875,7 +876,7 @@ do -- Setup F3K tasks menu
     PushGUI(screenTask)
   end
 
-  menuF3K.menu(LEFT, TOP, 7, tasks, callBack)
+  menuF3K.menu(LEFT, TOP, N_LINES, tasks, callBack)
 end
 
 do -- Setup practice tasks menu
@@ -889,8 +890,8 @@ do -- Setup practice tasks menu
 
   -- {win, launches, scores, final, tgtType, scoType, QR }
   local taskData = {
-    { 0, -1, 8, false, 0, 2, false }, -- Just fly
-    { 0, -1, 8, false, 2, 2, true },  -- QR
+    { 0, -1, 5, false, 0, 2, false }, -- Just fly
+    { 0, -1, 5, false, 2, 2, true },  -- QR
     { 600, 2, 2, true, 2, 2, false }  -- Deuces
   }
   
@@ -900,7 +901,7 @@ do -- Setup practice tasks menu
     PushGUI(screenTask)
   end
 
-  menuPractice.menu(LEFT, TOP, 7, tasks, callBack)
+  menuPractice.menu(LEFT, TOP, N_LINES, tasks, callBack)
 end
 
 
@@ -923,16 +924,16 @@ do -- Setup score keeper screen for F3K and Practice tasks
   end
   
   -- Add score times
-  local x = LEFT
   local y = TOP
+  local dy = select(2, lcd.sizeText("", libGUI.flags))
   
   screenTask.scoreLabels = { }
   screenTask.scores = { }
 
-  for i = 1, 8 do
-    screenTask.scoreLabels[i] = screenTask.label(x, y, 20, HEIGHT, string.format("%i.", i))
+  for i = 1, N_LINES do
+    screenTask.scoreLabels[i] = screenTask.label(LEFT, y, 20, HEIGHT, string.format("%i.", i))
     
-    local s = screenTask.timer(x + 20, y, 60, HEIGHT)
+    local s = screenTask.timer(LEFT + 30, y, 60, HEIGHT, 0, nil)
     s.disabled = true
     s.value = "- - -"
     screenTask.scores[i] = s
@@ -949,20 +950,15 @@ do -- Setup score keeper screen for F3K and Practice tasks
       draw(idx)
     end
     
-    if i == 4 then
-      y = TOP
-      x = x + 85
-    else
-      y = y + LINE
-    end
+    y = y + dy
   end
   
   -- Add center buttons
   local x = (LCD_W - BUTTON_W) / 2
   local y = TOP
-  screenTask.buttonQR = screenTask.toggleButton(x, y, BUTTON_W, HEIGHT, "QR", false, nil, DBLSIZE)
+  screenTask.buttonQR = screenTask.toggleButton(x, y, BUTTON_W, HEIGHT, "QR", false, nil)
   y = y + LINE
-  screenTask.buttonEoW = screenTask.toggleButton(x, y, BUTTON_W, HEIGHT, "EoW", true, nil, DBLSIZE)
+  screenTask.buttonEoW = screenTask.toggleButton(x, y, BUTTON_W, HEIGHT, "EoW", true, nil)
   
   local function callBack(button)
     if state <= STATE_PAUSE then
@@ -987,11 +983,11 @@ do -- Setup score keeper screen for F3K and Practice tasks
   end
   
   y = y + LINE
-  screenTask.button3 = screenTask.button(x, y, BUTTON_W, HEIGHT, "Start", callBack, DBLSIZE)
+  screenTask.button3 = screenTask.button(x, y, BUTTON_W, HEIGHT, "Start", callBack)
   
   -- Info text label
   y = y + LINE
-  screenTask.labelInfo = screenTask.label(RGT - 250, y, 250, HEIGHT, "", DBLSIZE + RIGHT)
+  screenTask.labelInfo = screenTask.label(RGT - 250, y, 250, HEIGHT, "", libGUI.flags + RIGHT)
   
   -- Add timers
   y = TOP
@@ -1031,7 +1027,7 @@ do -- Prompt asking to save scores and exit task window
     lcd.drawRectangle(x0, y0, PROMPT_W, PROMPT_H, COLOR_THEME_PRIMARY1, 3)
   end
 
-  promptSaveScores.label(x0, TOP, PROMPT_W, HEIGHT, "Save scores?", DBLSIZE + CENTER)
+  promptSaveScores.label(x0, TOP, PROMPT_W, HEIGHT, "Save scores?", libGUI.flags + CENTER)
 
   local function callBack(button)
     if button == promptSaveScores.buttonYes then
@@ -1059,8 +1055,8 @@ do -- Prompt asking to save scores and exit task window
     screenTask.dismiss()
   end -- callBack(...)
 
-  promptSaveScores.buttonYes = promptSaveScores.button(LEFT, BOTTOM - HEIGHT, BUTTON_W, HEIGHT, "Yes", callBack, DBLSIZE)
-  promptSaveScores.button(RGT - BUTTON_W, BOTTOM - HEIGHT, BUTTON_W, HEIGHT, "No", callBack, DBLSIZE)
+  promptSaveScores.buttonYes = promptSaveScores.button(LEFT, BOTTOM - HEIGHT, BUTTON_W, HEIGHT, "Yes", callBack)
+  promptSaveScores.button(RGT - BUTTON_W, BOTTOM - HEIGHT, BUTTON_W, HEIGHT, "No", callBack)
 
 end
 
