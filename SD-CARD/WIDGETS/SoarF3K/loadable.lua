@@ -2,7 +2,7 @@
 -- SoarETX F3K score keeper widget, loadable part                        --
 --                                                                       --
 -- Author:  Jesper Frickmann                                             --
--- Date:    2021-10-02                                                   --
+-- Date:    2021-10-03                                                   --
 -- Version: 0.99                                                         --
 --                                                                       --
 -- Copyright (C) Jesper Frickmann                                        --
@@ -639,9 +639,6 @@ end
 -- Pop GUI to return to previous screen
 local function PopGUI()
   if CanPopGUI() then
-    if widget.gui.onPop then
-      widget.gui.onPop()
-    end
     widget.gui = widget.gui.parent
     return true
   end
@@ -720,7 +717,6 @@ local function SetupScreen(gui, title)
     lcd.drawText(LCD_W - 90, 21, str, RIGHT + BOLD + color)
     
     -- Draw trims
-    -- Drawing parameters
     local p = {
     --{ x, y, h, w }
       { LCD_W - 191, LCD_H - 13, 177, 8 },
@@ -911,10 +907,16 @@ end
 do -- Setup score keeper screen for F3K and Practice tasks
   SetupScreen(screenTask, "")
   
+  -- Restore default task and dismiss task screen
+  function screenTask.dismiss()  
+    SetupTask("Just Fly!", { 0, -1, 8, false, 0, 2, false })
+    PopGUI()
+  end
+  
   -- Return button shows prompt to save scores instead of popping right away
   function screenTask.buttonRet.callBack()
     if state == STATE_IDLE then
-      PopGUI()
+      screenTask.dismiss()
     else
       screenTask.prompt = promptSaveScores
     end
@@ -1004,10 +1006,16 @@ do -- Setup score keeper screen for F3K and Practice tasks
   local tmr = screenTask.timer(RGT - 160, y, 160, HEIGHT, 1, nil, XXLSIZE + RIGHT)
   tmr.disabled = true
   
-  -- Restore default task when leaving
-  function screenTask.onPop()
-    SetupTask("Just Fly!", { 0, -1, 8, false, 0, 2, false })
+-- Short press EXIT handler must prompt to save scores
+  local function HandleEXIT(event, touchState)
+    if CanPopGUI() then
+      screenTask.buttonRet.callBack()
+      return false
+    else
+      return event
+    end
   end
+  screenTask.SetEventHandler(EVT_VIRTUAL_EXIT, HandleEXIT)
 end
 
 do -- Prompt asking to save scores and exit task window
@@ -1048,7 +1056,7 @@ do -- Prompt asking to save scores and exit task window
     
     -- Dismiss prompt and return to menu
     screenTask.prompt = nil
-    PopGUI()
+    screenTask.dismiss()
   end -- callBack(...)
 
   promptSaveScores.buttonYes = promptSaveScores.button(LEFT, BOTTOM - HEIGHT, BUTTON_W, HEIGHT, "Yes", callBack, DBLSIZE)
