@@ -38,15 +38,15 @@ local HEADER =   40
 local LEFT =     25
 local RGT =      LCD_W - 15
 local TOP =      50
-local LINE =     52
-local LINE2 =    22 
+local LINE =     54
+local LINE2 =    28 
 local HEIGHT =   38
 local HEIGHT2 =  18
 local BUTTON_W = 90
 local PROMPT_W = 260
 local PROMPT_H = 170
 local PROMPT_M = 30
-local N_LINES =   5
+local N_LINES =  5
 
 local trimSources = {         -- Input sources for the trim buttons
   getFieldInfo("trim-ail").id,
@@ -649,42 +649,49 @@ end
 local function drawZone()
   lcd.drawFilledRectangle(0, 0, zone.w, zone.h, options.BgColor, options.BgOpacity)
   
+  -- Draw Rx battery
+  local color = colors.text
+  if rxBatV == 0 then
+    color = COLOR_THEME_DISABLED
+  end
+  str = string.format("%1.1fV", rxBatV)
+  lcd.drawText(zone.w, 0, str, RIGHT + BOLD + color)
+  
+  -- Draw scores
+  x = 5
+  local y = 0
+  local dy = zone.h / N_LINES
+  
+  for i = 1, taskScores do
+    lcd.drawText(x, y, string.format("%i.", i), colors.text + DBLSIZE)
+    if i > #scores then
+      lcd.drawText(x + 30, y, " -  -  -", colors.text + DBLSIZE)
+    else
+      lcd.drawTimer(x + 30, y, scores[i], colors.text + DBLSIZE)
+    end
+    
+    y = y + dy
+  end
+
   -- Draw timers
   local blink = 0
-  local x = 5
+  local x = zone.w - lcd.sizeText("-00:00 ", DBLSIZE)
+  local y = 18
+  
   local tmr = model.getTimer(0).value
   if tmr < 0 and state == STATE_COMMITTED then 
     blink = BLINK
   end
 
-  lcd.drawText(x, 0, screenTask.labelTimer0.title, libGUI.colors.text)
-  lcd.drawTimer(x, 18, tmr, libGUI.colors.text + blink + DBLSIZE)
+  lcd.drawText(x, y, screenTask.labelTimer0.title, colors.text + MIDSIZE)
+  y = y + 24
+  lcd.drawTimer(x, y, tmr, colors.text + blink + DBLSIZE)
   
   tmr = model.getTimer(1).value
-  x = zone.w / 2 + 5
-
-  lcd.drawText(x, 0, "Window:", libGUI.colors.text)
-  lcd.drawTimer(x, 18, tmr, libGUI.colors.text + DBLSIZE)
-  
-  -- Draw scores
-  x = 5
-  local y = 55
-  local dy = (zone.h - y - select(2, lcd.sizeText("X", MIDSIZE))) / 3
-  for i = 1, taskScores do
-    lcd.drawText(x, y, string.format("%i.", i), libGUI.colors.text + MIDSIZE)
-    if i > #scores then
-      lcd.drawText(x + 20, y, " -  -  -", libGUI.colors.text + MIDSIZE)
-    else
-      lcd.drawTimer(x + 20, y, scores[i], libGUI.colors.text + MIDSIZE)
-    end
-    
-    if i == 4 then
-      x = zone.w / 2 + 5
-      y = 55
-    else
-      y = y + dy
-    end
-  end
+  y = y + 48
+  lcd.drawText(x, y, "Task:", colors.text + MIDSIZE)
+  y = y + 24
+  lcd.drawTimer(x, y, tmr, colors.text + DBLSIZE)
 end -- drawZone()
 
 
@@ -745,7 +752,7 @@ local function SetupScreen(gui, title)
     end
     
     -- Flight mode
-    lcd.drawText(LCD_W / 2, LCD_H - 22, select(2, getFlightMode()), CENTER + COLOR_THEME_SECONDARY1)    
+    lcd.drawText(LCD_W / 2, LCD_H - LINE2, select(2, getFlightMode()), MIDSIZE + CENTER + COLOR_THEME_SECONDARY1)    
   end -- fullScreenRefresh()
   
   -- Return button
@@ -910,7 +917,7 @@ do -- Setup score keeper screen for F3K and Practice tasks
   
   -- Restore default task and dismiss task screen
   function screenTask.dismiss()  
-    SetupTask("Just Fly!", { 0, -1, 8, false, 0, 2, false })
+    SetupTask("Just Fly!", { 0, -1, 5, false, 0, 2, false })
     PopGUI()
   end
   
@@ -991,13 +998,13 @@ do -- Setup score keeper screen for F3K and Practice tasks
   
   -- Add timers
   y = TOP
-  screenTask.labelTimer0 = screenTask.label(RGT - 160, y, 50, HEIGHT2, "Target:", 0)
+  screenTask.labelTimer0 = screenTask.label(RGT - 160, y, 50, HEIGHT2, "Target:", MIDSIZE)
   y = y + LINE2
   screenTask.timer0 = screenTask.timer(RGT - 160, y, 160, HEIGHT, 0, nil, XXLSIZE + RIGHT)
   screenTask.timer0.disabled = true
   
   y = y + LINE
-  screenTask.label(RGT - 160, y, 50, HEIGHT2, "Task:", 0)
+  screenTask.label(RGT - 160, y, 50, HEIGHT2, "Task:", MIDSIZE)
   y = y + LINE2
   local tmr = screenTask.timer(RGT - 160, y, 160, HEIGHT, 1, nil, XXLSIZE + RIGHT)
   tmr.disabled = true
@@ -1065,7 +1072,7 @@ do -- Setup score browser screen
 end
 
 -- Initialize stuff
-SetupTask("Just Fly!", { 0, -1, 8, false, 0, 2, false })
+SetupTask("Just Fly!", { 0, -1, 5, false, 0, 2, false })
 widget.update(options)
 
 return widget
