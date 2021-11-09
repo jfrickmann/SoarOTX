@@ -2,7 +2,7 @@
 -- SoarETX F3K score keeper widget, loadable part                        --
 --                                                                       --
 -- Author:  Jesper Frickmann                                             --
--- Date:    2021-10-03                                                   --
+-- Date:    2021-11-09                                                   --
 -- Version: 0.99                                                         --
 --                                                                       --
 -- Copyright (C) Jesper Frickmann                                        --
@@ -29,9 +29,9 @@ local colors = libGUI.colors  -- Short cut
 local menuMain = libGUI.newGUI()
 local menuF3K = libGUI.newGUI()
 local menuPractice = libGUI.newGUI()
-local menuScores = libGUI.newGUI()
 local screenTask = libGUI.newGUI()
 local promptSaveScores = libGUI.newGUI()
+local menuScores = { }
 
 -- Screen drawing constants
 local HEADER =   40
@@ -107,6 +107,9 @@ local pokerCalled     -- Lock in time in Poker task
 local lastInput = 0   -- For announcing changes in PokerCall
 local lastChange = 0  -- Same
 local tblStep = { {30, 5}, {60, 10}, {120, 15}, {210, 30}, {420, 60}, {taskWindow + 60} } -- Step sizes for input of call time
+
+-- Browsing scores
+local SCORE_FILE = "/LOGS/JF F3K Scores.csv"
 
 -- Set GV for controlling timers
 local function SetGVTmr(tmr)
@@ -665,7 +668,7 @@ local function drawZone()
   for i = 1, taskScores do
     lcd.drawText(x, y, string.format("%i.", i), colors.text + DBLSIZE)
     if i > #scores then
-      lcd.drawText(x + 30, y, " -  -  -", colors.text + DBLSIZE)
+      lcd.drawText(x + 30, y, "  -   -   -", colors.text + DBLSIZE)
     else
       lcd.drawTimer(x + 30, y, scores[i], colors.text + DBLSIZE)
     end
@@ -708,12 +711,12 @@ local function SetupScreen(gui, title)
 
     -- Top bar
     lcd.drawFilledRectangle(0, 0, LCD_W, HEADER, COLOR_THEME_SECONDARY1)
-    lcd.drawText(10, 3, gui.title, bit32.bor(DBLSIZE, colors.focusText))
+    lcd.drawText(10, 2, gui.title, bit32.bor(DBLSIZE, colors.focusText))
 
     -- Date
     local now = getDateTime()
     local str = string.format("%02i:%02i", now.hour, now.min)
-    lcd.drawText(LCD_W - 90, 3, str, RIGHT + BOLD + colors.focusText)    
+    lcd.drawText(LCD_W - 80, 6, str, RIGHT + MIDSIZE + colors.focusText)    
 
     if rxBatV == 0 then
       color = COLOR_THEME_DISABLED
@@ -722,7 +725,7 @@ local function SetupScreen(gui, title)
     end
     
     str = string.format("%1.1fV", rxBatV)
-    lcd.drawText(LCD_W - 90, 21, str, RIGHT + BOLD + color)
+    lcd.drawText(LCD_W - 140, 6, str, RIGHT + MIDSIZE + color)
     
     -- Draw trims
     local p = {
@@ -809,7 +812,7 @@ local function SetupScreen(gui, title)
   gui.SetEventHandler(EVT_VIRTUAL_EXIT, HandleEXIT)
   
   return gui
-end -- NewScreen
+end -- SetupScreen
 
 -- Setup main menu
 do
@@ -1038,22 +1041,22 @@ do -- Prompt asking to save scores and exit task window
 
   local function callBack(button)
     if button == promptSaveScores.buttonYes then
-      local logFile = io.open("/LOGS/JF F3K Scores.csv", "a")
-      if logFile then
-        io.write(logFile, string.format("%s,%s", model.getInfo().name, screenTask.title))
+      local scoreFile = io.open(SCORE_FILE, "a")
+      if scoreFile then
+        io.write(scoreFile, string.format("%s,%s", model.getInfo().name, screenTask.title))
 
         local now = getDateTime()				
-        io.write(logFile, string.format(",%04i-%02i-%02i", now.year, now.mon, now.day))
-        io.write(logFile, string.format(",%02i:%02i", now.hour, now.min))				
-        io.write(logFile, string.format(",s,%i", taskScores))
-        io.write(logFile, string.format(",%i", totalScore))
+        io.write(scoreFile, string.format(",%04i-%02i-%02i", now.year, now.mon, now.day))
+        io.write(scoreFile, string.format(",%02i:%02i", now.hour, now.min))				
+        io.write(scoreFile, string.format(",s,%i", taskScores))
+        io.write(scoreFile, string.format(",%i", totalScore))
         
         for i = 1, #scores do
-          io.write(logFile, string.format(",%i", scores[i]))
+          io.write(scoreFile, string.format(",%i", scores[i]))
         end
         
-        io.write(logFile, "\n")
-        io.close(logFile)
+        io.write(scoreFile, "\n")
+        io.close(scoreFile)
       end
     end
     
@@ -1068,7 +1071,227 @@ do -- Prompt asking to save scores and exit task window
 end
 
 do -- Setup score browser screen
-  SetupScreen(menuScores, "TODO browse scores")
+  local RECORD_H = 58     -- Height of a record on the screen
+  local records           -- Score records
+  local firstRecord       -- First record on the screen
+  local scoreFile         -- File handle
+  local pos               -- Read position in file
+  local firstRecordTouch  -- First record at the start of touch slide
+  
+  -- Read a line of a log file
+  local function ReadLine(scoreFile, pos)
+    if scoreFile and pos then
+      io.seek(scoreFile, pos)
+      local str = io.read(scoreFile, 100)
+      local endPos = string.find(str, "\n")
+
+      if endPos then
+        pos = pos + endPos
+        str = string.sub(str, 1, endPos - 1)
+        return pos, str
+      end
+    end
+    
+    -- No "\n" was found; return nothing
+    return 0, ""
+  end  --  ReadLine()
+
+  -- Read a line a split comma separated fields
+  local function ParseLineData(str)
+    local i = 0
+    local record = { }
+    record.scores = { }
+
+    for field in string.gmatch(str, "[^,]+") do
+      i = i + 1
+      
+      if i == 1 then
+        record.planeName = field
+      elseif i == 2 then
+        record.taskName = field
+      elseif i == 3 then
+        record.dateStr = field
+      elseif i == 4 then
+        record.timeStr = field
+      elseif i == 5 then
+        record.unitStr = field
+      elseif i == 6 then
+        record.taskScores = tonumber(field)
+      elseif i == 7 then
+        record.totalScore = tonumber(field)
+      else
+        record.scores[#record.scores + 1] = tonumber(field)
+      end
+    end
+    
+    if record.totalScore then
+      records[#records + 1] = record
+    end
+  end  --  ReadLineData()
+  
+  local function DrawRecord(i, r)
+    local top = 40 + i * RECORD_H
+    local left = 200
+    local w = (LCD_W - left - 10) / 3
+    local record = records[r]
+    
+    if r % 2 == 0 then
+      lcd.drawFilledRectangle(1, top, LCD_W, RECORD_H, COLOR_THEME_SECONDARY2, 6)
+    else
+      lcd.drawFilledRectangle(1, top, LCD_W, RECORD_H, COLOR_THEME_SECONDARY3, 6)
+    end
+    
+    lcd.drawText(10, top + 6, record.taskName, BOLD)
+    lcd.drawText(10, top + 24, record.dateStr .. " " .. record.timeStr, SMLSIZE)
+    lcd.drawText(10, top + 36, record.planeName, SMLSIZE)
+    
+    local x = left
+    local y = top + 6
+    
+    for j = 1, math.min(5, record.taskScores) do
+      lcd.drawText(x, y, j .. ".")
+
+      if j > #record.scores then
+        lcd.drawText(x + 18, y, " -  -  -")
+      elseif record.unitStr == "s" then
+        lcd.drawTimer(x + 18, y, record.scores[j])
+      else
+        lcd.drawText(x + 18, y, record.scores[j] .. record.unitStr)
+      end
+      
+      if j == 3 then
+        x = left
+        y = top + 30
+      else
+        x = x + w
+      end
+    end
+    
+    lcd.drawText(left + 2 * w, top + 30, "Total: " .. record.totalScore .. record.unitStr)
+  end -- DrawRecord
+
+  function menuScores.run(event, touchState)
+    local color
+    local PROMPT_W = 300
+    local PROMPT_H = 200
+
+    if not event then
+      drawZone()
+      return
+    end
+  
+    -- Bleed out background to make all of the screen readable
+    lcd.drawFilledRectangle(0, HEADER, LCD_W, LCD_H - HEADER, options.BgColor, options.BgOpacity)
+
+    -- Top bar
+    lcd.drawFilledRectangle(0, 0, LCD_W, HEADER, COLOR_THEME_SECONDARY1)
+    lcd.drawText(10, 2, "Score Card", bit32.bor(DBLSIZE, colors.focusText))
+
+    -- Date
+    local now = getDateTime()
+    local str = string.format("%02i:%02i", now.hour, now.min)
+    lcd.drawText(LCD_W - 80, 6, str, RIGHT + MIDSIZE + colors.focusText)    
+
+    if rxBatV == 0 then
+      color = COLOR_THEME_DISABLED
+    else
+      color = colors.focusText
+    end
+    
+    str = string.format("%1.1fV", rxBatV)
+    lcd.drawText(LCD_W - 140, 6, str, RIGHT + MIDSIZE + color)
+    
+    -- Return button
+    lcd.drawFilledRectangle(LCD_W - 74, 6, 28, 28, COLOR_THEME_SECONDARY1)
+    lcd.drawRectangle(LCD_W - 74, 6, 28, 28, colors.focusText)
+    
+    for i = -1, 1 do
+      lcd.drawLine(LCD_W - 60 + i, 12, LCD_W - 60 + i, 30, SOLID, colors.focusText)
+    end
+    
+    for i = 0, 3 do
+      lcd.drawLine(LCD_W - 60 , 10 + i, LCD_W - 50 - i, 20, SOLID, colors.focusText)
+      lcd.drawLine(LCD_W - 60 , 10 + i, LCD_W - 70 + i, 20, SOLID, colors.focusText)
+    end
+
+    -- Minimize button
+    lcd.drawFilledRectangle(LCD_W - 34, 6, 28, 28, COLOR_THEME_SECONDARY1)
+    lcd.drawRectangle(LCD_W - 34, 6, 28, 28, colors.focusText)
+    for y = 19, 21 do
+      lcd.drawLine(LCD_W - 30, y, LCD_W - 10, y, SOLID, colors.focusText)
+    end
+  
+    if event ~= EVT_TOUCH_SLIDE then
+      firstRecordTouch = nil
+    end
+    
+    if event == EVT_VIRTUAL_EXIT then
+      firstRecord = nil
+      PopGUI()
+    elseif event == EVT_TOUCH_TAP then
+      local x, y = touchState.x, touchState.y
+      
+      if 6 <= y and y <= 34 then
+        if LCD_W - 74 <= x and x <= LCD_W - 40 then
+          firstRecord = nil
+          PopGUI()
+        elseif x >= LCD_W - 34 then
+          lcd.exitFullScreen()
+        end
+      end
+    elseif event == EVT_VIRTUAL_PREV then
+      firstRecord = math.max(1, firstRecord - 1)
+    elseif event == EVT_VIRTUAL_NEXT then
+      firstRecord = math.min(#records - 3, firstRecord + 1)
+    elseif event == EVT_TOUCH_SLIDE then
+      if not firstRecordTouch then
+        firstRecordTouch = firstRecord
+      end
+      local delta = math.floor((touchState.startY - touchState.y) / RECORD_H + 0.5)
+      firstRecord = math.max(1, math.min(#records - 3, firstRecordTouch + delta))
+    end
+
+    if firstRecord then
+      for i = 0, 3 do
+        local r = i + firstRecord
+        
+        if r > #records then
+          break
+        end
+        
+        DrawRecord(i, r)
+      end
+    
+    else -- Read score records
+      lcd.drawText(LCD_W / 2, LCD_H / 2, "Reading scores ...", VCENTER + CENTER + DBLSIZE + COLOR_THEME_PRIMARY1)      
+
+      if not scoreFile then
+        scoreFile = io.open(SCORE_FILE, "r")
+        pos = 0
+        if scoreFile then
+          records = { }
+        end
+      end
+      
+      if scoreFile then
+        for i = 1, 10 do
+          local str
+          pos, str = ReadLine(scoreFile, pos)
+          ParseLineData(str)
+          if pos == 0 then
+            io.close(scoreFile)
+            firstRecord = math.max(1, #records - 3)
+            
+            if #records == 0 then
+              firstRecord = nil
+            end
+            
+            break
+          end
+        end
+      end
+    end
+  end -- run(...)
 end
 
 -- Initialize stuff
