@@ -2,7 +2,7 @@
 -- SoarETX F3K score keeper widget, loadable part                        --
 --                                                                       --
 -- Author:  Jesper Frickmann                                             --
--- Date:    2021-11-09                                                   --
+-- Date:    2021-11-27                                                   --
 -- Version: 0.99                                                         --
 --                                                                       --
 -- Copyright (C) Jesper Frickmann                                        --
@@ -61,12 +61,18 @@ local rxBatSrc                -- Receiver battery source
 local rxBatNxtWarn = 0        -- Time for next battery warning call
 
 -- Constants
-local LS_ALT = getFieldInfo("ls1").id   -- Input ID for allowing altitude calls
-local LS_ALT10 = getFieldInfo("ls6").id -- Input ID for altitude calls every 10 sec.
-local FM_ADJUST = 1                     -- Adjustment flight mode
-local FM_LAUNCH = 2                     -- Launch/motor flight mode
-local GV_BAT = 6                        -- GV used for battery warning in FM_ADJUST
-local ALT_UNIT = 9                      -- Altitude units (m)
+local LS_ALT     =  0 -- LS allowing altitude calls
+local LS_ALT10   =  5 -- LS for altitude calls every 10 sec.
+local LS_ALIGN   = 10 -- LS for aligning flaperons
+local LS_CENTER  = 11 -- LS for centering flaperons
+local LS_ADJUST  = 12 -- LS for adjusting other mixes
+local LS_WIN_TMR = 15 -- LS for the window timer
+local LS_FLT_TMR = 16 -- LS for the flight timer
+
+local FM_ADJUST  =  1 -- Adjustment flight mode
+local FM_LAUNCH  =  2 -- Launch/motor flight mode
+local GV_BAT     =  6 -- GV used for battery warning in FM_ADJUST
+local ALT_UNIT   =  9 -- Altitude units (m)
 local COLOR_NOTIFY_TEXT = lcd.RGB(255, 255, 127)
 local COLOR_NOTIFY_BG =   lcd.RGB(0, 0, 128)
 
@@ -111,33 +117,28 @@ local tblStep = { {30, 5}, {60, 10}, {120, 15}, {210, 30}, {420, 60}, {taskWindo
 -- Browsing scores
 local SCORE_FILE = "/LOGS/JF F3K Scores.csv"
 
--- Set GV for controlling timers
-local function SetGVTmr(tmr)
-	model.setGlobalVariable(8, 0, tmr)
-end
-
 -- Handle transitions between program states
 local function GotoState(newState)
   state = newState
  
   -- Stop blinking
-    screenTask.timer0.blink = false
+  screenTask.timer0.blink = false
 
-    if state < STATE_WINDOW or state == STATE_FREEZE then
-		-- Stop both timers
-		SetGVTmr(0)
+  if state < STATE_WINDOW or state == STATE_FREEZE then
+		setStickySwitch(LS_WIN_TMR, false)
+		setStickySwitch(LS_FLT_TMR, false)
     screenTask.labelTimer0.title = "Target:"
     screenTask.locked = false
 
   elseif state == STATE_WINDOW then
-		-- Start task window timer, but not flight timer
-		SetGVTmr(1)
+		setStickySwitch(LS_WIN_TMR, true)
+		setStickySwitch(LS_FLT_TMR, false)
     screenTask.labelTimer0.title = "Target:"
     screenTask.locked = true
 	
   elseif state == STATE_FLYING then
-		-- Start both timers
-		SetGVTmr(2)
+		setStickySwitch(LS_WIN_TMR, true)
+		setStickySwitch(LS_FLT_TMR, true)
     screenTask.labelTimer0.title = "Flight:"
     screenTask.locked = true
     
@@ -151,7 +152,7 @@ local function GotoState(newState)
   
   elseif state == STATE_COMMITTED then
     -- Call launch height
-    if getValue(LS_ALT) > 0 then
+    if getLogicalSwitchValue(LS_ALT) then
       playNumber(getValue("Alt+"), ALT_UNIT)
     end
     
@@ -460,7 +461,7 @@ function widget.background()
 	end
 	
   -- Call altitude every 10 sec.
-	if getValue(LS_ALT10) > 0 and now > nextCall then
+	if getLogicalSwitchValue(LS_ALT10) and now > nextCall then
 		playNumber(getValue("Alt"), ALT_UNIT)
 		nextCall = now + 1000
 	end
