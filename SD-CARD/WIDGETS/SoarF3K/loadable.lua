@@ -2,7 +2,7 @@
 -- SoarETX F3K score keeper widget, loadable part                        --
 --                                                                       --
 -- Author:  Jesper Frickmann                                             --
--- Date:    2021-11-27                                                   --
+-- Date:    2021-11-29                                                   --
 -- Version: 0.99                                                         --
 --                                                                       --
 -- Copyright (C) Jesper Frickmann                                        --
@@ -1228,31 +1228,33 @@ do -- Setup score browser screen
     
     if event == EVT_VIRTUAL_EXIT then
       firstRecord = nil
-      PopGUI()
+      return PopGUI()
     elseif event == EVT_TOUCH_TAP then
       local x, y = touchState.x, touchState.y
       
       if 6 <= y and y <= 34 then
         if LCD_W - 74 <= x and x <= LCD_W - 40 then
           firstRecord = nil
-          PopGUI()
+          return PopGUI()
         elseif x >= LCD_W - 34 then
           lcd.exitFullScreen()
         end
       end
-    elseif event == EVT_VIRTUAL_PREV then
-      firstRecord = math.max(1, firstRecord - 1)
-    elseif event == EVT_VIRTUAL_NEXT then
-      firstRecord = math.min(#records - 3, firstRecord + 1)
-    elseif event == EVT_TOUCH_SLIDE then
-      if not firstRecordTouch then
-        firstRecordTouch = firstRecord
-      end
-      local delta = math.floor((touchState.startY - touchState.y) / RECORD_H + 0.5)
-      firstRecord = math.max(1, math.min(#records - 3, firstRecordTouch + delta))
     end
 
     if firstRecord then
+      if event == EVT_VIRTUAL_PREV then
+        firstRecord = math.max(1, firstRecord - 1)
+      elseif event == EVT_VIRTUAL_NEXT then
+        firstRecord = math.min(#records - 3, firstRecord + 1)
+      elseif event == EVT_TOUCH_SLIDE then
+        if not firstRecordTouch then
+          firstRecordTouch = firstRecord
+        end
+        local delta = math.floor((touchState.startY - touchState.y) / RECORD_H + 0.5)
+        firstRecord = math.max(1, math.min(#records - 3, firstRecordTouch + delta))
+      end
+
       for i = 0, 3 do
         local r = i + firstRecord
         
@@ -1281,6 +1283,7 @@ do -- Setup score browser screen
           ParseLineData(str)
           if pos == 0 then
             io.close(scoreFile)
+            scoreFile = nil
             firstRecord = math.max(1, #records - 3)
             
             if #records == 0 then
