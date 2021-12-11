@@ -2,7 +2,7 @@
 -- SoarETX F3K score keeper widget, loadable part                        --
 --                                                                       --
 -- Author:  Jesper Frickmann                                             --
--- Date:    2021-11-29                                                   --
+-- Date:    2021-12-10                                                   --
 -- Version: 0.99                                                         --
 --                                                                       --
 -- Copyright (C) Jesper Frickmann                                        --
@@ -69,12 +69,8 @@ local LS_ADJUST  = 12 -- LS for adjusting other mixes
 local LS_WIN_TMR = 15 -- LS for the window timer
 local LS_FLT_TMR = 16 -- LS for the flight timer
 
-local FM_ADJUST  =  1 -- Adjustment flight mode
 local FM_LAUNCH  =  2 -- Launch/motor flight mode
-local GV_BAT     =  6 -- GV used for battery warning in FM_ADJUST
 local ALT_UNIT   =  9 -- Altitude units (m)
-local COLOR_NOTIFY_TEXT = lcd.RGB(255, 255, 127)
-local COLOR_NOTIFY_BG =   lcd.RGB(0, 0, 128)
 
 -- Program states
 local STATE_IDLE = 1      -- Task window not running
@@ -726,7 +722,7 @@ local function SetupScreen(gui, title)
     end
     
     str = string.format("%1.1fV", rxBatV)
-    lcd.drawText(LCD_W - 140, 6, str, RIGHT + MIDSIZE + color)
+    lcd.drawText(LCD_W - 145, 6, str, RIGHT + MIDSIZE + color)
     
     -- Draw trims
     local p = {
@@ -817,26 +813,27 @@ end -- SetupScreen
 
 -- Setup main menu
 do
+  local WIDTH = 180
+  local HEIGHT = 45
+  local ROW = 65
+  x = 40
+  y = 60
+  
   SetupScreen(menuMain, "SoarETX  F3K")
 
-  local items = {
-    "1. F3K tasks",
-    "2. Practice tasks",
-    "3. View saved scores"
-  }
-  
-  local subMenus = {
-    menuF3K,
-    menuPractice,
-    menuScores
-  }
-  
-  -- Call back function running when a menu item was selected
-  local function callBack(item, event, touchState)
-    PushGUI(subMenus[item.idx])
+  -- Generate callbacks with closure for calling submenus
+  local function makeCallBack(subMenu)
+    return function()
+      PushGUI(subMenu)
+    end
   end
 
-  menuMain.menu(LEFT, TOP, N_LINES, items, callBack)
+  menuMain.button(x, y, WIDTH, HEIGHT, "F3K tasks", makeCallBack(menuF3K))
+  y = y + ROW
+  menuMain.button(x, y, WIDTH, HEIGHT, "Practice", makeCallBack(menuPractice))
+  y = y + ROW
+  menuMain.button(x, y, WIDTH, HEIGHT, "Scores", makeCallBack(menuScores))
+  
   widget.gui = menuMain
 end
 
