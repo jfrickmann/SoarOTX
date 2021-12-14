@@ -2,7 +2,7 @@
 -- SoarETX F3K score keeper widget, loadable part                        --
 --                                                                       --
 -- Author:  Jesper Frickmann                                             --
--- Date:    2021-12-10                                                   --
+-- Date:    2021-12-13                                                   --
 -- Version: 0.99                                                         --
 --                                                                       --
 -- Copyright (C) Jesper Frickmann                                        --
@@ -650,7 +650,7 @@ local function drawZone()
   lcd.drawFilledRectangle(0, 0, zone.w, zone.h, options.BgColor, options.BgOpacity)
   
   -- Draw Rx battery
-  local color = colors.text
+  local color = colors.primary3
   if rxBatV == 0 then
     color = COLOR_THEME_DISABLED
   end
@@ -663,11 +663,11 @@ local function drawZone()
   local dy = zone.h / N_LINES
   
   for i = 1, taskScores do
-    lcd.drawText(x, y, string.format("%i.", i), colors.text + DBLSIZE)
+    lcd.drawText(x, y, string.format("%i.", i), colors.primary3 + DBLSIZE)
     if i > #scores then
-      lcd.drawText(x + 30, y, "  -   -   -", colors.text + DBLSIZE)
+      lcd.drawText(x + 30, y, "  -   -   -", colors.primary3 + DBLSIZE)
     else
-      lcd.drawTimer(x + 30, y, scores[i], colors.text + DBLSIZE)
+      lcd.drawTimer(x + 30, y, scores[i], colors.primary3 + DBLSIZE)
     end
     
     y = y + dy
@@ -683,15 +683,15 @@ local function drawZone()
     blink = BLINK
   end
 
-  lcd.drawText(x, y, screenTask.labelTimer0.title, colors.text + MIDSIZE)
+  lcd.drawText(x, y, screenTask.labelTimer0.title, colors.primary3 + MIDSIZE)
   y = y + 24
-  lcd.drawTimer(x, y, tmr, colors.text + blink + DBLSIZE)
+  lcd.drawTimer(x, y, tmr, colors.primary3 + blink + DBLSIZE)
   
   tmr = model.getTimer(1).value
   y = y + 48
-  lcd.drawText(x, y, "Task:", colors.text + MIDSIZE)
+  lcd.drawText(x, y, "Task:", colors.primary3 + MIDSIZE)
   y = y + 24
-  lcd.drawTimer(x, y, tmr, colors.text + DBLSIZE)
+  lcd.drawTimer(x, y, tmr, colors.primary3 + DBLSIZE)
 end -- drawZone()
 
 
@@ -708,17 +708,17 @@ local function SetupScreen(gui, title)
 
     -- Top bar
     lcd.drawFilledRectangle(0, 0, LCD_W, HEADER, COLOR_THEME_SECONDARY1)
-    lcd.drawText(10, 2, gui.title, bit32.bor(DBLSIZE, colors.focusText))
+    lcd.drawText(10, 2, gui.title, bit32.bor(DBLSIZE, colors.primary2))
 
     -- Date
     local now = getDateTime()
     local str = string.format("%02i:%02i", now.hour, now.min)
-    lcd.drawText(LCD_W - 80, 6, str, RIGHT + MIDSIZE + colors.focusText)    
+    lcd.drawText(LCD_W - 80, 6, str, RIGHT + MIDSIZE + colors.primary2)    
 
     if rxBatV == 0 then
       color = COLOR_THEME_DISABLED
     else
-      color = colors.focusText
+      color = colors.primary2
     end
     
     str = string.format("%1.1fV", rxBatV)
@@ -746,9 +746,9 @@ local function SetupScreen(gui, title)
       end
       
       lcd.drawFilledRectangle(q[1], q[2], q[3], q[4], COLOR_THEME_SECONDARY1)
-      lcd.drawFilledRectangle(x - 7, y - 7, 15, 15, COLOR_THEME_PRIMARY1)
-      lcd.drawFilledRectangle(x - 8, y - 8, 15, 15, colors.buttonBackground)
-      lcd.drawNumber(x, y, value, SMLSIZE + VCENTER + CENTER + colors.focusText)
+      lcd.drawFilledRectangle(x - 7, y - 7, 15, 15, colors.primary1)
+      lcd.drawFilledRectangle(x - 8, y - 8, 15, 15, colors.focus)
+      lcd.drawNumber(x, y, value, SMLSIZE + VCENTER + CENTER + colors.primary2)
     end
     
     -- Flight mode
@@ -765,7 +765,7 @@ local function SetupScreen(gui, title)
     drawRet(idx)
 
     if CanPopGUI() then
-      color = colors.focusText
+      color = colors.primary2
       gui.buttonRet.disabled = nil
     else
       color = COLOR_THEME_DISABLED
@@ -792,9 +792,9 @@ local function SetupScreen(gui, title)
     drawMin(idx)
     
     lcd.drawFilledRectangle(LCD_W - 34, 6, 28, 28, COLOR_THEME_SECONDARY1)
-    lcd.drawRectangle(LCD_W - 34, 6, 28, 28, colors.focusText)
+    lcd.drawRectangle(LCD_W - 34, 6, 28, 28, colors.primary2)
     for y = 19, 21 do
-      lcd.drawLine(LCD_W - 30, y, LCD_W - 10, y, SOLID, colors.focusText)
+      lcd.drawLine(LCD_W - 30, y, LCD_W - 10, y, SOLID, colors.primary2)
     end
   end
   
@@ -1031,8 +1031,8 @@ do -- Prompt asking to save scores and exit task window
   local BOTTOM = y0 + PROMPT_H - PROMPT_M
   
   function promptSaveScores.fullScreenRefresh()
-    lcd.drawFilledRectangle(x0, y0, PROMPT_W, PROMPT_H, COLOR_THEME_PRIMARY2, 2)
-    lcd.drawRectangle(x0, y0, PROMPT_W, PROMPT_H, COLOR_THEME_PRIMARY1, 3)
+    lcd.drawFilledRectangle(x0, y0, PROMPT_W, PROMPT_H, colors.primary2, 2)
+    lcd.drawRectangle(x0, y0, PROMPT_W, PROMPT_H, colors.primary1, 3)
   end
 
   promptSaveScores.label(x0, TOP, PROMPT_W, HEIGHT, "Save scores?", libGUI.flags + CENTER)
@@ -1134,9 +1134,9 @@ do -- Setup score browser screen
     local record = records[r]
     
     if r % 2 == 0 then
-      lcd.drawFilledRectangle(1, top, LCD_W, RECORD_H, COLOR_THEME_SECONDARY2, 6)
+      lcd.drawFilledRectangle(0, top, LCD_W, RECORD_H, COLOR_THEME_SECONDARY2, 6)
     else
-      lcd.drawFilledRectangle(1, top, LCD_W, RECORD_H, COLOR_THEME_SECONDARY3, 6)
+      lcd.drawFilledRectangle(0, top, LCD_W, RECORD_H, COLOR_THEME_SECONDARY3, 6)
     end
     
     lcd.drawText(10, top + 6, record.taskName, BOLD)
@@ -1183,17 +1183,17 @@ do -- Setup score browser screen
 
     -- Top bar
     lcd.drawFilledRectangle(0, 0, LCD_W, HEADER, COLOR_THEME_SECONDARY1)
-    lcd.drawText(10, 2, "Score Card", bit32.bor(DBLSIZE, colors.focusText))
+    lcd.drawText(10, 2, "Score Card", bit32.bor(DBLSIZE, colors.primary2))
 
     -- Date
     local now = getDateTime()
     local str = string.format("%02i:%02i", now.hour, now.min)
-    lcd.drawText(LCD_W - 80, 6, str, RIGHT + MIDSIZE + colors.focusText)    
+    lcd.drawText(LCD_W - 80, 6, str, RIGHT + MIDSIZE + colors.primary2)    
 
     if rxBatV == 0 then
       color = COLOR_THEME_DISABLED
     else
-      color = colors.focusText
+      color = colors.primary2
     end
     
     str = string.format("%1.1fV", rxBatV)
@@ -1201,22 +1201,22 @@ do -- Setup score browser screen
     
     -- Return button
     lcd.drawFilledRectangle(LCD_W - 74, 6, 28, 28, COLOR_THEME_SECONDARY1)
-    lcd.drawRectangle(LCD_W - 74, 6, 28, 28, colors.focusText)
+    lcd.drawRectangle(LCD_W - 74, 6, 28, 28, colors.primary2)
     
     for i = -1, 1 do
-      lcd.drawLine(LCD_W - 60 + i, 12, LCD_W - 60 + i, 30, SOLID, colors.focusText)
+      lcd.drawLine(LCD_W - 60 + i, 12, LCD_W - 60 + i, 30, SOLID, colors.primary2)
     end
     
     for i = 0, 3 do
-      lcd.drawLine(LCD_W - 60 , 10 + i, LCD_W - 50 - i, 20, SOLID, colors.focusText)
-      lcd.drawLine(LCD_W - 60 , 10 + i, LCD_W - 70 + i, 20, SOLID, colors.focusText)
+      lcd.drawLine(LCD_W - 60 , 10 + i, LCD_W - 50 - i, 20, SOLID, colors.primary2)
+      lcd.drawLine(LCD_W - 60 , 10 + i, LCD_W - 70 + i, 20, SOLID, colors.primary2)
     end
 
     -- Minimize button
     lcd.drawFilledRectangle(LCD_W - 34, 6, 28, 28, COLOR_THEME_SECONDARY1)
-    lcd.drawRectangle(LCD_W - 34, 6, 28, 28, colors.focusText)
+    lcd.drawRectangle(LCD_W - 34, 6, 28, 28, colors.primary2)
     for y = 19, 21 do
-      lcd.drawLine(LCD_W - 30, y, LCD_W - 10, y, SOLID, colors.focusText)
+      lcd.drawLine(LCD_W - 30, y, LCD_W - 10, y, SOLID, colors.primary2)
     end
   
     if event ~= EVT_TOUCH_SLIDE then
@@ -1263,7 +1263,7 @@ do -- Setup score browser screen
       end
     
     else -- Read score records
-      lcd.drawText(LCD_W / 2, LCD_H / 2, "Reading scores ...", VCENTER + CENTER + DBLSIZE + COLOR_THEME_PRIMARY1)      
+      lcd.drawText(LCD_W / 2, LCD_H / 2, "Reading scores ...", VCENTER + CENTER + DBLSIZE + colors.primary1)      
 
       if not scoreFile then
         scoreFile = io.open(SCORE_FILE, "r")
