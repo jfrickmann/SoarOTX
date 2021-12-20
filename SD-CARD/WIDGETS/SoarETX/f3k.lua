@@ -1,8 +1,8 @@
 ---------------------------------------------------------------------------
--- SoarETX F3K score keeper widget, loadable part                        --
+-- SoarETX F3K score keeper, loadable component                          --
 --                                                                       --
 -- Author:  Jesper Frickmann                                             --
--- Date:    2021-12-13                                                   --
+-- Date:    2021-12-20                                                   --
 -- Version: 0.99                                                         --
 --                                                                       --
 -- Copyright (C) Jesper Frickmann                                        --
@@ -19,11 +19,11 @@
 -- GNU General Public License for more details.                          --
 ---------------------------------------------------------------------------
 
-local zone, options = ...     -- zone and options were passed as arguments to chunk(...).
-local widget = { }            -- The widget table will be returned to the main script.
-local libGUI = loadGUI()      -- GUI library
-libGUI.flags = DBLSIZE        -- Default drawing flags
-local colors = libGUI.colors  -- Short cut
+local widget, soarGlobals = ...
+local libGUI = loadGUI()
+libGUI.flags = DBLSIZE
+local colors = libGUI.colors
+local activeGUI
 
 -- GUIs for the different screens and popups
 local menuMain = libGUI.newGUI()
@@ -48,17 +48,13 @@ local PROMPT_H = 170
 local PROMPT_M = 30
 local N_LINES =  5
 
-local trimSources = {         -- Input sources for the trim buttons
+-- Input sources for the trim buttons
+local trimSources = {
   getFieldInfo("trim-ail").id,
   getFieldInfo("trim-rud").id,
   getFieldInfo("trim-ele").id,
   getFieldInfo("trim-thr").id
 }
-
--- Battery
-local rxBatV = 0              -- Receiver battery V
-local rxBatSrc                -- Receiver battery source
-local rxBatNxtWarn = 0        -- Time for next battery warning call
 
 -- Constants
 local LS_ALT     =  0 -- LS allowing altitude calls
@@ -453,6 +449,11 @@ function widget.background()
 
   -- Reset altitude
 	if launchPulled then
+    if soarGlobals.battery == 0 then
+      playHaptic(200, 0, 1)
+      playFile("lowbat.wav")
+    end
+
 		ResetAlt()
 	end
 	
@@ -579,88 +580,39 @@ function widget.background()
       GotoState(STATE_FINISHED)
     end
 	end
-  
-  -- Receiver battery
-  if not rxBatSrc then 
-    rxBatSrc = getFieldInfo("Cels")
-    if not rxBatSrc then rxBatSrc = getFieldInfo("RxBt") end
-    if not rxBatSrc then rxBatSrc = getFieldInfo("A1") end
-    if not rxBatSrc then rxBatSrc = getFieldInfo("A2") end
-  end
-  
-  if rxBatSrc then
-    rxBatV = getValue(rxBatSrc.id)
-    
-    if type(rxBatV) == "table" then
-      for i = 2, #rxBatV do
-        rxBatV[1] = math.min(rxBatV[1], rxBatV[i])
-      end
-      rxBatV = rxBatV[1]
-    end
-  end
-
-  if not rxBatV then
-    rxBatV = 0
-  end
-  
-  -- Warn about low receiver battery or Rx off
-  if now > rxBatNxtWarn then
-    if rxBatV == 0 then
-      if flightMode == FM_LAUNCH then
-        playHaptic(200, 0, 1)
-        playFile("lowbat.wav")
-        rxBatNxtWarn = now + 200
-      end
-    else
-      if rxBatV < 0.1 * options.Battery then
-        playHaptic(200, 0, 1)
-        playFile("lowbat.wav")
-        playNumber(10 * rxBatV + 0.5, 1, PREC1)
-        rxBatNxtWarn = now + 2000
-      end
-    end
-  end
 end -- background()
 
-function widget.update(opt)
-  options = opt
-end
+-- Refresh function
+function widget.refresh(event, touchState)
+  widget.background()
+  activeGUI.run(event, touchState)
+end -- refresh(...)
 
 -- Push new GUI as sub screen
 local function PushGUI(gui)
-  gui.parent = widget.gui
-  widget.gui = gui
+  gui.parent = activeGUI
+  activeGUI = gui
 end
 
 -- Are we allowed to pop screen?
 local function CanPopGUI()
-  return widget.gui.parent and not widget.gui.editing and not widget.gui.locked
+  return activeGUI.parent and not activeGUI.editing and not activeGUI.locked
 end
 
 -- Pop GUI to return to previous screen
 local function PopGUI()
   if CanPopGUI() then
-    widget.gui = widget.gui.parent
+    activeGUI = activeGUI.parent
     return true
   end
 end
 
 -- Draw zone area when not in fullscreen mode
-local function drawZone()
-  lcd.drawFilledRectangle(0, 0, zone.w, zone.h, options.BgColor, options.BgOpacity)
-  
-  -- Draw Rx battery
-  local color = colors.primary3
-  if rxBatV == 0 then
-    color = COLOR_THEME_DISABLED
-  end
-  str = string.format("%1.1fV", rxBatV)
-  lcd.drawText(zone.w, 0, str, RIGHT + BOLD + color)
-  
+function libGUI.widgetRefresh()
   -- Draw scores
   x = 5
   local y = 0
-  local dy = zone.h / N_LINES
+  local dy = widget.zone.h / N_LINES
   
   for i = 1, taskScores do
     lcd.drawText(x, y, string.format("%i.", i), colors.primary3 + DBLSIZE)
@@ -675,36 +627,36 @@ local function drawZone()
 
   -- Draw timers
   local blink = 0
-  local x = zone.w - lcd.sizeText("-00:00 ", DBLSIZE)
-  local y = 18
+  local x1 = widget.zone.w - lcd.sizeText("00:00 ", DBLSIZE)
+  local x2 = widget.zone.w
+  local y = 4
   
   local tmr = model.getTimer(0).value
   if tmr < 0 and state == STATE_COMMITTED then 
     blink = BLINK
   end
 
-  lcd.drawText(x, y, screenTask.labelTimer0.title, colors.primary3 + MIDSIZE)
-  y = y + 24
-  lcd.drawTimer(x, y, tmr, colors.primary3 + blink + DBLSIZE)
+  lcd.drawText(x1, y, screenTask.labelTimer0.title, colors.primary3 + MIDSIZE)
+  y = y + dy - 3
+  lcd.drawTimer(x2, y, tmr, colors.primary3 + blink + DBLSIZE + RIGHT)
   
   tmr = model.getTimer(1).value
-  y = y + 48
-  lcd.drawText(x, y, "Task:", colors.primary3 + MIDSIZE)
-  y = y + 24
-  lcd.drawTimer(x, y, tmr, colors.primary3 + DBLSIZE)
+  y = y + dy + 3
+  lcd.drawText(x1, y, "Task:", colors.primary3 + MIDSIZE)
+  y = y + dy - 3
+  lcd.drawTimer(x2, y, tmr, colors.primary3 + DBLSIZE + RIGHT)
 end -- drawZone()
 
 
 -- Setup screen with title, trims, flight mode etc.
 local function SetupScreen(gui, title)
-  gui.widgetRefresh = drawZone
   gui.title = title
   
   function gui.fullScreenRefresh()
     local color
 
     -- Bleed out background to make all of the screen readable
-    lcd.drawFilledRectangle(0, HEADER, LCD_W, LCD_H - HEADER, options.BgColor, options.BgOpacity)
+    lcd.drawFilledRectangle(0, HEADER, LCD_W, LCD_H - HEADER, WHITE, 10)
 
     -- Top bar
     lcd.drawFilledRectangle(0, 0, LCD_W, HEADER, COLOR_THEME_SECONDARY1)
@@ -715,13 +667,13 @@ local function SetupScreen(gui, title)
     local str = string.format("%02i:%02i", now.hour, now.min)
     lcd.drawText(LCD_W - 80, 6, str, RIGHT + MIDSIZE + colors.primary2)    
 
-    if rxBatV == 0 then
+    if soarGlobals.battery == 0 then
       color = COLOR_THEME_DISABLED
     else
       color = colors.primary2
     end
     
-    str = string.format("%1.1fV", rxBatV)
+    str = string.format("%1.1fV", soarGlobals.battery)
     lcd.drawText(LCD_W - 145, 6, str, RIGHT + MIDSIZE + color)
     
     -- Draw trims
@@ -834,7 +786,7 @@ do
   y = y + ROW
   menuMain.button(x, y, WIDTH, HEIGHT, "Scores", makeCallBack(menuScores))
   
-  widget.gui = menuMain
+  activeGUI = menuMain
 end
 
 
@@ -1178,9 +1130,6 @@ do -- Setup score browser screen
       return
     end
   
-    -- Bleed out background to make all of the screen readable
-    lcd.drawFilledRectangle(0, HEADER, LCD_W, LCD_H - HEADER, options.BgColor, options.BgOpacity)
-
     -- Top bar
     lcd.drawFilledRectangle(0, 0, LCD_W, HEADER, COLOR_THEME_SECONDARY1)
     lcd.drawText(10, 2, "Score Card", bit32.bor(DBLSIZE, colors.primary2))
@@ -1190,13 +1139,13 @@ do -- Setup score browser screen
     local str = string.format("%02i:%02i", now.hour, now.min)
     lcd.drawText(LCD_W - 80, 6, str, RIGHT + MIDSIZE + colors.primary2)    
 
-    if rxBatV == 0 then
+    if soarGlobals.battery == 0 then
       color = COLOR_THEME_DISABLED
     else
       color = colors.primary2
     end
     
-    str = string.format("%1.1fV", rxBatV)
+    str = string.format("%1.1fV", soarGlobals.battery)
     lcd.drawText(LCD_W - 140, 6, str, RIGHT + MIDSIZE + color)
     
     -- Return button
@@ -1297,6 +1246,3 @@ end
 
 -- Initialize stuff
 SetupTask("Just Fly!", { 0, -1, 5, false, 0, 2, false })
-widget.update(options)
-
-return widget
