@@ -2,7 +2,7 @@
 -- SoarETX F3K score keeper, loadable component                          --
 --                                                                       --
 -- Author:  Jesper Frickmann                                             --
--- Date:    2021-12-20                                                   --
+-- Date:    2022-01-02                                                   --
 -- Version: 0.99                                                         --
 --                                                                       --
 -- Copyright (C) Jesper Frickmann                                        --
@@ -590,19 +590,19 @@ end -- refresh(...)
 
 -- Push new GUI as sub screen
 local function PushGUI(gui)
-  gui.parent = activeGUI
+  gui.previous = activeGUI
   activeGUI = gui
 end
 
 -- Are we allowed to pop screen?
 local function CanPopGUI()
-  return activeGUI.parent and not activeGUI.editing and not activeGUI.locked
+  return activeGUI.previous and not activeGUI.editing and not activeGUI.locked
 end
 
 -- Pop GUI to return to previous screen
 local function PopGUI()
   if CanPopGUI() then
-    activeGUI = activeGUI.parent
+    activeGUI = activeGUI.previous
     return true
   end
 end
@@ -649,8 +649,15 @@ end -- drawZone()
 
 
 -- Setup screen with title, trims, flight mode etc.
-local function SetupScreen(gui, title)
+local function SetupScreen(gui, title, pop)
   gui.title = title
+  local x1
+  
+  if pop then
+    x1 = LCD_W - 80
+  else
+    x1 = LCD_W - 50
+  end
   
   function gui.fullScreenRefresh()
     local color
@@ -665,7 +672,7 @@ local function SetupScreen(gui, title)
     -- Date
     local now = getDateTime()
     local str = string.format("%02i:%02i", now.hour, now.min)
-    lcd.drawText(LCD_W - 80, 6, str, RIGHT + MIDSIZE + colors.primary2)    
+    lcd.drawText(x1, 6, str, RIGHT + MIDSIZE + colors.primary2)    
 
     if soarGlobals.battery == 0 then
       color = COLOR_THEME_DISABLED
@@ -674,15 +681,14 @@ local function SetupScreen(gui, title)
     end
     
     str = string.format("%1.1fV", soarGlobals.battery)
-    lcd.drawText(LCD_W - 145, 6, str, RIGHT + MIDSIZE + color)
+    lcd.drawText(x1 - 65, 6, str, RIGHT + MIDSIZE + color)
     
     -- Draw trims
     local p = {
-    --{ x, y, h, w }
-      { LCD_W - 191, LCD_H - 13, 177, 8 },
-      { 14, LCD_H - 13, 177, 8 },
-      { LCD_W - 13, 68, 8, 177 },
-      { 6, 68, 8, 177 },
+      { LCD_W - 191, LCD_H - 14, 177, 8 },
+      { 14, LCD_H - 14, 177, 8 },
+      { LCD_W - 14, 68, 8, 177 },
+      { 7, 68, 8, 177 },
     }
     
     for i = 1, 4 do
@@ -698,8 +704,8 @@ local function SetupScreen(gui, title)
       end
       
       lcd.drawFilledRectangle(q[1], q[2], q[3], q[4], COLOR_THEME_SECONDARY1)
-      lcd.drawFilledRectangle(x - 7, y - 7, 15, 15, colors.primary1)
-      lcd.drawFilledRectangle(x - 8, y - 8, 15, 15, colors.focus)
+      lcd.drawFilledRectangle(x - 9, y - 6, 18, 15, colors.primary1)
+      lcd.drawFilledRectangle(x - 10, y - 7, 18, 15, colors.focus)
       lcd.drawNumber(x, y, value, SMLSIZE + VCENTER + CENTER + colors.primary2)
     end
     
@@ -708,48 +714,57 @@ local function SetupScreen(gui, title)
   end -- fullScreenRefresh()
   
   -- Return button
-  gui.buttonRet = gui.button(LCD_W - 74, 6, 28, 28, "", PopGUI)
-
-  -- Paint another face on it
-  local drawRet = gui.buttonRet.draw
-  function gui.buttonRet.draw(idx)
-    local color
-    drawRet(idx)
-
-    if CanPopGUI() then
-      color = colors.primary2
-      gui.buttonRet.disabled = nil
-    else
-      color = COLOR_THEME_DISABLED
-      gui.buttonRet.disabled = true
-    end
+  if pop then
+    gui.buttonRet = gui.custom({ }, LCD_W - 2 * HEADER, 0, HEADER, HEADER)
     
-    lcd.drawFilledRectangle(LCD_W - 74, 6, 28, 28, COLOR_THEME_SECONDARY1)
-    lcd.drawRectangle(LCD_W - 74, 6, 28, 28, color)
-    for i = -1, 1 do
-      lcd.drawLine(LCD_W - 60 + i, 12, LCD_W - 60 + i, 30, SOLID, color)
-    end
-    for i = 0, 3 do
-      lcd.drawLine(LCD_W - 60 , 10 + i, LCD_W - 50 - i, 20, SOLID, color)
-      lcd.drawLine(LCD_W - 60 , 10 + i, LCD_W - 70 + i, 20, SOLID, color)
-    end
-  end
+    function gui.buttonRet.draw(focused)
+      local color
 
-  -- Minimize button
-  local buttonMin = gui.button(LCD_W - 34, 6, 28, 28, "", function() lcd.exitFullScreen() end)
+      if CanPopGUI() then
+        color = colors.primary2
+        gui.buttonRet.disabled = false
+      else
+        color = COLOR_THEME_DISABLED
+        gui.buttonRet.disabled = true
+      end
+      
+      lcd.drawRectangle(LCD_W - 74, 6, 28, 28, color)
+      lcd.drawFilledRectangle(LCD_W - 61, 12, 3, 18, color)
+      for i = 0, 3 do
+        lcd.drawLine(LCD_W - 60 , 10 + i, LCD_W - 50 - i, 20, SOLID, color)
+        lcd.drawLine(LCD_W - 60 , 10 + i, LCD_W - 70 + i, 20, SOLID, color)
+      end
+      
+      if focused then
+        gui.buttonRet.drawFocus(LCD_W - 74, 6, 28, 28)
+      end
+    end
 
-  -- Paint another face on it
-  local drawMin = buttonMin.draw
-  function buttonMin.draw(idx)
-    drawMin(idx)
-    
-    lcd.drawFilledRectangle(LCD_W - 34, 6, 28, 28, COLOR_THEME_SECONDARY1)
-    lcd.drawRectangle(LCD_W - 34, 6, 28, 28, colors.primary2)
-    for y = 19, 21 do
-      lcd.drawLine(LCD_W - 30, y, LCD_W - 10, y, SOLID, colors.primary2)
+    function gui.buttonRet.onEvent(event)
+      if event == EVT_VIRTUAL_ENTER then
+        PopGUI()
+      end
     end
   end
   
+  -- Minimize button
+  local buttonMin = gui.custom({ }, LCD_W - HEADER, 0, HEADER, HEADER)
+
+  function buttonMin.draw(focused)
+    lcd.drawRectangle(LCD_W - 34, 6, 28, 28, colors.primary2)
+    lcd.drawFilledRectangle(LCD_W - 30, 19, 20, 3, colors.primary2)
+
+    if focused then
+      buttonMin.drawFocus(LCD_W - 34, 6, 28, 28)
+    end
+  end
+  
+  function buttonMin.onEvent(event)
+    if event == EVT_VIRTUAL_ENTER then
+      lcd.exitFullScreen()
+    end
+  end
+
   -- Short press EXIT to return to previous screen
   local function HandleEXIT(event, touchState)
     if PopGUI() then
@@ -774,24 +789,24 @@ do
   SetupScreen(menuMain, "SoarETX  F3K")
 
   -- Generate callbacks with closure for calling submenus
-  local function makeCallBack(subMenu)
+  local function MakePush(subMenu)
     return function()
       PushGUI(subMenu)
     end
   end
 
-  menuMain.button(x, y, WIDTH, HEIGHT, "F3K tasks", makeCallBack(menuF3K))
+  menuMain.button(x, y, WIDTH, HEIGHT, "F3K tasks", MakePush(menuF3K))
   y = y + ROW
-  menuMain.button(x, y, WIDTH, HEIGHT, "Practice", makeCallBack(menuPractice))
+  menuMain.button(x, y, WIDTH, HEIGHT, "Practice", MakePush(menuPractice))
   y = y + ROW
-  menuMain.button(x, y, WIDTH, HEIGHT, "Scores", makeCallBack(menuScores))
+  menuMain.button(x, y, WIDTH, HEIGHT, "Scores", MakePush(menuScores))
   
   activeGUI = menuMain
 end
 
 
 do -- Setup F3K tasks menu
-  SetupScreen(menuF3K, "Select  F3K  Task")
+  SetupScreen(menuF3K, "F3K  Tasks", true)
 
 	local tasks = {
 		"A. Last flight",
@@ -840,7 +855,7 @@ do -- Setup F3K tasks menu
 end
 
 do -- Setup practice tasks menu
-  SetupScreen(menuPractice, "Select  Practice  Task")
+  SetupScreen(menuPractice, "Practice  Tasks", true)
   
 	local tasks = {
 		"Just Fly!",
@@ -866,7 +881,7 @@ end
 
 
 do -- Setup score keeper screen for F3K and Practice tasks
-  SetupScreen(screenTask, "")
+  SetupScreen(screenTask, "", true)
   
   -- Restore default task and dismiss task screen
   function screenTask.dismiss()  
@@ -875,11 +890,13 @@ do -- Setup score keeper screen for F3K and Practice tasks
   end
   
   -- Return button shows prompt to save scores instead of popping right away
-  function screenTask.buttonRet.callBack()
-    if state == STATE_IDLE then
-      screenTask.dismiss()
-    else
-      screenTask.prompt = promptSaveScores
+  function screenTask.buttonRet.onEvent(event)
+    if event == EVT_VIRTUAL_ENTER then
+      if state == STATE_IDLE then
+        screenTask.dismiss()
+      else
+        screenTask.showPrompt(promptSaveScores)
+      end
     end
   end
   
@@ -965,7 +982,7 @@ do -- Setup score keeper screen for F3K and Practice tasks
 -- Short press EXIT handler must prompt to save scores
   local function HandleEXIT(event, touchState)
     if CanPopGUI() then
-      screenTask.buttonRet.callBack()
+      screenTask.buttonRet.onEvent(EVT_VIRTUAL_ENTER)
       return false
     else
       return event
@@ -1011,7 +1028,7 @@ do -- Prompt asking to save scores and exit task window
     end
     
     -- Dismiss prompt and return to menu
-    screenTask.prompt = nil
+    screenTask.dismissPrompt()
     screenTask.dismiss()
   end -- callBack(...)
 
@@ -1164,9 +1181,7 @@ do -- Setup score browser screen
     -- Minimize button
     lcd.drawFilledRectangle(LCD_W - 34, 6, 28, 28, COLOR_THEME_SECONDARY1)
     lcd.drawRectangle(LCD_W - 34, 6, 28, 28, colors.primary2)
-    for y = 19, 21 do
-      lcd.drawLine(LCD_W - 30, y, LCD_W - 10, y, SOLID, colors.primary2)
-    end
+    lcd.drawFilledRectangle(LCD_W - 30, 19, 20, 3, colors.primary2)
   
     if event ~= EVT_TOUCH_SLIDE then
       firstRecordTouch = nil
