@@ -2,7 +2,7 @@
 -- SoarETX F3K score keeper, loadable component                          --
 --                                                                       --
 -- Author:  Jesper Frickmann                                             --
--- Date:    2022-01-02                                                   --
+-- Date:    2022-01-03                                                   --
 -- Version: 0.99                                                         --
 --                                                                       --
 -- Copyright (C) Jesper Frickmann                                        --
@@ -35,18 +35,20 @@ local menuScores = { }
 
 -- Screen drawing constants
 local HEADER =   40
-local LEFT =     25
-local RGT =      LCD_W - 15
+local LEFT =     40
+local RGT =      LCD_W - 18
 local TOP =      50
-local LINE =     54
+local LINE =     60
 local LINE2 =    28 
-local HEIGHT =   38
+local HEIGHT =   42
 local HEIGHT2 =  18
-local BUTTON_W = 90
+local BUTTON_W = 86
 local PROMPT_W = 260
 local PROMPT_H = 170
 local PROMPT_M = 30
 local N_LINES =  5
+local COL2 =     (LCD_W - BUTTON_W)/2
+local BOT_ROW =  LCD_H - 60
 
 -- Input sources for the trim buttons
 local trimSources = {
@@ -104,7 +106,7 @@ local flightTime            -- Flight flown
 local pokerCalled     -- Lock in time in Poker task
 local lastInput = 0   -- For announcing changes in PokerCall
 local lastChange = 0  -- Same
-local tblStep = { {30, 5}, {60, 10}, {120, 15}, {210, 30}, {420, 60}, {taskWindow + 60} } -- Step sizes for input of call time
+local tblStep = { {30, 5}, {60, 10}, {120, 15}, {210, 30}, {420, 60} } -- Step sizes for input of call time
 
 -- Browsing scores
 local SCORE_FILE = "/LOGS/JF F3K Scores.csv"
@@ -385,9 +387,14 @@ local function PokerCall()
   if not dial then dial = getFieldInfo("s1").id end
 
   local input = getValue(dial)
-  local i, x = math.modf(1 + (#tblStep - 1) * (math.min(1023, input) + 1024) / 2048)
+  local i, x = math.modf(1 + #tblStep * (math.min(1023, input) + 1024) / 2048)
   local t1 = tblStep[i][1]
-  local t2 = tblStep[i + 1][1]
+  local t2
+  if i >= #tblStep then
+    t2 = math.max(600, taskWindow) + 60
+  else
+    t2 = tblStep[i + 1][1]
+  end
   local dt = tblStep[i][2]
   
   local result = t1 + dt * math.floor(x * (t2 - t1) /dt)
@@ -419,6 +426,14 @@ local function TargetTime()
     end
 	elseif targetType == 3 then -- 1234
     return Best1234Target(winTimer, scores, 4)
+	elseif targetType == 4 then -- Deuces
+    if #scores == 0 then
+      return math.max(0, math.floor(winTimer / 2))
+    elseif #scores == 1 then
+      return math.max(0, math.min(winTimer, scores[1]))
+    else
+      return 0
+    end
 	else -- All other tasks
     return MaxScore(#scores + 1)
 	end
@@ -609,26 +624,28 @@ end
 
 -- Draw zone area when not in fullscreen mode
 function libGUI.widgetRefresh()
+  local COL1 = widget.zone.w / 2 - 200
+  local COL2 = COL1 + 30
+  local COL3 = COL1 + 125
+  local RGT  = COL1 + 400
+  
   -- Draw scores
   x = 5
   local y = 0
   local dy = widget.zone.h / N_LINES
   
   for i = 1, taskScores do
-    lcd.drawText(x, y, string.format("%i.", i), colors.primary3 + DBLSIZE)
+    lcd.drawText(COL1, y, string.format("%i.", i), colors.primary1 + DBLSIZE)
     if i > #scores then
-      lcd.drawText(x + 30, y, "  -   -   -", colors.primary3 + DBLSIZE)
+      lcd.drawText(COL2, y, "  -   -   -", colors.primary1 + DBLSIZE)
     else
-      lcd.drawTimer(x + 30, y, scores[i], colors.primary3 + DBLSIZE)
+      lcd.drawTimer(COL2, y, scores[i], colors.primary1 + DBLSIZE)
     end
-    
     y = y + dy
   end
 
   -- Draw timers
   local blink = 0
-  local x1 = widget.zone.w - lcd.sizeText("00:00 ", DBLSIZE)
-  local x2 = widget.zone.w
   local y = 4
   
   local tmr = model.getTimer(0).value
@@ -636,16 +653,13 @@ function libGUI.widgetRefresh()
     blink = BLINK
   end
 
-  lcd.drawText(x1, y, screenTask.labelTimer0.title, colors.primary3 + MIDSIZE)
-  y = y + dy - 3
-  lcd.drawTimer(x2, y, tmr, colors.primary3 + blink + DBLSIZE + RIGHT)
-  
+  lcd.drawText(COL3, y + 10, screenTask.labelTimer0.title, colors.primary1 + DBLSIZE)
+  lcd.drawTimer(RGT, y, tmr, colors.primary1 + blink + XXLSIZE + RIGHT)  
+  y = y + 2 * dy
   tmr = model.getTimer(1).value
-  y = y + dy + 3
-  lcd.drawText(x1, y, "Task:", colors.primary3 + MIDSIZE)
-  y = y + dy - 3
-  lcd.drawTimer(x2, y, tmr, colors.primary3 + DBLSIZE + RIGHT)
-end -- drawZone()
+  lcd.drawText(COL3, y + 10, "Task:", colors.primary1 + DBLSIZE)
+  lcd.drawTimer(RGT, y, tmr, colors.primary1 + XXLSIZE + RIGHT)
+end -- widgetRefresh()
 
 
 -- Setup screen with title, trims, flight mode etc.
@@ -867,7 +881,7 @@ do -- Setup practice tasks menu
   local taskData = {
     { 0, -1, 5, false, 0, 2, false }, -- Just fly
     { 0, -1, 5, false, 2, 2, true },  -- QR
-    { 600, 2, 2, true, 2, 2, false }  -- Deuces
+    { 600, 2, 2, true, 4, 2, false }  -- Deuces
   }
   
   -- Call back function running when a menu item is selected
@@ -910,32 +924,30 @@ do -- Setup score keeper screen for F3K and Practice tasks
   for i = 1, N_LINES do
     screenTask.scoreLabels[i] = screenTask.label(LEFT, y, 20, HEIGHT, string.format("%i.", i))
     
-    local s = screenTask.timer(LEFT + 30, y, 60, HEIGHT, 0, nil)
+    local s = screenTask.timer(LEFT + 40, y, 60, HEIGHT, 0, nil)
     s.disabled = true
-    s.value = "- - -"
+    s.value = "  -   -   -"
     screenTask.scores[i] = s
 
     -- Modify timer's draw function to insert score value
     local draw = s.draw
     function s.draw(idx)
       if i > #scores then 
-        screenTask.scores[i].value = " -   -   -"
+        screenTask.scores[i].value = "  -   -   -"
       else
         screenTask.scores[i].value = scores[i]
       end
       
       draw(idx)
     end
-    
     y = y + dy
   end
   
   -- Add center buttons
-  local x = (LCD_W - BUTTON_W) / 2
   local y = TOP
-  screenTask.buttonQR = screenTask.toggleButton(x, y, BUTTON_W, HEIGHT, "QR", false, nil)
+  screenTask.buttonQR = screenTask.toggleButton(COL2, y, BUTTON_W, HEIGHT, "QR", false, nil)
   y = y + LINE
-  screenTask.buttonEoW = screenTask.toggleButton(x, y, BUTTON_W, HEIGHT, "EoW", true, nil)
+  screenTask.buttonEoW = screenTask.toggleButton(COL2, y, BUTTON_W, HEIGHT, "EoW", true, nil)
   
   local function callBack(button)
     if state <= STATE_PAUSE then
@@ -960,11 +972,10 @@ do -- Setup score keeper screen for F3K and Practice tasks
   end
   
   y = y + LINE
-  screenTask.button3 = screenTask.button(x, y, BUTTON_W, HEIGHT, "Start", callBack)
+  screenTask.button3 = screenTask.button(COL2, y, BUTTON_W, HEIGHT, "Start", callBack)
   
   -- Info text label
-  y = y + LINE
-  screenTask.labelInfo = screenTask.label(RGT - 250, y, 250, HEIGHT, "", libGUI.flags + RIGHT)
+  screenTask.labelInfo = screenTask.label(RGT - 250, BOT_ROW, 250, HEIGHT, "", libGUI.flags + RIGHT)
   
   -- Add timers
   y = TOP
@@ -1103,9 +1114,9 @@ do -- Setup score browser screen
     local record = records[r]
     
     if r % 2 == 0 then
-      lcd.drawFilledRectangle(0, top, LCD_W, RECORD_H, COLOR_THEME_SECONDARY2, 6)
+      lcd.drawFilledRectangle(0, top, LCD_W, RECORD_H, COLOR_THEME_SECONDARY2, 2)
     else
-      lcd.drawFilledRectangle(0, top, LCD_W, RECORD_H, COLOR_THEME_SECONDARY3, 6)
+      lcd.drawFilledRectangle(0, top, LCD_W, RECORD_H, COLOR_THEME_SECONDARY3, 2)
     end
     
     lcd.drawText(10, top + 6, record.taskName, BOLD)
@@ -1143,7 +1154,6 @@ do -- Setup score browser screen
     local PROMPT_H = 200
 
     if not event then
-      drawZone()
       return
     end
   

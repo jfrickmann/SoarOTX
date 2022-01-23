@@ -2,7 +2,7 @@
 -- SoarETX widget                                                        --
 --                                                                       --
 -- Author:  Jesper Frickmann                                             --
--- Date:    2021-12-20                                                   --
+-- Date:    2022-01-17                                                   --
 -- Version: 0.99                                                         --
 --                                                                       --
 -- Copyright (C) Jesper Frickmann                                        --
@@ -19,17 +19,15 @@
 -- GNU General Public License for more details.                          --
 ---------------------------------------------------------------------------
 
-local name = "SoarETX"
-local soarGlobals
-local parameterCurve
-
 local options = {
-  { "Loadable", STRING, "" }
+  { "Version", VALUE, 1, 1, 99 },
+  { "FileName", STRING, "" }
 }
+local soarGlobals
 
--- Load a Lua component dynamically based on "Loadable" option value
+-- Load a Lua component dynamically based on option values
 local function Load(widget)
-  local chunk, errMsg = loadScript("/WIDGETS/" .. name .. "/" .. widget.options.Loadable .. ".lua")
+  local chunk, errMsg = loadScript("/WIDGETS/SoarETX/" .. widget.options.Version .. "/" .. widget.options.FileName .. ".lua")
   if errMsg then
     widget.errMsg = errMsg
   else
@@ -45,7 +43,7 @@ local function init()
   }
 
   -- Functions to handle persistent model parameters stored in curve 32
-  parameterCurve = model.getCurve(31)
+  local parameterCurve = model.getCurve(31)
   
   if not parameterCurve then
     error("Curve #32 is missing! It is used to store persistent model parameters for Lua.")
@@ -83,7 +81,7 @@ local function create(zone, options)
 end
 
 local function update(widget, options)
-  if options.Loadable ~= widget.options.Loadable then
+  if options.Version ~= widget.options.Version or options.FileName ~= widget.options.FileName then
     local zone = widget.zone
     
     -- Erase all fields in widget
@@ -116,7 +114,7 @@ local function background(widget)
 end
 
 return {
-  name = name, 
+  name = "SoarETX", 
   create = create, 
   refresh = refresh, 
   options = options, 

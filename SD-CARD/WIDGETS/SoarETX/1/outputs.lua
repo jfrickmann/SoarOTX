@@ -2,7 +2,7 @@
 -- SoarETX outputs configuration widget, loadable part                   --
 --                                                                       --
 -- Author:  Jesper Frickmann                                             --
--- Date:    2021-12-14                                                   --
+-- Date:    2021-12-23                                                   --
 -- Version: 0.99                                                         --
 --                                                                       --
 -- Copyright (C) Jesper Frickmann                                        --
@@ -19,100 +19,70 @@
 -- GNU General Public License for more details.                          --
 ---------------------------------------------------------------------------
 
-local zone, options = ...     -- zone and options were passed as arguments to chunk(...).
-local widget = { }            -- The widget table will be returned to the main script.
-widget.gui = { }
-local message = true          -- Show warning message
+local widget, soarGlobals =  ...
+local libGUI =  loadGUI()
+libGUI.flags =  MIDSIZE
+local gui
+local prompt =  libGUI.newGUI()
+local colors =  libGUI.colors
+local title =   "Outputs"
+
+local channels                                -- List sub-GUIs for named channels
+local focusNamed = 0                          -- Index of sub-GUI in focus
+local firstLine = 1                           -- Index of sub-GUI on the first line
+local N = 32                                  -- Highest channel number to swap
+local MAXOUT = 1500                           -- Maximum output value
+local MINDIF = 100                            -- Minimum difference between lower, center and upper values
+local SOURCE0 = 	getFieldInfo("ch1").id - 1  -- Base of channel sources
 
 -- Screen drawing constants
 local HEADER =   40
+local MARGIN =   10
 local TOP =      50
-local LINE =     30
-local HEIGHT =   24
+local ROW =      38
+local HEIGHT =   ROW - 4
+local PROMPT_W = 300
+local PROMPT_H = 170
 
-local N = 32 -- Highest channel number to swap
-local MAXOUT = 1500 -- Maximum output value
-local MINDIF = 100 -- Minimum difference between lower, center and upper values
-
-local namedChs = {} -- List of named channels
-local firstLine = 1 -- Named channel displayed on the first line
-local selection = 1 -- Selected named channel
-local srcBase = 	getFieldInfo("ch1").id - 1 -- ASSUMING that channel sources are consecutive!
-local stage = 1 -- 1:Show warning 2:Run
-
--- Screen size specific variables
-local  XDOT =   15
-local  XREV =   58
-local  CENTER = 140
-local  SCALE =  0.045
-local  XTXT =   30
-local  ATT1 =   MIDSIZE
-local  ATT2 =   0
-
-local editing = 0 
---[[ Selected channel is being edited
-	0 = Not edited
-	1 = Channel no. selected
-	2 = Direction selected
-	3 = Lower, Center, Upper selected
-	4 = Range selected
-	5 = Lower selected
-	6 = Center selected
-	7 = Upper selected
-	11 = Channel no. edited
-	13 = Lower, Center, Upper edited
-	14 = Range edited
-	15 = Lower edited
-	16 = Center edited
-	17 = Upper edited
-]]
-
-function widget.background()
-  message = true
-end -- background()
-
-function widget.update(opt)
-  options = opt
-end
-
--- Are we allowed to pop screen?
-local function CanPopGUI()
-  return widget.gui.parent and not widget.gui.editing and not widget.gui.locked
-end
-
--- Pop GUI to return to previous screen
-local function PopGUI()
-  if CanPopGUI() then
-    widget.gui = widget.gui.parent
-    return true
+-- Setup warning prompt
+do
+  local left = (LCD_W - PROMPT_W) / 2
+  local top = (LCD_H - PROMPT_H) / 2
+  
+  function prompt.fullScreenRefresh()
+    local txt = "Please disable the motor!\n\n" ..
+                "Sudden spikes may occur when channels are moved.\n\n" ..
+                "Press ENTER to proceed."
+    
+    lcd.drawFilledRectangle(left, top, PROMPT_W, HEADER, COLOR_THEME_SECONDARY1)
+    lcd.drawFilledRectangle(left, top + HEADER, PROMPT_W, PROMPT_H - HEADER, libGUI.colors.primary2)
+    lcd.drawRectangle(left, top, PROMPT_W, PROMPT_H, libGUI.colors.primary1, 2)
+    lcd.drawText(left + MARGIN, top + HEADER / 2, "W A R N I N G", DBLSIZE + VCENTER + libGUI.colors.primary2)
+    lcd.drawTextLines(left + MARGIN, top + HEADER + MARGIN, PROMPT_W - 2 * MARGIN, PROMPT_H - 2 * MARGIN, txt)
   end
-end
 
--- Draw zone area when not in fullscreen mode
-local function drawZone()
-  lcd.drawFilledRectangle(6, 4, zone.w - 12, zone.h - 8, COLOR_THEME_FOCUS)
-  lcd.drawRectangle(7, 5, zone.w - 14, zone.h - 10, COLOR_THEME_PRIMARY2, 1)
-  lcd.drawText(zone.w / 2, zone.h / 2, "Outputs", CENTER + VCENTER + DBLSIZE + COLOR_THEME_PRIMARY2)
-end -- drawZone()
+  -- Make a dismiss button from a custom element
+  local custom = prompt.custom({ }, left + PROMPT_W - HEADER, top, HEADER, HEADER)
 
-local function init()
-	-- Build the list of named channels that are displayed and can be moved
-	local j = 0
-	
-	for i = 1, N do
-		local out = model.getOutput(i - 1)
-		
-		if out and out.name ~= "" then
-			j = j + 1
-			namedChs[j] = i
-		end
-	end
-end -- init()
+  function custom.draw(focused)
+    lcd.drawRectangle(left + PROMPT_W - 30, top + 10, 20, 20, libGUI.colors.primary2)
+    lcd.drawText(left + PROMPT_W - 20, top + 20, "X", MIDSIZE + CENTER + VCENTER + libGUI.colors.primary2)
+    if focused then
+      custom.drawFocus(left + PROMPT_W - 30, top + 10, 20, 20)
+    end
+  end
 
--- Swap two channels, direction = -1 or +1
-local function MoveSelected(direction)
-	local m = {} -- Channel indices
-	m[1] = namedChs[selection] -- Channel to move
+  function custom.onEvent(event, touchState)
+    if event == EVT_VIRTUAL_ENTER then
+      gui.dismissPrompt()
+    end
+  end
+end -- Warning prompt
+
+-- Move output channel by swapping with previous or next; direction = -1 or +1
+local function MoveOutput(direction, channel)
+	local m = { } -- Channel indices
+	m[1] = channel.iChannel -- Channel to move
 	m[2] = m[1] + direction -- Neighbouring channel to swap
 	
 	-- Are we at then end?
@@ -121,23 +91,38 @@ local function MoveSelected(direction)
 		return
 	end
 	
-	local out = {} -- List of output tables
-	local mixes = {} -- List of lists of mixer tables
+	local outputs = { } -- List of output tables
+	local mixes = { }   -- List of lists of mixer tables
 
 	-- Read channel into tables
 	for i = 1, 2 do
-		out[i] = model.getOutput(m[i] - 1)
+		outputs[i] = model.getOutput(m[i] - 1)
 
 		-- Read list of mixer lines
-		mixes[i] = {}
+		mixes[i] = { }
 		for j = 1, model.getMixesCount(m[i] - 1) do
 			mixes[i][j] = model.getMix(m[i] - 1, j - 1)
+
+local mm = m[i]
+print("----> Read CH" .. mm .. " MX" .. j)
+for k, v in pairs(mixes[i][j]) do
+  if type(v) == "boolean" then
+    if v then
+      print("  " .. k .." = TRUE")
+    else
+      print("  " .. k .." = FALSE")
+    end
+  else
+    print("  " .. k .." = " .. v)
+  end
+end
+
 		end
 	end
 	
 	-- Write back swapped data
 	for i = 1, 2 do
-		model.setOutput(m[i] - 1, out[3 - i])
+		model.setOutput(m[i] - 1, outputs[3 - i])
 
 		-- Delete existing mixer lines
 		for j = 1, model.getMixesCount(m[i] - 1) do
@@ -147,23 +132,38 @@ local function MoveSelected(direction)
 		-- Write back mixer lines
 		for j, mix in pairs(mixes[3 - i]) do
 			model.insertMix(m[i] - 1, j - 1, mix)
+
+local mm = m[i]
+print("----> Wrote CH" .. mm .. " MX" .. j)
+for k, v in pairs(mix) do
+  if type(v) == "boolean" then
+    if v then
+      print("  " .. k .." = TRUE")
+    else
+      print("  " .. k .." = FALSE")
+    end
+  else
+    print("  " .. k .." = " .. v)
+  end
+end
+
 		end
 	end
 
 	-- Swap sources for the two channels in all mixes
 	for i = 1, N do
-		local mixes = {} -- List of mixer tables
+		local mixes = { }   -- List of mixer tables
 		local dirty = false -- If any sources were swapped, then write back data
 
 		-- Read mixer lines and swap sources if they match the two channels being swapped
 		for j = 1, model.getMixesCount(i - 1) do
 			mixes[j] = model.getMix(i - 1, j - 1)
-			if mixes[j].source == m[1] + srcBase then
+			if mixes[j].source == m[1] + SOURCE0 then
 				dirty = true
-				mixes[j].source = m[2] + srcBase
-			elseif mixes[j].source == m[2] + srcBase then
+				mixes[j].source = m[2] + SOURCE0
+			elseif mixes[j].source == m[2] + SOURCE0 then
 				dirty = true
-				mixes[j].source = m[1] + srcBase
+				mixes[j].source = m[1] + SOURCE0
 			end
 		end
 		
@@ -181,81 +181,222 @@ local function MoveSelected(direction)
 		end
 	end
 
-	-- Update selection on screen
-	if namedChs[selection + direction] and namedChs[selection + direction] == m[2] then
-		-- Swapping two named channels?
-		selection = selection + direction
-	else
-		-- Swapping named channel with unnamed, invisible channel
-		namedChs[selection] = m[2]
+	-- Update channel GUI(s) on the screen
+  channel.iChannel = m[2]
+  channel.output = outputs[1]
+  local iNamed2 = channel.iNamed + direction
+  local channel2 = channels[iNamed2]
+	if channel2 and channel2.iChannel == m[2] then
+		-- Swapping two named channels!
+    channel2.iChannel = m[1]
+    channel2.output = outputs[2]
+    channels[channel.iNamed], channels[iNamed2] = channel2, channel
+    channel.iNamed, channel2.iNamed = iNamed2, channel.iNamed
+		gui.moveFocused(direction)
 	end
-end -- SwapChannels()
+end -- MoveOutput()
 
--- Setup main menu
-do
-  function widget.gui.run(event, touchState)
-    local color
-    local PROMPT_W = 300
-    local PROMPT_H = 200
+local function init()
+  -- Start building GUI from scratch
+  gui = libGUI.newGUI()
+  gui.showPrompt(prompt)
 
-    if not event then
-      message = true
-      drawZone()
-      return
-    end
-  
-    -- Bleed out background to make all of the screen readable
-    lcd.drawFilledRectangle(0, HEADER, LCD_W, LCD_H - HEADER, options.BgColor, options.BgOpacity)
-
+  function gui.fullScreenRefresh()
     -- Top bar
     lcd.drawFilledRectangle(0, 0, LCD_W, HEADER, COLOR_THEME_SECONDARY1)
-    lcd.drawText(10, 2, "SoarETX Outputs", bit32.bor(DBLSIZE, COLOR_THEME_PRIMARY2))
-
-    -- Minimize button
-    lcd.drawFilledRectangle(LCD_W - 34, 6, 28, 28, COLOR_THEME_SECONDARY1)
-    lcd.drawRectangle(LCD_W - 34, 6, 28, 28, COLOR_THEME_PRIMARY2)
-    for y = 19, 21 do
-      lcd.drawLine(LCD_W - 30, y, LCD_W - 10, y, SOLID, COLOR_THEME_PRIMARY2)
-    end
-  
-    if event == EVT_VIRTUAL_EXIT then
-      return PopGUI()
-    elseif event == EVT_TOUCH_TAP then
-      local x, y = touchState.x, touchState.y
-      
-      if 6 <= y and y <= 34 and x >= LCD_W - 34 then
-        lcd.exitFullScreen()
+    lcd.drawText(MARGIN, HEADER / 2 - 2, "Configure   outputs", DBLSIZE + VCENTER + colors.primary2)
+    
+    -- Row background
+    for i = 0, 6 do
+      local y = HEADER + i * ROW
+      if i % 2 == 1 then
+        lcd.drawFilledRectangle(0, y, LCD_W, ROW, COLOR_THEME_SECONDARY2, 2)
+      else
+        lcd.drawFilledRectangle(0, y, LCD_W, ROW, COLOR_THEME_SECONDARY3, 2)
       end
     end
+    
+    -- Adjust scroll for channels
+    if focusNamed > 0 then
+      if focusNamed < firstLine then
+        firstLine = focusNamed
+      elseif firstLine + 5 < focusNamed then
+        firstLine = focusNamed - 5
+      end
+    end
+    focusNamed = 0
+  end
 
-  end -- run(...)
-end
+  -- Minimize button
+  local buttonMin = gui.custom({ }, LCD_W - HEADER, 0, HEADER, HEADER)
 
-widget.update(options)
+  function buttonMin.draw(focused)
+    lcd.drawRectangle(LCD_W - 34, 6, 28, 28, colors.primary2)
+    lcd.drawFilledRectangle(LCD_W - 30, 19, 20, 3, colors.primary2)
 
-return widget
+    if focused then
+      buttonMin.drawFocus(LCD_W - 34, 6, 28, 28)
+    end
+  end
 
+  function buttonMin.onEvent(event)
+    if event == EVT_VIRTUAL_ENTER then
+      lcd.exitFullScreen()
+    end
+  end
 
+	-- Build the list of named channels, each in their own movable GUI
+  do
+    local iNamed = 0
+    channels = { }
+    
+    for iChannel = 1, N do
+      local output = model.getOutput(iChannel - 1)
+      
+      if output and output.name ~= "" then
+        local channel = gui.gui(2, LCD_H, LCD_W - 4, HEIGHT)
+        local d0
+
+        iNamed = iNamed + 1
+        channels[iNamed] = channel
+        channel.iNamed = iNamed
+        channel.iChannel = iChannel
+
+        -- Hack the sub-GUI's draw function to do a few extra things
+        local draw = channel.draw
+        function channel.draw(focused)
+          if focused then
+            focusNamed = channel.iNamed
+          end
+          if channel.iNamed < firstLine or channel.iNamed > firstLine + 5 then
+            channel.y = LCD_H
+          else
+            channel.y = HEADER + (channel.iNamed - firstLine) * ROW + 2
+            draw(focused)
+          end
+        end
+
+        -- Custom element for changing output channel (and moving all mixer lines etc.)
+        local nbrChannel = channel.custom({ }, 0, 0, 30, HEIGHT)        
+        
+        function nbrChannel.draw(focused)
+          local fg = libGUI.colors.primary1
+          if focused then
+            nbrChannel.drawFocus(0, 0, 30, HEIGHT)
+            if channel.editing then
+              fg = libGUI.colors.primary2
+              channel.drawFilledRectangle(0, 0, 30, HEIGHT, libGUI.colors.edit)
+            end
+          end
+          channel.drawNumber(30, HEIGHT / 2, channel.iChannel, libGUI.flags + VCENTER + RIGHT + fg)
+        end
+
+        function nbrChannel.onEvent(event, touchState)
+          if channel.editing then
+            if libGUI.match(event, EVT_VIRTUAL_ENTER, EVT_VIRTUAL_EXIT) then
+              channel.editing = false
+            elseif event == EVT_VIRTUAL_INC then
+              MoveOutput(1, channel)
+            elseif event == EVT_VIRTUAL_DEC then
+              MoveOutput(-1, channel)
+            elseif event == EVT_TOUCH_FIRST then
+              d0 = 0
+            elseif event == EVT_TOUCH_SLIDE and channel.scrolling then
+              local d = math.floor((touchState.y - touchState.startY) / ROW + 0.5)
+              if d ~= d0 then
+                MoveOutput(d - d0, channel)
+                d0 = d
+              end
+            end
+          elseif event == EVT_VIRTUAL_ENTER then
+            channel.editing = true
+          end
+        end -- onEvent(...)
+      
+        -- Label for channel name
+        local lblName = channel.label(30, 0, 140, HEIGHT, ". " .. output.name)
+        
+        -- Custom element to invert output direction
+        local revert = channel.custom({ }, 170, 0, 30, HEIGHT)
+        
+        function revert.draw(focused)
+          local y = HEIGHT / 2 + 1
+          if output.revert == 1 then
+            channel.drawFilledRectangle(176, y - 1, 19, 3, colors.primary1)
+            for x = 175, 178 do
+              channel.drawLine(x, y, x + 8, y - 8, SOLID, colors.primary1)
+              channel.drawLine(x, y, x + 8, y + 8, SOLID, colors.primary1)
+            end
+          else
+            channel.drawFilledRectangle(175, y - 1, 19, 3, colors.primary1)
+            for x = 192, 195 do
+              channel.drawLine(x, y, x - 8, y - 8, SOLID, colors.primary1)
+              channel.drawLine(x, y, x - 8, y + 8, SOLID, colors.primary1)
+            end
+          end
+          
+          function revert.onEvent(event, touchState)
+            if event == EVT_VIRTUAL_ENTER then
+              output.revert = 1 - output.revert
+              model.setOutput(channel.iChannel - 1, output)
+            end
+          end
+
+          if focused then
+            revert.drawFocus(170, 0, 30, HEIGHT)
+          end
+        end
+
+        -- Custom element to adjust center and end points
+  --[[
+  out.offset
+  out.min
+  out.max
+  ]]--
+      end
+    end
+  end
+end -- init()
+
+function widget.refresh(event, touchState)
+  if not event then
+    gui = nil
+    lcd.drawFilledRectangle(6, 4, widget.zone.w - 12, widget.zone.h - 8, colors.focus)
+    lcd.drawRectangle(7, 5, widget.zone.w - 14, widget.zone.h - 10, colors.primary2, 1)
+    lcd.drawText(widget.zone.w / 2, widget.zone.h / 2, title, CENTER + VCENTER + DBLSIZE + colors.primary2)
+    return
+  elseif gui == nil then
+    init()
+  end
+  
+  gui.run(event, touchState)
+end -- refresh(...)
+
+function widget.background()
+  gui = nil
+end -- background()
+
+-----------------------------------------------------------------------------------------------------
 -- JF Channel configuration
 -- Timestamp: 2021-01-03
 -- Created by Jesper Frickmann
-
+--[[
 local function Draw()
 	soarUtil.InfoBar(MENUTXT)
 	
 	-- Draw vertical reference lines
 	for i = -6, 6 do
-		local x = CENTER - i * MAXOUT * SCALE / 6
+		local x = CTR - i * MAXOUT * SCALE / 6
 		lcd.drawLine(x, 8, x, LCD_H, DOTTED, FORCE)
 	end
 
 	for iLine = 1, math.min(6, #namedChs - firstLine + 1) do		
 		local iNamed = iLine + firstLine - 1
-		local iCh = namedChs[iNamed]
-		local out = model.getOutput(iCh - 1)
-		local x0 = CENTER + SCALE * out.offset
-		local x1 = CENTER + SCALE * out.min
-		local x2 = CENTER + SCALE * out.max
+		local iChannel = namedChs[iNamed]
+		local out = model.getOutput(iChannel - 1)
+		local x0 = CTR + SCALE * out.offset
+		local x1 = CTR + SCALE * out.min
+		local x2 = CTR + SCALE * out.max
 		local y0 = 1 + 9 * iLine
 
 		-- Drawing attributes for blinking etc.
@@ -304,7 +445,7 @@ local function Draw()
 		end
 
 		-- Draw channel no. and name
-		lcd.drawNumber(XDOT, y0, iCh, RIGHT + attCh)
+		lcd.drawNumber(XDOT, y0, iChannel, RIGHT + attCh)
 		lcd.drawText(XDOT + 4, y0, out.name, attName)
 		lcd.drawText(XDOT, y0, ".")
 		
@@ -336,14 +477,14 @@ local function Draw()
 		lcd.drawLine(x1, y0 + 3, x2, y0 + 3, SOLID, FORCE)
 		
 		-- And current position inducator
-		x0 = getValue(srcBase + iCh)
+		x0 = getValue(SOURCE0 + iChannel)
 		if x0 >= 0 then
 			x0 = out.offset + math.min(x0, 1024) * (out.max - out.offset) / 1024 
 		else
 			x0 = out.offset + math.max(x0, -1024) * (out.offset - out.min) / 1024 
 		end
 
-		x0 = CENTER + SCALE * x0
+		x0 = CTR + SCALE * x0
 		lcd.drawLine(x0, y0 + 1, x0, y0 + 1, SOLID, FORCE)
 		lcd.drawLine(x0 - 1, y0, x0 + 1, y0, SOLID, FORCE)
 		lcd.drawLine(x0 - 2, y0 - 1, x0 + 2, y0 - 1, SOLID, FORCE)
@@ -370,12 +511,12 @@ local function run(event)
 			return true -- Quit
 		end
 	elseif stage == 2 then
-		local iCh
+		local iChannel
 		local out
 	
 		if editing > 1 then
-			iCh = namedChs[selection]
-			out = model.getOutput(iCh - 1)
+			iChannel = namedChs[selection]
+			out = model.getOutput(iChannel - 1)
 		end
 		
 		-- Handle key events
@@ -405,7 +546,7 @@ local function run(event)
 			-- Editing direction
 			if event == EVT_VIRTUAL_ENTER then
 				out.revert = 1 - out.revert
-				model.setOutput(iCh - 1, out)
+				model.setOutput(iChannel - 1, out)
 			elseif event == EVT_VIRTUAL_PREV or event == EVT_VIRTUAL_PREV_REPT then
 				editing = 1
 			elseif event == EVT_VIRTUAL_NEXT or event == EVT_VIRTUAL_NEXT_REPT then
@@ -510,7 +651,7 @@ local function run(event)
 				out.max = out.max + delta
 			end
 
-			model.setOutput(iCh - 1, out)
+			model.setOutput(iChannel - 1, out)
 		end
 
 		-- Scroll if necessary
@@ -523,3 +664,4 @@ local function run(event)
 end
 
 return {init = init, run = run}
+]]--
