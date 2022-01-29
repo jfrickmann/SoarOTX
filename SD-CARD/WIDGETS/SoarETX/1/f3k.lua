@@ -2,7 +2,7 @@
 -- SoarETX F3K score keeper, loadable component                          --
 --                                                                       --
 -- Author:  Jesper Frickmann                                             --
--- Date:    2022-01-03                                                   --
+-- Date:    2022-01-26                                                   --
 -- Version: 0.99                                                         --
 --                                                                       --
 -- Copyright (C) Jesper Frickmann                                        --
@@ -729,7 +729,7 @@ local function SetupScreen(gui, title, pop)
   
   -- Return button
   if pop then
-    gui.buttonRet = gui.custom({ }, LCD_W - 2 * HEADER, 0, HEADER, HEADER)
+    gui.buttonRet = gui.custom({ }, LCD_W - 74, 6, 28, 28)
     
     function gui.buttonRet.draw(focused)
       local color
@@ -750,7 +750,7 @@ local function SetupScreen(gui, title, pop)
       end
       
       if focused then
-        gui.buttonRet.drawFocus(LCD_W - 74, 6, 28, 28)
+        gui.buttonRet.drawFocus()
       end
     end
 
@@ -762,14 +762,14 @@ local function SetupScreen(gui, title, pop)
   end
   
   -- Minimize button
-  local buttonMin = gui.custom({ }, LCD_W - HEADER, 0, HEADER, HEADER)
+  local buttonMin = gui.custom({ }, LCD_W - 34, 6, 28, 28)
 
   function buttonMin.draw(focused)
     lcd.drawRectangle(LCD_W - 34, 6, 28, 28, colors.primary2)
     lcd.drawFilledRectangle(LCD_W - 30, 19, 20, 3, colors.primary2)
 
     if focused then
-      buttonMin.drawFocus(LCD_W - 34, 6, 28, 28)
+      buttonMin.drawFocus()
     end
   end
   

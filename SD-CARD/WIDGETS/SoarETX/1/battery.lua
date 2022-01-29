@@ -2,7 +2,7 @@
 -- SoarETX, loadable component                                           --
 --                                                                       --
 -- Author:  Jesper Frickmann                                             --
--- Date:    2022-01-17                                                   --
+-- Date:    2022-01-26                                                   --
 -- Version: 0.99                                                         --
 --                                                                       --
 -- Copyright (C) Jesper Frickmann                                        --
@@ -105,14 +105,14 @@ function gui.fullScreenRefresh()
 end
 
 -- Minimize button
-local buttonMin = gui.custom({ }, LCD_W - HEADER, 0, HEADER, HEADER)
+local buttonMin = gui.custom({ }, LCD_W - 34, 6, 28, 28)
 
 function buttonMin.draw(focused)
   lcd.drawRectangle(LCD_W - 34, 6, 28, 28, colors.primary2)
   lcd.drawFilledRectangle(LCD_W - 30, 19, 20, 3, colors.primary2)
 
   if focused then
-    buttonMin.drawFocus(LCD_W - 34, 6, 28, 28)
+    buttonMin.drawFocus()
   end
 end
 
