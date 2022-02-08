@@ -2,7 +2,7 @@
 -- SoarETX F3K score keeper, loadable component                          --
 --                                                                       --
 -- Author:  Jesper Frickmann                                             --
--- Date:    2022-01-26                                                   --
+-- Date:    2022-01-29                                                   --
 -- Version: 0.99                                                         --
 --                                                                       --
 -- Copyright (C) Jesper Frickmann                                        --
@@ -1011,7 +1011,7 @@ do -- Prompt asking to save scores and exit task window
   local BOTTOM = y0 + PROMPT_H - PROMPT_M
   
   function promptSaveScores.fullScreenRefresh()
-    lcd.drawFilledRectangle(x0, y0, PROMPT_W, PROMPT_H, colors.primary2, 2)
+    lcd.drawFilledRectangle(x0, y0, PROMPT_W, PROMPT_H, colors.primary2)
     lcd.drawRectangle(x0, y0, PROMPT_W, PROMPT_H, colors.primary1, 3)
   end
 
@@ -1114,9 +1114,9 @@ do -- Setup score browser screen
     local record = records[r]
     
     if r % 2 == 0 then
-      lcd.drawFilledRectangle(0, top, LCD_W, RECORD_H, COLOR_THEME_SECONDARY2, 2)
+      lcd.drawFilledRectangle(0, top, LCD_W, RECORD_H, COLOR_THEME_SECONDARY2)
     else
-      lcd.drawFilledRectangle(0, top, LCD_W, RECORD_H, COLOR_THEME_SECONDARY3, 2)
+      lcd.drawFilledRectangle(0, top, LCD_W, RECORD_H, COLOR_THEME_SECONDARY3)
     end
     
     lcd.drawText(10, top + 6, record.taskName, BOLD)

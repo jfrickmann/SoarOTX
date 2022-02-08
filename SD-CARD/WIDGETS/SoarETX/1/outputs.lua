@@ -282,18 +282,18 @@ local function init()
   end
 
   -- Close button
-  local buttonMin = gui.custom({ }, LCD_W - 34, 6, 28, 28)
+  local buttonClose = gui.custom({ }, LCD_W - 34, 6, 28, 28)
 
-  function buttonMin.draw(focused)
+  function buttonClose.draw(focused)
     lcd.drawRectangle(LCD_W - 34, 6, 28, 28, colors.primary2)
     lcd.drawText(LCD_W - 20, 20, "X", CENTER + VCENTER + MIDSIZE + colors.primary2)
 
     if focused then
-      buttonMin.drawFocus()
+      buttonClose.drawFocus()
     end
   end
 
-  function buttonMin.onEvent(event)
+  function buttonClose.onEvent(event)
     if event == EVT_VIRTUAL_ENTER then
       lcd.exitFullScreen()
     end
@@ -474,6 +474,7 @@ local function init()
             end
             outX = CTR + outX / SCALE
             channel.drawFilledTriangle(outX, y - 3, outX - 3, y - 9, outX + 3, y - 9, colorBar)
+            channel.drawLine(outX, y - 2, outX, y + 2, SOLID, colorBar)
             channel.drawFilledTriangle(outX, y + 3, outX - 3, y + 9, outX + 3, y + 9, colorBar)
           end -- draw(...)
           

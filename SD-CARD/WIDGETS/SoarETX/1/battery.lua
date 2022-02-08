@@ -2,7 +2,7 @@
 -- SoarETX, loadable component                                           --
 --                                                                       --
 -- Author:  Jesper Frickmann                                             --
--- Date:    2022-01-26                                                   --
+-- Date:    2022-01-29                                                   --
 -- Version: 0.99                                                         --
 --                                                                       --
 -- Copyright (C) Jesper Frickmann                                        --
@@ -35,8 +35,6 @@ local LINE =    36
 local HEIGHT =  28
 
 -- Battery variables
-local MEM_CRV = 31
-local MEM_BAT =  0
 local rxBatSrc
 local rxBatNxtWarn = 0
 
