@@ -46,10 +46,17 @@ local function GetCurve(crvIndex)
 	local newTbl = {}
 	local oldTbl = model.getCurve(crvIndex)
 	
-	newTbl.y = {}
-	for p = 1, ui.n do
-		newTbl.y[p] = oldTbl.y[p - 1]
+	-- EdgeTX starting from commit 8f3dd7f72 emits the curves with the first point being 1,
+	-- conversion only required for versions older than v2.9.0 which did emit the "0"th element
+	if oldTbl.y[0] == nil then
+	    newTbl.y = oldTbl.y
+	else
+	    newTbl.y = {}
+	    for p = 1, ui.n do
+		    newTbl.y[p] = oldTbl.y[p - 1]
+	    end
 	end
+
 	
 	newTbl.smooth = 1
 	newTbl.name = oldTbl.name
