@@ -3,7 +3,7 @@
 -- OpenTX or EdgeTX                                                      --
 --                                                                       --
 -- Author:  Jesper Frickmann                                             --
--- Date:    2023-12-12                                                   --
+-- Date:    2023-12-18                                                   --
 -- Version: 1.0.1                                                        --
 --                                                                       --
 -- Copyright (C) 2023 OpenTX and EdgeTX                                  --
@@ -143,11 +143,18 @@ local function defineTasks()
 		{ lang.Z, 0, -1, 7, false, 0, 2	},
 		{ lang.browse } -- Not a task - menu item for browsing scores
 	}
-end
 
-timeDialSteps[6]	= { {30,	5}, {60, 10}, {120, 15}, {210, 30}, {420, 60}, {660, 1} }	-- Poker 10 min.
-timeDialSteps[7]	= { {30, 10}, {90, 15}, {270, 30}, {480, 60}, {960, 1} } 						-- Poker 15 min.
-timeDialSteps[16] = { {15,	5}, {30, 10}, { 60, 15}, {120, 30}, {270, 1} } 						-- QR
+	-- Time steps for dialing time targets in Poker etc.
+	for i, task in ipairs(tasks) do
+		if task[1] == lang.E1 then -- Poker 10 min.
+			timeDialSteps[i]	= { {30,	5}, {60, 10}, {120, 15}, {210, 30}, {420, 60}, {660, 1} }
+		elseif task[1] == lang.E2 then -- Poker 15 min.
+			timeDialSteps[i]	= { {30, 10}, {90, 15}, {270, 30}, {480, 60}, {960, 1} }
+		elseif task[1] == lang.Y then -- Quick Relaunch
+			timeDialSteps[i] = { {15,	5}, {30, 10}, { 60, 15}, {120, 30}, {270, 1} }
+		end
+	end
+end
 
 -------------------------------- Utility functions ---------------------------------
 
