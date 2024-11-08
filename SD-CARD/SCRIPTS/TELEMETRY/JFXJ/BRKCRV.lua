@@ -1,5 +1,5 @@
 -- JFXJ/BRKCRV.lua
--- Timestamp: 2021-01-02
+-- Timestamp: 2024-11-07
 -- Created by Jesper Frickmann
 
 local GV_FLP = 1 -- Index of global variable set by throttle trim for common flap curve adjustment
@@ -26,25 +26,9 @@ local function FindPoint()
 	return math.floor((ui.n - 1) / 2048 * (x + 1024) + 1.5) 
 end -- FindPoint()
 
--- Work around the stupid fact that getCurve and setCurve tables are incompatible...
-local function GetCurve(crvIndex)
-	local newTbl = {}
-	local oldTbl = model.getCurve(crvIndex)
-	
-	newTbl.y = {}
-	for i = 1, ui.n do
-		newTbl.y[i] = oldTbl.y[i - 1]
-	end
-	
-	newTbl.smooth = 0
-	newTbl.name = oldTbl.name
-	
-	return newTbl
-end -- GetCurve()
-
 local function init()
-	flpCrv = GetCurve(CRV_FLP)
-	ailCrv = GetCurve(CRV_AIL)
+	flpCrv = model.getCurve(CRV_FLP)
+	ailCrv = model.getCurve(CRV_AIL)
 end -- init()
 
 local function run(event)

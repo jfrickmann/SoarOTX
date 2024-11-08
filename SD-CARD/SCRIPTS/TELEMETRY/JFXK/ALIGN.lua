@@ -1,5 +1,5 @@
 -- JF FxK Flaperon Adjustment
--- Timestamp: 2021-01-02
+-- Timestamp: 2024-11-07
 -- Created by Jesper Frickmann
 
 local N = 32 -- Highest output channel number
@@ -40,22 +40,6 @@ local function FindPoint()
 	local x = getValue(INP_STEP)
 	return math.floor((ui.n - 1) / 2048 * (x + 1024) + 1.5) 
 end -- FindPoint()
-
--- Work around the stupid fact that getCurve and setCurve tables are incompatible...
-local function GetCurve(crvIndex)
-	local newTbl = {}
-	local oldTbl = model.getCurve(crvIndex)
-	
-	newTbl.y = {}
-	for p = 1, ui.n do
-		newTbl.y[p] = oldTbl.y[p - 1]
-	end
-	
-	newTbl.smooth = 1
-	newTbl.name = oldTbl.name
-	
-	return newTbl
-end -- GetCurve()
 
 -- Find the output where the specified curve index is being used
 local function GetOutput(crvIndex)
@@ -126,10 +110,10 @@ local function UpdateGVs(point)
 end -- UpdateGVs()
 
 local function init()
-	rgtCrv = GetCurve(CRV_RGT)
+	rgtCrv = model.getCurve(CRV_RGT)
 	rgtOutIndex, rgtOut = GetOutput(CRV_RGT)
 	
-	lftCrv = GetCurve(CRV_LFT)
+	lftCrv = model.getCurve(CRV_LFT)
 	lftOutIndex, lftOut = GetOutput(CRV_LFT)
 	
 	ComputeYs(rgtCrv, rgtOut, rgtY)

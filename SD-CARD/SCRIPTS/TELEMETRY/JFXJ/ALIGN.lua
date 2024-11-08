@@ -1,5 +1,5 @@
 -- JFXJ/ALIGN.lua
--- Timestamp: 2021-01-02
+-- Timestamp: 2021-11-07
 -- Created by Jesper Frickmann
 
 local N = 32 -- Highest output channel number
@@ -56,22 +56,6 @@ local function FindPoint()
 	local x = getValue(INP_STEP)
 	return math.floor((ui.n - 1) / 2048 * (x + 1024) + 1.5) 
 end -- FindPoint()
-
--- Work around the stupid fact that getCurve and setCurve tables are incompatible...
-local function GetCurve(crvIndex)
-	local newTbl = {}
-	local oldTbl = model.getCurve(crvIndex)
-	
-	newTbl.y = {}
-	for p = 1, ui.n do
-		newTbl.y[p] = oldTbl.y[p - 1]
-	end
-	
-	newTbl.smooth = 1
-	newTbl.name = oldTbl.name
-	
-	return newTbl
-end -- GetCurve()
 
 -- Find the output where the specified curve index is being used
 local function GetOutput(crvIndex)
@@ -155,19 +139,19 @@ local function UpdateGVs(point)
 end -- UpdateGVs()
 
 local function init()
-	lftAilCrv = GetCurve(CRV_AIL_LFT)
+	lftAilCrv = model.getCurve(CRV_AIL_LFT)
 	lftAilOutIndex, lftAilOut = GetOutput(CRV_AIL_LFT)
 	ComputeYs(lftAilCrv, lftAilOut, lftAilY)
 
-	rgtAilCrv = GetCurve(CRV_AIL_RGT)
+	rgtAilCrv = model.getCurve(CRV_AIL_RGT)
 	rgtAilOutIndex, rgtAilOut = GetOutput(CRV_AIL_RGT)
 	ComputeYs(rgtAilCrv, rgtAilOut, rgtAilY)
 
-	lftFlpCrv = GetCurve(CRV_FLP_LFT)
+	lftFlpCrv = model.getCurve(CRV_FLP_LFT)
 	lftFlpOutIndex, lftFlpOut = GetOutput(CRV_FLP_LFT)	
 	ComputeYs(lftFlpCrv, lftFlpOut, lftFlpY)
 	
-	rgtFlpCrv = GetCurve(CRV_FLP_RGT)
+	rgtFlpCrv = model.getCurve(CRV_FLP_RGT)
 	rgtFlpOutIndex, rgtFlpOut = GetOutput(CRV_FLP_RGT)
 	ComputeYs(rgtFlpCrv, rgtFlpOut, rgtFlpY)
 	
